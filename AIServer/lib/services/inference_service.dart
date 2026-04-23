@@ -20,7 +20,8 @@ class InferenceService {
   bool get modelLoaded => _modelLoaded;
   String? get loadedModelId => _loadedModelId;
 
-  /// Registers the .task model file with flutter_gemma.
+  /// Registers a model file with flutter_gemma.
+  /// Automatically detects .litertlm vs .task from the file extension.
   Future<bool> loadModel(String modelPath, String modelId) async {
     // ── Pre-flight checks ──────────────────────────────────────────────────
     final file = File(modelPath);
@@ -40,9 +41,15 @@ class InferenceService {
         ? Uri.parse(modelPath).toFilePath()
         : modelPath;
 
+    // Detect file type from extension so MediaPipe parses it correctly.
+    final fileType = cleanPath.endsWith('.litertlm')
+        ? ModelFileType.litertlm
+        : ModelFileType.task;
+
     try {
       await FlutterGemma.installModel(
         modelType: ModelType.gemmaIt,
+        modelFileType: fileType,
       ).fromFile(cleanPath).install();
 
       _modelLoaded = true;
