@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_gemma/flutter_gemma.dart';
 
 /// Wraps the flutter_gemma plugin for on-device Gemma inference.
@@ -13,11 +14,31 @@ class InferenceService {
   bool get modelLoaded => _modelLoaded;
   String? get loadedModelId => _loadedModelId;
 
-  /// Loads a Gemma .bin model from [modelPath] on disk.
+  /// Loads a Gemma .task model from [modelPath] on disk.
   Future<bool> loadModel(String modelPath, String modelId) async {
+    // ── Pre-flight checks ────────────────────────────────────────────────────
+    final file = File(modelPath);
+    if (!file.existsSync()) {
+      throw InferenceException(
+          'Model file not found at:\n$modelPath\n\nTry re-downloading the model.');
+    }
+
+    final sizeBytes = file.lengthSync();
+    if (sizeBytes < 1024 * 1024) {
+      // Under 1 MB almost certainly means a partial/corrupt download.
+      throw InferenceException(
+          'Model file is too small (${(sizeBytes / 1024).toStringAsFixed(1)} KB). '
+          'It may be a partial download. Delete and re-download.');
+    }
+
+    // Strip any file:// prefix — MediaPipe needs a bare POSIX path.
+    final cleanPath = modelPath.startsWith('file://')
+        ? Uri.parse(modelPath).toFilePath()
+        : modelPath;
+
     try {
       await FlutterGemmaPlugin.instance.init(
-        modelPath: modelPath,
+        modelPath: cleanPath,
         temperature: 0.8,
         topK: 40,
         randomSeed: 1,
@@ -28,7 +49,11 @@ class InferenceService {
       return true;
     } catch (e) {
       _modelLoaded = false;
-      throw InferenceException('loadModel failed: $e');
+      throw InferenceException(
+          'loadModel failed.\n'
+          'Path: $cleanPath\n'
+          'Size: ${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB\n'
+          'Error: $e');
     }
   }
 
