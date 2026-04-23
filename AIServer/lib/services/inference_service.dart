@@ -1,9 +1,15 @@
 import 'dart:io';
 import 'package:flutter_gemma/flutter_gemma.dart';
 
-/// Wraps the flutter_gemma plugin for on-device Gemma inference.
-/// No native bridge code required — flutter_gemma handles iOS and Android
-/// internally via Google AI Edge (MediaPipe Tasks GenAI).
+/// Wraps flutter_gemma 0.13.x for on-device Gemma inference.
+///
+/// New API (since v0.5.0 / v0.11.10):
+///   FlutterGemma.initialize()           — called once in main()
+///   FlutterGemma.installModel().fromFile().install()  — registers model
+///   FlutterGemma.getActiveModel()       — returns InferenceModel
+///   model.createSession()               — per-request session
+///   session.addQueryChunk(Message)      — add prompt
+///   session.getResponse()               — blocking response
 class InferenceService {
   InferenceService._();
   static final InferenceService instance = InferenceService._();
@@ -14,21 +20,19 @@ class InferenceService {
   bool get modelLoaded => _modelLoaded;
   String? get loadedModelId => _loadedModelId;
 
-  /// Loads a Gemma .task model from [modelPath] on disk.
+  /// Registers the .task model file with flutter_gemma.
   Future<bool> loadModel(String modelPath, String modelId) async {
-    // ── Pre-flight checks ────────────────────────────────────────────────────
+    // ── Pre-flight checks ──────────────────────────────────────────────────
     final file = File(modelPath);
     if (!file.existsSync()) {
       throw InferenceException(
-          'Model file not found at:\n$modelPath\n\nTry re-downloading the model.');
+          'Model file not found at:\n$modelPath\n\nTry re-downloading.');
     }
-
     final sizeBytes = file.lengthSync();
     if (sizeBytes < 1024 * 1024) {
-      // Under 1 MB almost certainly means a partial/corrupt download.
       throw InferenceException(
-          'Model file is too small (${(sizeBytes / 1024).toStringAsFixed(1)} KB). '
-          'It may be a partial download. Delete and re-download.');
+          'Model file too small (${(sizeBytes / 1024).toStringAsFixed(1)} KB). '
+          'Partial download — delete and re-download.');
     }
 
     // Strip any file:// prefix — MediaPipe needs a bare POSIX path.
@@ -37,13 +41,10 @@ class InferenceService {
         : modelPath;
 
     try {
-      await FlutterGemmaPlugin.instance.init(
-        modelPath: cleanPath,
-        temperature: 0.8,
-        topK: 40,
-        randomSeed: 1,
-        maxTokens: 1024,
-      );
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+      ).fromFile(cleanPath).install();
+
       _modelLoaded = true;
       _loadedModelId = modelId;
       return true;
@@ -57,7 +58,7 @@ class InferenceService {
     }
   }
 
-  /// Runs a single blocking inference call with [prompt].
+  /// Runs a single blocking inference call and returns the response string.
   Future<String> runInference(
     String prompt, {
     int maxTokens = 512,
@@ -67,38 +68,39 @@ class InferenceService {
       throw InferenceException('No model loaded. Call loadModel() first.');
     }
     try {
-      final response =
-          await FlutterGemmaPlugin.instance.getResponse(prompt: prompt);
+      final model = await FlutterGemma.getActiveModel(maxTokens: maxTokens);
+      final session = await model.createSession();
+      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
+      final response = await session.getResponse();
+      await session.close();
+      await model.close();
       return response ?? '';
     } catch (e) {
       throw InferenceException('runInference failed: $e');
     }
   }
 
-  /// Converts a list of chat messages into Gemma's instruction-tuned prompt
-  /// format:
-  ///   <start_of_turn>user\n{text}<end_of_turn>\n<start_of_turn>model
+  /// Formats chat messages into a single prompt string for the model.
+  /// For the new API each call is treated as a standalone turn, so we
+  /// flatten the history into one user message here.
   String buildChatPrompt(List<Map<String, String>> messages) {
     final buf = StringBuffer();
     for (final msg in messages) {
       final role = msg['role'] ?? 'user';
       final content = msg['content'] ?? '';
-      if (role == 'system') {
-        buf.write('<start_of_turn>user\n[System: $content]<end_of_turn>\n');
-      } else {
-        final gemmaRole = role == 'assistant' ? 'model' : 'user';
-        buf.write('<start_of_turn>$gemmaRole\n$content<end_of_turn>\n');
+      switch (role) {
+        case 'system':
+          buf.writeln('[System: $content]\n');
+        case 'assistant':
+          buf.writeln('Assistant: $content\n');
+        default:
+          buf.writeln('User: $content\n');
       }
     }
-    buf.write('<start_of_turn>model\n');
-    return buf.toString();
+    return buf.toString().trim();
   }
 
   Future<void> unloadModel() async {
-    try {
-      // flutter_gemma does not expose an explicit unload; reinitialising
-      // with a new model path replaces the current one.
-    } catch (_) {}
     _modelLoaded = false;
     _loadedModelId = null;
   }

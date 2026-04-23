@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   # On-device Gemma inference — official Google Flutter plugin
-  flutter_gemma: ^0.2.0
+  flutter_gemma: ^0.13.6
   # HTTP server
   shelf: ^1.4.1
   shelf_router: ^1.1.4
