@@ -1,0 +1,47 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_gemma (0.0.1):
+    - Flutter
+    - MediaPipeTasksGenAI (= 0.10.12)
+    - MediaPipeTasksGenAIC (= 0.10.12)
+  - MediaPipeTasksGenAI (0.10.12):
+    - MediaPipeTasksGenAIC (= 0.10.12)
+  - MediaPipeTasksGenAIC (0.10.12)
+  - permission_handler_apple (9.3.0):
+    - Flutter
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_gemma (from `.symlinks/plugins/flutter_gemma/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+
+SPEC REPOS:
+  trunk:
+    - MediaPipeTasksGenAI
+    - MediaPipeTasksGenAIC
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_gemma:
+    :path: ".symlinks/plugins/flutter_gemma/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_gemma: f26ff94e1bc5ea4ea8f637d7b172ae6b41dd3d31
+  MediaPipeTasksGenAI: efd6d1177fcb6455a5460466c99229da4afe35bb
+  MediaPipeTasksGenAIC: ed29bc83f4f39276505abfe956f4ff25f9c6a93a
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+
+PODFILE CHECKSUM: cb0ee8143bf7bef4ddd224b90ea718128ac552b9
+
+COCOAPODS: 1.16.2
