@@ -1,0 +1,47 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace "com.gemma4.app1"
+    compileSdk 34
+    ndkVersion "25.1.8937393"
+
+    defaultConfig {
+        applicationId "com.gemma4.app1"
+        minSdk 26          // Google AI Edge LLM Inference requires API 26+
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+        }
+    }
+}
+
+flutter {
+    source "../.."
+}
+
+dependencies {
+    // Google AI Edge — LLM Inference API (MediaPipe Tasks GenAI)
+    implementation "com.google.mediapipe:tasks-genai:0.10.22"
+
+    // Kotlin coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+}
