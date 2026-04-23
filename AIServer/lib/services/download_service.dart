@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -8,9 +7,10 @@ import '../services/settings_service.dart';
 
 typedef ProgressCallback = void Function(double progress, int receivedBytes, int totalBytes);
 
-/// Handles downloading Gemma model files from Kaggle.
+/// Handles downloading Gemma model .task files from HuggingFace.
 ///
-/// Kaggle requires HTTP Basic auth: username:apiKey (base64-encoded).
+/// HuggingFace gated models require a Bearer token.
+/// Token created at: https://huggingface.co/settings/tokens
 class DownloadService {
   DownloadService._();
   static final DownloadService instance = DownloadService._();
@@ -44,20 +44,16 @@ class DownloadService {
     return File(path).existsSync();
   }
 
-  /// Downloads [model] from Kaggle, reporting progress via [onProgress].
+  /// Downloads [model] from HuggingFace, reporting progress via [onProgress].
   /// Throws [DownloadException] on any error.
   Future<String> download(
     ModelInfo model, {
     ProgressCallback? onProgress,
   }) async {
     final settings = SettingsService.instance;
-    if (!settings.hasKaggleCredentials) {
-      throw DownloadException('Kaggle credentials not set.');
+    if (!settings.hasHfToken) {
+      throw DownloadException('HuggingFace token not set.');
     }
-
-    final credentials = base64Encode(
-      utf8.encode('${settings.kaggleUsername}:${settings.kaggleKey}'),
-    );
 
     final savePath = await modelFilePath(model);
     _cancelToken = CancelToken();
@@ -68,7 +64,7 @@ class DownloadService {
         savePath,
         cancelToken: _cancelToken,
         options: Options(
-          headers: {'Authorization': 'Basic $credentials'},
+          headers: {'Authorization': 'Bearer ${settings.hfToken}'},
           responseType: ResponseType.bytes,
         ),
         onReceiveProgress: (received, total) {
@@ -80,6 +76,12 @@ class DownloadService {
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
         throw DownloadException('Download cancelled.');
+      }
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        throw DownloadException(
+            'Access denied ($status). Check your HuggingFace token and '
+            'ensure you have accepted the model licence at huggingface.co.');
       }
       throw DownloadException('Download error: ${e.message}');
     }

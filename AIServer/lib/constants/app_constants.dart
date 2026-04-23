@@ -7,8 +7,7 @@ class AppConstants {
   static const int defaultPort = 8080;
   static const String settingsKeyPort = 'server_port';
   static const String settingsKeySelectedModel = 'selected_model_id';
-  static const String settingsKeyKaggleUsername = 'kaggle_username';
-  static const String settingsKeyKaggleKey = 'kaggle_key';
+  static const String settingsKeyHfToken = 'hf_token';
   static const String settingsKeySetupDone = 'setup_done';
 
   /// Inference platform-channel name

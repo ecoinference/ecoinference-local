@@ -1,41 +1,47 @@
 import '../models/model_info.dart';
 
-/// Kaggle model download URLs follow the pattern:
-///   https://www.kaggle.com/api/v1/models/{owner}/{model}/{framework}/{variation}/{version}/download
+/// Models are hosted on HuggingFace as LiteRT .task files.
+/// These are the formats required by flutter_gemma / Google AI Edge
+/// LLM Inference API.
 ///
-/// flutter_gemma uses .bin files (MediaPipe CPU/GPU int4 format).
-/// Models are hosted under the 'tfLite' framework on Kaggle Models.
+/// License acceptance required at:
+///   https://huggingface.co/litert-community/Gemma3-1B-IT
+///   https://huggingface.co/litert-community/Gemma3-4B-IT
+///
+/// Note: Gemma 4 LiteRT files are not yet published. Gemma 3 is the
+/// latest generation available in .task format. This catalog will be
+/// updated when Gemma 4 LiteRT artefacts are released.
 
 class ModelCatalog {
   ModelCatalog._();
 
-  static const String _kaggleBase =
-      'https://www.kaggle.com/api/v1/models/google';
+  static const String _hfBase = 'https://huggingface.co';
 
   static final List<ModelInfo> models = [
     ModelInfo(
-      id: 'gemma4-1b-it-int4',
-      displayName: 'Gemma 4 1B (INT4)',
+      id: 'gemma3-1b-it-int4',
+      displayName: 'Gemma 3 1B (INT4)',
       description:
-          'Instruction-tuned, 4-bit quantised. Best for older/low-RAM devices.',
+          'Instruction-tuned, 4-bit quantised. Runs on all devices, '
+          'fast inference.',
       parameterCount: '1B',
-      fileSizeMb: 650,
+      fileSizeMb: 700,
       downloadUrl:
-          '$_kaggleBase/gemma-4/tfLite/gemma4-1b-it-gpu-int4/1/download',
-      fileName: 'gemma4-1b-it-gpu-int4.bin',
-      // SHA-256 to be updated once Google publishes the Gemma 4 artefacts.
+          '$_hfBase/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
+      fileName: 'gemma3-1b-it-int4.task',
       sha256: null,
     ),
     ModelInfo(
-      id: 'gemma4-4b-it-int4',
-      displayName: 'Gemma 4 4B (INT4)',
+      id: 'gemma3-4b-it-int4',
+      displayName: 'Gemma 3 4B (INT4)',
       description:
-          'Instruction-tuned, 4-bit quantised. Better quality; needs ≥6 GB RAM.',
+          'Instruction-tuned, 4-bit quantised. Better quality; '
+          'needs ≥6 GB RAM.',
       parameterCount: '4B',
-      fileSizeMb: 2500,
+      fileSizeMb: 2600,
       downloadUrl:
-          '$_kaggleBase/gemma-4/tfLite/gemma4-4b-it-gpu-int4/1/download',
-      fileName: 'gemma4-4b-it-gpu-int4.bin',
+          '$_hfBase/litert-community/Gemma3-4B-IT/resolve/main/gemma3-4b-it-int4.task',
+      fileName: 'gemma3-4b-it-int4.task',
       sha256: null,
     ),
   ];

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/settings_service.dart';
 import 'model_picker_screen.dart';
 
-/// Welcome / Kaggle credentials entry screen — first screen in setup flow.
+/// Welcome / HuggingFace token entry — first screen in setup flow.
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
 
@@ -12,33 +12,26 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameCtrl = TextEditingController();
-  final _keyCtrl = TextEditingController();
-  bool _keyVisible = false;
+  final _tokenCtrl = TextEditingController();
+  bool _tokenVisible = false;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    final s = SettingsService.instance;
-    _usernameCtrl.text = s.kaggleUsername;
-    _keyCtrl.text = s.kaggleKey;
+    _tokenCtrl.text = SettingsService.instance.hfToken;
   }
 
   @override
   void dispose() {
-    _usernameCtrl.dispose();
-    _keyCtrl.dispose();
+    _tokenCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _next() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
-    await SettingsService.instance.setKaggleCredentials(
-      _usernameCtrl.text.trim(),
-      _keyCtrl.text.trim(),
-    );
+    await SettingsService.instance.setHfToken(_tokenCtrl.text.trim());
     setState(() => _saving = false);
     if (!mounted) return;
     Navigator.of(context).push(
@@ -62,56 +55,74 @@ class _SetupScreenState extends State<SetupScreen> {
                 Icon(Icons.hub_rounded,
                     size: 64, color: theme.colorScheme.primary),
                 const SizedBox(height: 24),
-                Text('Gemma 4 Server',
+                Text('Gemma Server',
                     style: theme.textTheme.headlineMedium
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text(
-                  'Run a Gemma 4 model entirely on this device and expose '
+                  'Run a Gemma model entirely on this device and expose '
                   'a local REST API for any client app.',
-                  style: theme.textTheme.bodyLarge
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 40),
-                Text('Kaggle Credentials',
+                Text('HuggingFace Token',
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
-                  'Models are downloaded from Kaggle. Enter your username '
-                  'and API key from kaggle.com → Account → API.',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  'Models are downloaded from HuggingFace. '
+                  'Create a free token at huggingface.co → Settings → Access Tokens.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _usernameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Kaggle Username',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _keyCtrl,
-                  obscureText: !_keyVisible,
+                  controller: _tokenCtrl,
+                  obscureText: !_tokenVisible,
                   decoration: InputDecoration(
-                    labelText: 'Kaggle API Key',
+                    labelText: 'Access Token',
+                    hintText: 'hf_...',
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.key_outlined),
                     suffixIcon: IconButton(
-                      icon: Icon(_keyVisible
+                      icon: Icon(_tokenVisible
                           ? Icons.visibility_off
                           : Icons.visibility),
                       onPressed: () =>
-                          setState(() => _keyVisible = !_keyVisible),
+                          setState(() => _tokenVisible = !_tokenVisible),
                     ),
                   ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 12),
+                // Licence reminder
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 16,
+                          color: theme.colorScheme.onSecondaryContainer),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Before downloading, accept the model licence at:\n'
+                          'huggingface.co/litert-community/Gemma3-1B-IT\n'
+                          'huggingface.co/litert-community/Gemma3-4B-IT',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color:
+                                  theme.colorScheme.onSecondaryContainer),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(

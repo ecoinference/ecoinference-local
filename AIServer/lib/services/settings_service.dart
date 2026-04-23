@@ -19,21 +19,15 @@ class SettingsService {
   Future<void> setPort(int value) =>
       _prefs.setInt(AppConstants.settingsKeyPort, value);
 
-  // ── Kaggle credentials ──────────────────────────────────────────────────────
+  // ── HuggingFace token ───────────────────────────────────────────────────────
 
-  String get kaggleUsername =>
-      _prefs.getString(AppConstants.settingsKeyKaggleUsername) ?? '';
+  String get hfToken =>
+      _prefs.getString(AppConstants.settingsKeyHfToken) ?? '';
 
-  String get kaggleKey =>
-      _prefs.getString(AppConstants.settingsKeyKaggleKey) ?? '';
+  Future<void> setHfToken(String token) =>
+      _prefs.setString(AppConstants.settingsKeyHfToken, token.trim());
 
-  Future<void> setKaggleCredentials(String username, String key) async {
-    await _prefs.setString(AppConstants.settingsKeyKaggleUsername, username);
-    await _prefs.setString(AppConstants.settingsKeyKaggleKey, key);
-  }
-
-  bool get hasKaggleCredentials =>
-      kaggleUsername.isNotEmpty && kaggleKey.isNotEmpty;
+  bool get hasHfToken => hfToken.isNotEmpty;
 
   // ── Selected model ──────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
 import '../../services/settings_service.dart';
 
-/// Server settings: port number and Kaggle credentials.
+/// Server settings: port number and HuggingFace token.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -12,9 +12,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _portCtrl = TextEditingController();
-  final _usernameCtrl = TextEditingController();
-  final _keyCtrl = TextEditingController();
-  bool _keyVisible = false;
+  final _tokenCtrl = TextEditingController();
+  bool _tokenVisible = false;
   bool _saving = false;
 
   @override
@@ -22,15 +21,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final s = SettingsService.instance;
     _portCtrl.text = s.port.toString();
-    _usernameCtrl.text = s.kaggleUsername;
-    _keyCtrl.text = s.kaggleKey;
+    _tokenCtrl.text = s.hfToken;
   }
 
   @override
   void dispose() {
     _portCtrl.dispose();
-    _usernameCtrl.dispose();
-    _keyCtrl.dispose();
+    _tokenCtrl.dispose();
     super.dispose();
   }
 
@@ -46,10 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _saving = true);
     final s = SettingsService.instance;
     await s.setPort(portVal);
-    await s.setKaggleCredentials(
-      _usernameCtrl.text.trim(),
-      _keyCtrl.text.trim(),
-    );
+    await s.setHfToken(_tokenCtrl.text.trim());
     setState(() => _saving = false);
 
     if (!mounted) return;
@@ -105,63 +99,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── Server section ───────────────────────────────────────────────
+          // ── Server ───────────────────────────────────────────────────────
           _SectionHeader(title: 'Server'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(
-                    controller: _portCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Port',
-                      border: const OutlineInputBorder(),
-                      helperText:
-                          'Default: ${AppConstants.defaultPort}. Range: 1024–65535.',
-                    ),
-                  ),
-                ],
+              child: TextFormField(
+                controller: _portCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Port',
+                  border: const OutlineInputBorder(),
+                  helperText:
+                      'Default: ${AppConstants.defaultPort}. Range: 1024–65535.',
+                ),
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // ── Kaggle section ───────────────────────────────────────────────
-          _SectionHeader(title: 'Kaggle Credentials'),
+          // ── HuggingFace ──────────────────────────────────────────────────
+          _SectionHeader(title: 'HuggingFace Token'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _usernameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
+              child: TextFormField(
+                controller: _tokenCtrl,
+                obscureText: !_tokenVisible,
+                decoration: InputDecoration(
+                  labelText: 'Access Token',
+                  hintText: 'hf_...',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.key_outlined),
+                  suffixIcon: IconButton(
+                    icon: Icon(_tokenVisible
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    onPressed: () =>
+                        setState(() => _tokenVisible = !_tokenVisible),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _keyCtrl,
-                    obscureText: !_keyVisible,
-                    decoration: InputDecoration(
-                      labelText: 'API Key',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.key_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(_keyVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility),
-                        onPressed: () =>
-                            setState(() => _keyVisible = !_keyVisible),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
