@@ -114,8 +114,8 @@ class _SetupScreenState extends State<SetupScreen> {
                       Expanded(
                         child: Text(
                           'Before downloading, accept the model licence at:\n'
-                          'huggingface.co/litert-community/Gemma3-1B-IT\n'
-                          'huggingface.co/litert-community/Gemma3-4B-IT',
+                          'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm\n'
+                          'huggingface.co/litert-community/gemma-4-E4B-it-litert-lm',
                           style: theme.textTheme.bodySmall?.copyWith(
                               color:
                                   theme.colorScheme.onSecondaryContainer),
