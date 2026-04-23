@@ -1,4 +1,4 @@
-name: app1
+name: ai_server
 description: Gemma 4 on-device inference server with REST API.
 publish_to: 'none'
 version: 1.0.0+1

@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-    namespace "com.gemma4.app1"
+    namespace "com.gemma4.aiserver"
     compileSdk 34
     ndkVersion "25.1.8937393"
 
     defaultConfig {
-        applicationId "com.gemma4.app1"
+        applicationId "com.gemma4.aiserver"
         minSdk 26          // Google AI Edge LLM Inference requires API 26+
         targetSdk 34
         versionCode 1

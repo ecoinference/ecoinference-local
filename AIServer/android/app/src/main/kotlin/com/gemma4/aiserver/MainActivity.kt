@@ -1,4 +1,4 @@
-package com.gemma4.app1
+package com.gemma4.aiserver
 
 import io.flutter.embedding.android.FlutterActivity
 

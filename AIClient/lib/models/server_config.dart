@@ -1,4 +1,4 @@
-/// Connection settings for the app1 inference server.
+/// Connection settings for the AIServer inference server.
 class ServerConfig {
   const ServerConfig({
     this.host = '127.0.0.1',

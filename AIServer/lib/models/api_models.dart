@@ -1,5 +1,5 @@
 /// Typed request/response models for the REST API.
-/// Follows OpenAI schema so app2 (and FlutterFlow) can stay provider-agnostic.
+/// Follows OpenAI schema so AIClient (and FlutterFlow) can stay provider-agnostic.
 
 // ── Chat Completions ──────────────────────────────────────────────────────────
 

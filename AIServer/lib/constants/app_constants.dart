@@ -1,4 +1,4 @@
-// App-wide constants for app1.
+// App-wide constants for AIServer.
 
 class AppConstants {
   AppConstants._();
@@ -12,7 +12,7 @@ class AppConstants {
   static const String settingsKeySetupDone = 'setup_done';
 
   /// Inference platform-channel name
-  static const String inferenceChannel = 'com.gemma4.app1/inference';
+  static const String inferenceChannel = 'com.gemma4.AIServer/inference';
 
   /// Platform-channel method names
   static const String methodLoadModel = 'loadModel';

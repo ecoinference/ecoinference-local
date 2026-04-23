@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import '../models/chat_message.dart';
 import '../models/server_config.dart';
 
-/// REST client for the app1 inference server.
+/// REST client for the AIServer inference server.
 /// All methods throw [ApiException] on failure.
 class ApiService {
   ApiService(this.config)
@@ -19,7 +19,7 @@ class ApiService {
 
   // ── Health ──────────────────────────────────────────────────────────────────
 
-  /// Returns true if app1 is reachable and a model is loaded.
+  /// Returns true if AIServer is reachable and a model is loaded.
   Future<HealthStatus> checkHealth() async {
     try {
       final res = await _dio.get('/health');
@@ -90,10 +90,10 @@ class ApiService {
   String _msg(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return 'Connection timed out. Is app1 running?';
+      return 'Connection timed out. Is AIServer running?';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Cannot reach server at ${config.baseUrl}. Is app1 running?';
+      return 'Cannot reach server at ${config.baseUrl}. Is AIServer running?';
     }
     final status = e.response?.statusCode;
     final body = e.response?.data;

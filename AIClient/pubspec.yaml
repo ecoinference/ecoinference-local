@@ -1,5 +1,5 @@
-name: app2
-description: Gemma 4 client — connects to the local inference server (app1).
+name: ai_client
+description: Gemma 4 client — connects to the local inference server (AIServer).
 publish_to: 'none'
 version: 1.0.0+1
 

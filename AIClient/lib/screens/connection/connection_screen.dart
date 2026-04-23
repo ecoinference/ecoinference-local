@@ -92,7 +92,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text(
-                'Connect to the Gemma 4 inference server (app1) running on '
+                'Connect to the Gemma 4 inference server (AIServer) running on '
                 'this device.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant),
@@ -183,7 +183,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                             fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text(
-                      '1. Launch app1 on the same device.\n'
+                      '1. Launch AIServer on the same device.\n'
                       '2. Complete model setup and wait for "Server running".\n'
                       '3. Enter the same port here and tap Connect.',
                       style: theme.textTheme.bodySmall?.copyWith(
