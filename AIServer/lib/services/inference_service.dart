@@ -49,7 +49,7 @@ class InferenceService {
     try {
       await FlutterGemma.installModel(
         modelType: ModelType.gemmaIt,
-        modelFileType: fileType,
+        fileType: fileType,
       ).fromFile(cleanPath).install();
 
       _modelLoaded = true;
