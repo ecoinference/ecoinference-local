@@ -10,6 +10,11 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 ///   model.createSession()               — per-request session
 ///   session.addQueryChunk(Message)      — add prompt
 ///   session.getResponse()               — blocking response
+///
+/// iOS compatibility note:
+///   Gemma 4 (.litertlm) crashes at inference on iOS with MediaPipe 0.10.33.
+///   Use .task models (Gemma 3n, Gemma 3) for iOS.
+///   .litertlm with ModelFileType.litertlm is reserved for Android/Desktop.
 class InferenceService {
   InferenceService._();
   static final InferenceService instance = InferenceService._();

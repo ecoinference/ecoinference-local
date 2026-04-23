@@ -113,9 +113,10 @@ class _SetupScreenState extends State<SetupScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Before downloading, accept the model licence at:\n'
-                          'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm\n'
-                          'huggingface.co/litert-community/gemma-4-E4B-it-litert-lm',
+                          'Gemma 3n E2B requires a HuggingFace account.\n'
+                          'Accept the licence at:\n'
+                          'huggingface.co/google/gemma-3n-E2B-it-litert-preview\n\n'
+                          'Gemma 3 1B is public — no licence required.',
                           style: theme.textTheme.bodySmall?.copyWith(
                               color:
                                   theme.colorScheme.onSecondaryContainer),

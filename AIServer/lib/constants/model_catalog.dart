@@ -1,15 +1,17 @@
 import '../models/model_info.dart';
 
-/// Gemma 4 LiteRT models from the litert-community org on HuggingFace.
+/// iOS-compatible Gemma models in MediaPipe .task format.
 ///
-/// File format: .litertlm  (LiteRT LM runtime — iOS + Android text inference)
-/// Note: the -web.task files in the same repos are web-only; do not use them.
+/// ⚠️  Gemma 4 (.litertlm) is NOT yet supported on iOS — the MediaPipe
+///     LlmInference backend crashes at inference time with Gemma 4 models.
+///     Gemma 4 works on Android only; iOS requires .task format models.
 ///
-/// "E2B" / "E4B" = Effective 2B / 4B parameters (Gemma 4 architecture).
+/// Confirmed working on iOS with flutter_gemma 0.13.6 / MediaPipe 0.10.33:
+///   • Gemma 3n E2B  — 3.1 GB, instruction-tuned, gated (HF token required)
+///   • Gemma 3 1B    — 0.5 GB, instruction-tuned, public (no token needed)
 ///
-/// License acceptance required (one-time, in browser) at:
-///   https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
-///   https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm
+/// HuggingFace licence acceptance required once in browser for gated models:
+///   https://huggingface.co/google/gemma-3n-E2B-it-litert-preview
 
 class ModelCatalog {
   ModelCatalog._();
@@ -18,29 +20,31 @@ class ModelCatalog {
 
   static final List<ModelInfo> models = [
     ModelInfo(
-      id: 'gemma4-e2b-it',
-      displayName: 'Gemma 4 E2B',
+      id: 'gemma3n-e2b-it',
+      displayName: 'Gemma 3n E2B',
       description:
-          'Gemma 4 effective-2B, instruction-tuned. '
-          'Good balance of speed and quality on most devices.',
+          'Gemma 3 Nano effective-2B, instruction-tuned. '
+          'Best quality for on-device inference; requires HuggingFace token '
+          'and ~3.1 GB storage.',
       parameterCount: 'E2B',
-      fileSizeMb: 2580,
+      fileSizeMb: 3100,
       downloadUrl:
-          '$_hfBase/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
-      fileName: 'gemma-4-E2B-it.litertlm',
+          '$_hfBase/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
+      fileName: 'gemma-3n-E2B-it-int4.task',
       sha256: null,
     ),
     ModelInfo(
-      id: 'gemma4-e4b-it',
-      displayName: 'Gemma 4 E4B',
+      id: 'gemma3-1b-it',
+      displayName: 'Gemma 3 1B',
       description:
-          'Gemma 4 effective-4B, instruction-tuned. '
-          'Best quality; needs ≥6 GB RAM and ~3.7 GB storage.',
-      parameterCount: 'E4B',
-      fileSizeMb: 3650,
+          'Gemma 3 1B, instruction-tuned. '
+          'Fastest and smallest option (~0.5 GB). '
+          'No HuggingFace token required.',
+      parameterCount: '1B',
+      fileSizeMb: 500,
       downloadUrl:
-          '$_hfBase/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
-      fileName: 'gemma-4-E4B-it.litertlm',
+          '$_hfBase/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
+      fileName: 'gemma3-1b-it-int4.task',
       sha256: null,
     ),
   ];
