@@ -8,11 +8,8 @@ import UIKit
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        // flutter_gemma registers its own plugin automatically via GeneratedPluginRegistrant.
         GeneratedPluginRegistrant.register(with: self)
-        // Register the native inference plugin.
-        if let registrar = self.registrar(forPlugin: "InferencePlugin") {
-            InferencePlugin.register(with: registrar)
-        }
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 }

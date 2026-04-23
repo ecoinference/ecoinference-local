@@ -31,11 +31,8 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
+  # flutter_gemma pulls in MediaPipe Tasks GenAI automatically.
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-  # Google AI Edge — LLM Inference API
-  pod 'MediaPipeTasksGenAI',    '~> 0.10.22'
-  pod 'MediaPipeTasksGenAIIOS', '~> 0.10.22'
 end
 
 post_install do |installer|
@@ -43,8 +40,6 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-      # Required for MediaPipe on device.
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'MEDIAPIPE_DISABLE_GPU=0']
     end
   end
 end

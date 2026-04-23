@@ -1,15 +1,11 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
-import '../constants/app_constants.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
 
-/// Communicates with the native inference bridge via a MethodChannel.
-/// The native side (Kotlin / Swift) wraps Google AI Edge LLM Inference API.
+/// Wraps the flutter_gemma plugin for on-device Gemma inference.
+/// No native bridge code required — flutter_gemma handles iOS and Android
+/// internally via Google AI Edge (MediaPipe Tasks GenAI).
 class InferenceService {
   InferenceService._();
   static final InferenceService instance = InferenceService._();
-
-  static const MethodChannel _channel =
-      MethodChannel(AppConstants.inferenceChannel);
 
   bool _modelLoaded = false;
   String? _loadedModelId;
@@ -17,25 +13,26 @@ class InferenceService {
   bool get modelLoaded => _modelLoaded;
   String? get loadedModelId => _loadedModelId;
 
-  /// Loads a .task model file from [modelPath] on disk.
-  /// Returns true on success.
+  /// Loads a Gemma .bin model from [modelPath] on disk.
   Future<bool> loadModel(String modelPath, String modelId) async {
     try {
-      final result = await _channel.invokeMethod<bool>(
-        AppConstants.methodLoadModel,
-        {'modelPath': modelPath},
+      await FlutterGemmaPlugin.instance.init(
+        modelPath: modelPath,
+        temperature: 0.8,
+        topK: 40,
+        randomSeed: 1,
+        maxTokens: 1024,
       );
-      _modelLoaded = result ?? false;
-      if (_modelLoaded) _loadedModelId = modelId;
-      return _modelLoaded;
-    } on PlatformException catch (e) {
+      _modelLoaded = true;
+      _loadedModelId = modelId;
+      return true;
+    } catch (e) {
       _modelLoaded = false;
-      throw InferenceException('loadModel failed: ${e.message}');
+      throw InferenceException('loadModel failed: $e');
     }
   }
 
-  /// Runs inference for a single prompt string.
-  /// [maxTokens] and [temperature] are passed to the native side.
+  /// Runs a single blocking inference call with [prompt].
   Future<String> runInference(
     String prompt, {
     int maxTokens = 512,
@@ -45,22 +42,16 @@ class InferenceService {
       throw InferenceException('No model loaded. Call loadModel() first.');
     }
     try {
-      final result = await _channel.invokeMethod<String>(
-        AppConstants.methodRunInference,
-        {
-          'prompt': prompt,
-          'maxTokens': maxTokens,
-          'temperature': temperature,
-        },
-      );
-      return result ?? '';
-    } on PlatformException catch (e) {
-      throw InferenceException('runInference failed: ${e.message}');
+      final response =
+          await FlutterGemmaPlugin.instance.getResponse(prompt: prompt);
+      return response ?? '';
+    } catch (e) {
+      throw InferenceException('runInference failed: $e');
     }
   }
 
-  /// Converts a list of chat messages to a single prompt string using
-  /// Gemma's instruction-tuned format:
+  /// Converts a list of chat messages into Gemma's instruction-tuned prompt
+  /// format:
   ///   <start_of_turn>user\n{text}<end_of_turn>\n<start_of_turn>model
   String buildChatPrompt(List<Map<String, String>> messages) {
     final buf = StringBuffer();
@@ -68,7 +59,6 @@ class InferenceService {
       final role = msg['role'] ?? 'user';
       final content = msg['content'] ?? '';
       if (role == 'system') {
-        // Prepend system message as a user turn so Gemma honours it.
         buf.write('<start_of_turn>user\n[System: $content]<end_of_turn>\n');
       } else {
         final gemmaRole = role == 'assistant' ? 'model' : 'user';
@@ -81,7 +71,8 @@ class InferenceService {
 
   Future<void> unloadModel() async {
     try {
-      await _channel.invokeMethod(AppConstants.methodUnloadModel);
+      // flutter_gemma does not expose an explicit unload; reinitialising
+      // with a new model path replaces the current one.
     } catch (_) {}
     _modelLoaded = false;
     _loadedModelId = null;
