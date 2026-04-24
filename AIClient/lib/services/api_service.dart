@@ -46,7 +46,7 @@ class ApiService {
       final res = await _dio.post(
         '/v1/chat/completions',
         data: {
-          'model': 'gemma4',
+          'model': config.modelId,
           'messages': messages.map((m) => m.toApiJson()).toList(),
           'max_tokens': maxTokens,
           'temperature': temperature,
@@ -71,7 +71,7 @@ class ApiService {
       final res = await _dio.post(
         '/v1/completions',
         data: {
-          'model': 'gemma4',
+          'model': config.modelId,
           'prompt': prompt,
           'max_tokens': maxTokens,
           'temperature': temperature,

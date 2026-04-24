@@ -60,9 +60,12 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     });
 
     if (health.ok && health.modelLoaded) {
+      final connectedConfig = config.copyWith(
+        modelId: health.modelId ?? config.modelId,
+      );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => ChatScreen(config: config),
+          builder: (_) => ChatScreen(config: connectedConfig),
         ),
       );
     } else if (health.ok && !health.modelLoaded) {

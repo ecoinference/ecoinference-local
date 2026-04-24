@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'screens/connection/connection_screen.dart';
 
 void main() {
-  runApp(const App2());
+  runApp(const App());
 }
 
-class App2 extends StatelessWidget {
-  const App2({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
