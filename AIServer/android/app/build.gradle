@@ -6,13 +6,13 @@ plugins {
 
 android {
     namespace "com.gemma4.aiserver"
-    compileSdk 34
+    compileSdk 36
     ndkVersion "25.1.8937393"
 
     defaultConfig {
         applicationId "com.gemma4.aiserver"
         minSdk 26          // Google AI Edge LLM Inference requires API 26+
-        targetSdk 34
+        targetSdk 36
         versionCode 1
         versionName "1.0.0"
     }
@@ -38,10 +38,6 @@ flutter {
     source "../.."
 }
 
-dependencies {
-    // Google AI Edge — LLM Inference API (MediaPipe Tasks GenAI)
-    implementation "com.google.mediapipe:tasks-genai:0.10.22"
-
-    // Kotlin coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
-}
+// flutter_gemma bundles MediaPipe tasks-genai 0.10.33 and LiteRT-LM
+// automatically — do NOT add a separate tasks-genai dependency here as
+// duplicate versions cause version-conflict build errors.

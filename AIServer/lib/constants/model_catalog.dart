@@ -1,31 +1,61 @@
+import 'package:flutter/foundation.dart';
 import '../models/model_info.dart';
 
-/// iOS-compatible Gemma models in MediaPipe .task format.
+/// Platform-aware model catalogue.
 ///
-/// ⚠️  Gemma 4 (.litertlm) is NOT yet supported on iOS — the MediaPipe
-///     LlmInference backend crashes at inference time with Gemma 4 models.
-///     Gemma 4 works on Android only; iOS requires .task format models.
+/// Android  → Gemma 4 .litertlm  (LiteRT-LM runtime, full Gemma 4 support)
+/// iOS      → Gemma 3n / Gemma 3 .task  (MediaPipe runtime; Gemma 4 crashes on iOS)
 ///
-/// Confirmed working on iOS with flutter_gemma 0.13.6 / MediaPipe 0.10.33:
-///   • Gemma 3n E2B  — 3.1 GB, instruction-tuned, gated (HF token required)
-///   • Gemma 3 1B    — 0.5 GB, instruction-tuned, public (no token needed)
-///
-/// HuggingFace licence acceptance required once in browser for gated models:
-///   https://huggingface.co/google/gemma-3n-E2B-it-litert-preview
+/// HuggingFace licence acceptance required (one-time in browser) for gated models:
+///   Gemma 4  E2B: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
+///   Gemma 4  E4B: https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm
+///   Gemma 3n E2B: https://huggingface.co/google/gemma-3n-E2B-it-litert-preview
 
 class ModelCatalog {
   ModelCatalog._();
 
   static const String _hfBase = 'https://huggingface.co';
 
-  static final List<ModelInfo> models = [
+  // ── Android models (Gemma 4, .litertlm) ──────────────────────────────────
+
+  static final List<ModelInfo> _androidModels = [
+    ModelInfo(
+      id: 'gemma4-e2b-it',
+      displayName: 'Gemma 4 E2B',
+      description:
+          'Gemma 4 effective-2B, instruction-tuned. '
+          'Good balance of speed and quality on most devices (~2.6 GB).',
+      parameterCount: 'E2B',
+      fileSizeMb: 2580,
+      downloadUrl:
+          '$_hfBase/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+      fileName: 'gemma-4-E2B-it.litertlm',
+      sha256: null,
+    ),
+    ModelInfo(
+      id: 'gemma4-e4b-it',
+      displayName: 'Gemma 4 E4B',
+      description:
+          'Gemma 4 effective-4B, instruction-tuned. '
+          'Best quality; needs ≥6 GB RAM and ~3.7 GB storage.',
+      parameterCount: 'E4B',
+      fileSizeMb: 3650,
+      downloadUrl:
+          '$_hfBase/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+      fileName: 'gemma-4-E4B-it.litertlm',
+      sha256: null,
+    ),
+  ];
+
+  // ── iOS models (Gemma 3n / Gemma 3, .task) ───────────────────────────────
+
+  static final List<ModelInfo> _iosModels = [
     ModelInfo(
       id: 'gemma3n-e2b-it',
       displayName: 'Gemma 3n E2B',
       description:
           'Gemma 3 Nano effective-2B, instruction-tuned. '
-          'Best quality for on-device inference; requires HuggingFace token '
-          'and ~3.1 GB storage.',
+          'Best quality for iOS; requires HuggingFace token and ~3.1 GB storage.',
       parameterCount: 'E2B',
       fileSizeMb: 3100,
       downloadUrl:
@@ -48,6 +78,14 @@ class ModelCatalog {
       sha256: null,
     ),
   ];
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  static List<ModelInfo> get models {
+    return defaultTargetPlatform == TargetPlatform.android
+        ? _androidModels
+        : _iosModels;
+  }
 
   static ModelInfo? findById(String id) {
     try {

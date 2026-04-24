@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../services/settings_service.dart';
 import 'model_picker_screen.dart';
@@ -113,10 +114,14 @@ class _SetupScreenState extends State<SetupScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Gemma 3n E2B requires a HuggingFace account.\n'
-                          'Accept the licence at:\n'
-                          'huggingface.co/google/gemma-3n-E2B-it-litert-preview\n\n'
-                          'Gemma 3 1B is public — no licence required.',
+                          defaultTargetPlatform == TargetPlatform.android
+                              ? 'Gemma 4 models require a HuggingFace account.\n'
+                                'Accept the licence at:\n'
+                                'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm'
+                              : 'Gemma 3n E2B requires a HuggingFace account.\n'
+                                'Accept the licence at:\n'
+                                'huggingface.co/google/gemma-3n-E2B-it-litert-preview\n\n'
+                                'Gemma 3 1B is public — no licence required.',
                           style: theme.textTheme.bodySmall?.copyWith(
                               color:
                                   theme.colorScheme.onSecondaryContainer),
