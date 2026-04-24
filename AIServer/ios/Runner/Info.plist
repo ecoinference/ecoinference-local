@@ -47,6 +47,13 @@
 			</array>
 		</dict>
 	</dict>
+	<!-- Required for iOS 14+ local network socket binding (shelf HTTP server). -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>AI Server uses the local network to expose a REST API to the AI Client app on the same device.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

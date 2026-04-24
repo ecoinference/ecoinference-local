@@ -103,6 +103,7 @@ class InferenceService {
       return true;
     } catch (e) {
       _modelLoaded = false;
+      _loadedModelId = null;
       _loadedFileName = null;
       throw InferenceException(
           'loadModel failed.\n'
@@ -127,7 +128,7 @@ class InferenceService {
     double temperature = 0.8,
   }) async {
     if (!_modelLoaded) {
-      throw InferenceException('No model loaded. Call loadModel() first.');
+      throw const InferenceException('No model loaded. Call loadModel() first.');
     }
     try {
       // Collect system instruction(s) to pass natively where supported.
@@ -184,7 +185,7 @@ class InferenceService {
     double temperature = 0.8,
   }) async* {
     if (!_modelLoaded) {
-      throw InferenceException('No model loaded. Call loadModel() first.');
+      throw const InferenceException('No model loaded. Call loadModel() first.');
     }
 
     InferenceModel? model;

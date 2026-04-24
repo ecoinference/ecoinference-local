@@ -10,20 +10,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # On-device Gemma inference — official Google Flutter plugin
-  flutter_gemma: ^0.13.6
+  # On-device Gemma inference — pinned to avoid breaking changes before 1.0
+  flutter_gemma: '>=0.13.6 <0.14.0'
   # HTTP server
   shelf: ^1.4.1
   shelf_router: ^1.1.4
-  # Downloads
-  dio: ^5.4.3
+  # Downloads (pinned upper bound — ResponseType.stream API can change in minors)
+  dio: '>=5.4.3 <6.0.0'
   # Storage
   path_provider: ^2.1.3
   shared_preferences: ^2.2.3
-  # Checksum verification
-  crypto: ^3.0.3
-  # Permissions (Android storage)
-  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

@@ -28,7 +28,8 @@ class ChatMessage {
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
         role: MessageRole.values.byName(json['role'] as String),
         content: json['content'] as String,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(
-            json['timestamp'] as int),
+        timestamp: json['timestamp'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(json['timestamp'] as int)
+            : DateTime.now(),
       );
 }

@@ -79,6 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (confirmed != true || !mounted) return;
     await SettingsService.instance.resetSetup();
+    if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/setup', (_) => false);
   }
 
@@ -103,16 +104,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           // ── Server ───────────────────────────────────────────────────────
-          _SectionHeader(title: 'Server'),
+          const _SectionHeader(title: 'Server'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: TextFormField(
                 controller: _portCtrl,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Port',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                   helperText:
                       'Default: ${AppConstants.defaultPort}. Range: 1024–65535.',
                 ),
@@ -122,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
 
           // ── HuggingFace ──────────────────────────────────────────────────
-          _SectionHeader(title: 'HuggingFace Token'),
+          const _SectionHeader(title: 'HuggingFace Token'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -148,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // ── Inference ────────────────────────────────────────────────────
-          _SectionHeader(title: 'Inference'),
+          const _SectionHeader(title: 'Inference'),
           Card(
             child: SwitchListTile(
               title: const Text('GPU acceleration'),
@@ -165,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // ── Danger zone ──────────────────────────────────────────────────
-          _SectionHeader(title: 'Danger Zone'),
+          const _SectionHeader(title: 'Danger Zone'),
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,

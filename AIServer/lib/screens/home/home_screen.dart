@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen>
   ];
 
   bool _booting = true;
+  bool _bootInProgress = false; // re-entrancy lock for _boot()
   bool _serverRunning = false;
   String? _error;
   String? _modelId;
@@ -75,6 +76,8 @@ class _HomeScreenState extends State<HomeScreen>
   // ── Boot sequence ───────────────────────────────────────────────────────────
 
   Future<void> _boot() async {
+    if (_bootInProgress) return;
+    _bootInProgress = true;
     setState(() {
       _booting = true;
       _error = null;
@@ -84,64 +87,70 @@ class _HomeScreenState extends State<HomeScreen>
       }
     });
 
-    _modelId = SettingsService.instance.selectedModelId;
-
-    // Step 0 — locate model
-    _setStep(0, _StepState.active);
-    final model = _modelId != null ? ModelCatalog.findById(_modelId!) : null;
-    if (model == null) {
-      // Stale or missing model ID (e.g. catalog changed, fresh install).
-      // Clear setup state and send the user back to pick a model.
-      await SettingsService.instance.resetSetup();
-      if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/setup', (_) => false);
-      return;
-    }
-    final modelPath = await DownloadService.instance.modelFilePath(model);
-    _setStep(0, _StepState.done, model.displayName);
-
-    // Step 1 — load model (two phases: register file, then warm-up engine)
-    _setStep(1, _StepState.active, 'Preparing…');
     try {
-      await InferenceService.instance.loadModel(
-        modelPath,
-        _modelId!,
-        onProgress: (p) {
-          if (!mounted) return;
-          _setStep(
-            1,
-            _StepState.active,
-            p < 50
-                ? 'Registering model file…'
-                : p < 100
-                    ? 'Loading weights into memory… ($p%)'
-                    : 'Finalising…',
-          );
-        },
-      );
-      _setStep(1, _StepState.done, 'Model ready');
-    } catch (e) {
-      _setStep(1, _StepState.error, e.toString());
-      setState(() { _booting = false; _error = e.toString(); });
-      return;
-    }
+      _modelId = SettingsService.instance.selectedModelId;
 
-    // Step 2 — start server
-    _setStep(2, _StepState.active);
-    try {
-      await ServerService.instance.start();
-      _setStep(2, _StepState.done,
-          'Listening on port ${SettingsService.instance.port}');
-    } catch (e) {
-      _setStep(2, _StepState.error, e.toString());
-      setState(() { _booting = false; _error = e.toString(); });
-      return;
-    }
+      // Step 0 — locate model
+      _setStep(0, _StepState.active);
+      final model = _modelId != null ? ModelCatalog.findById(_modelId!) : null;
+      if (model == null) {
+        // Stale or missing model ID (e.g. catalog changed, fresh install).
+        // Clear setup state and send the user back to pick a model.
+        await SettingsService.instance.resetSetup();
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil('/setup', (_) => false);
+        return;
+      }
+      final modelPath = await DownloadService.instance.modelFilePath(model);
+      _setStep(0, _StepState.done, model.displayName);
 
-    setState(() {
-      _booting = false;
-      _serverRunning = true;
-    });
+      // Step 1 — load model (two phases: register file, then warm-up engine)
+      _setStep(1, _StepState.active, 'Preparing…');
+      try {
+        await InferenceService.instance.loadModel(
+          modelPath,
+          _modelId!,
+          onProgress: (p) {
+            if (!mounted) return;
+            _setStep(
+              1,
+              _StepState.active,
+              p < 50
+                  ? 'Registering model file…'
+                  : p < 100
+                      ? 'Loading weights into memory… ($p%)'
+                      : 'Finalising…',
+            );
+          },
+        );
+        _setStep(1, _StepState.done, 'Model ready');
+      } catch (e) {
+        _setStep(1, _StepState.error, e.toString());
+        if (mounted) setState(() { _booting = false; _error = e.toString(); });
+        return;
+      }
+
+      // Step 2 — start server
+      _setStep(2, _StepState.active);
+      try {
+        await ServerService.instance.start();
+        _setStep(2, _StepState.done,
+            'Listening on port ${SettingsService.instance.port}');
+      } catch (e) {
+        _setStep(2, _StepState.error, e.toString());
+        if (mounted) setState(() { _booting = false; _error = e.toString(); });
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _booting = false;
+          _serverRunning = true;
+        });
+      }
+    } finally {
+      _bootInProgress = false;
+    }
   }
 
   void _setStep(int index, _StepState state, [String? detail]) {
@@ -168,10 +177,12 @@ class _HomeScreenState extends State<HomeScreen>
             if (mounted) setState(() => _testResult = (_testResult ?? '') + token);
           },
           onError: (Object e) {
-            if (mounted) setState(() {
-              _testResult = '⚠️ ${e.toString()}';
-              _testRunning = false;
-            });
+            if (mounted) {
+              setState(() {
+                _testResult = '⚠️ ${e.toString()}';
+                _testRunning = false;
+              });
+            }
           },
           onDone: () {
             if (mounted) setState(() => _testRunning = false);
@@ -190,12 +201,15 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _toggleServer() async {
     if (_serverRunning) {
       await ServerService.instance.stop();
+      if (!mounted) return;
       setState(() => _serverRunning = false);
     } else {
       try {
         await ServerService.instance.start();
+        if (!mounted) return;
         setState(() => _serverRunning = true);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.toString())));
       }
@@ -213,11 +227,22 @@ class _HomeScreenState extends State<HomeScreen>
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () async {
+              // Snapshot settings that require a server restart when changed.
+              final portBefore = SettingsService.instance.port;
+              final gpuBefore = SettingsService.instance.useGpu;
+
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
-              if (ServerService.instance.isRunning) {
+              if (!mounted) return;
+
+              final settingsChanged =
+                  SettingsService.instance.port != portBefore ||
+                  SettingsService.instance.useGpu != gpuBefore;
+
+              if (settingsChanged && ServerService.instance.isRunning) {
                 await ServerService.instance.stop();
+                if (!mounted) return;
                 await ServerService.instance.start();
               }
             },
@@ -529,7 +554,7 @@ class _StatusBanner extends StatelessWidget {
             Switch(
               value: isRunning,
               onChanged: (_) => onToggle(),
-              activeColor: Colors.green.shade600,
+              activeThumbColor: Colors.green.shade600,
             ),
           ],
         ),

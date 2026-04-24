@@ -50,6 +50,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Future<void> _startDownload() async {
+    if (_downloading) return; // guard against concurrent calls (e.g. double-tap Retry)
     setState(() {
       _downloading = true;
       _error = null;

@@ -45,6 +45,7 @@ class _ModelPickerScreenState extends State<ModelPickerScreen> {
     if (alreadyDownloaded) {
       // Already on disk — jump straight to home.
       await SettingsService.instance.markSetupDone();
+      if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
     } else {
       Navigator.of(context).push(

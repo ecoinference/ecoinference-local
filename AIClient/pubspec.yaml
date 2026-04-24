@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # HTTP client
-  dio: ^5.4.3
-  # Persist server config
+  # HTTP client (pinned upper bound — ResponseType.stream API can change in minors)
+  dio: '>=5.4.3 <6.0.0'
+  # Persist server config and chat history
   shared_preferences: ^2.2.3
 
 dev_dependencies:

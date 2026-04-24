@@ -21,7 +21,7 @@ class ModelCatalog {
   // Tracked: https://github.com/google-ai-edge/gallery/issues/557
   // ignore: unused_field
   static final List<ModelInfo> _androidModels = [
-    ModelInfo(
+    const ModelInfo(
       id: 'gemma4-e2b-it',
       displayName: 'Gemma 4 E2B',
       description:
@@ -34,7 +34,7 @@ class ModelCatalog {
       fileName: 'gemma-4-E2B-it.litertlm',
       sha256: null,
     ),
-    ModelInfo(
+    const ModelInfo(
       id: 'gemma4-e4b-it',
       displayName: 'Gemma 4 E4B',
       description:
@@ -52,7 +52,7 @@ class ModelCatalog {
   // ── iOS models (Gemma 3n / Gemma 3, .task) ───────────────────────────────
 
   static final List<ModelInfo> _iosModels = [
-    ModelInfo(
+    const ModelInfo(
       id: 'gemma3n-e2b-it',
       displayName: 'Gemma 3n E2B',
       description:
@@ -65,7 +65,7 @@ class ModelCatalog {
       fileName: 'gemma-3n-E2B-it-int4.task',
       sha256: null,
     ),
-    ModelInfo(
+    const ModelInfo(
       id: 'gemma3-1b-it',
       displayName: 'Gemma 3 1B',
       description:

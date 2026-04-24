@@ -1,5 +1,5 @@
-/// Typed request/response models for the REST API.
-/// Follows OpenAI schema so AIClient (and FlutterFlow) can stay provider-agnostic.
+// Typed request/response models for the REST API.
+// Follows OpenAI schema so AIClient (and FlutterFlow) can stay provider-agnostic.
 
 // ── Chat Completions ──────────────────────────────────────────────────────────
 

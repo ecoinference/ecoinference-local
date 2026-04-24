@@ -194,11 +194,12 @@ class ServerService {
         temperature: chatReq.temperature,
       );
 
+      final inputText = chatReq.messages.map((m) => m.content).join(' ');
       final response = ChatCompletionResponse(
         id: 'chatcmpl-${DateTime.now().millisecondsSinceEpoch}',
         model: modelName,
         content: output,
-        promptTokens: _estimateTokens(output),
+        promptTokens: _estimateTokens(inputText),
         completionTokens: _estimateTokens(output),
       );
       return _json(response.toJson());
@@ -410,8 +411,11 @@ class ServerService {
     };
   }
 
+  // Restrict to localhost — the server only binds on loopback so only
+  // localhost origins are valid. Wildcard '*' would allow any webpage
+  // the user visits to make inference requests to the local server.
   static const Map<String, String> _corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'http://localhost',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };

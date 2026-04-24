@@ -47,6 +47,14 @@
 			</array>
 		</dict>
 	</dict>
+	<!-- Allow plain HTTP connections to the local AIServer instance.
+	     NSAllowsLocalNetworking covers localhost, *.local, and link-local
+	     addresses without the broad NSAllowsArbitraryLoads flag. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

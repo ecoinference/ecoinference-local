@@ -54,9 +54,11 @@ class ApiService {
           'temperature': temperature,
         },
       );
-      final choices = res.data['choices'] as List;
-      if (choices.isEmpty) throw const ApiException('Empty choices in response');
-      return choices.first['message']['content'] as String;
+      final choices = res.data['choices'] as List?;
+      if (choices == null || choices.isEmpty) throw const ApiException('Empty choices in response');
+      final content = (choices.first as Map?)?['message']?['content'] as String?;
+      if (content == null) throw const ApiException('Missing content in response');
+      return content;
     } on DioException catch (e) {
       throw ApiException(_msg(e));
     }
@@ -130,9 +132,11 @@ class ApiService {
           'temperature': temperature,
         },
       );
-      final choices = res.data['choices'] as List;
-      if (choices.isEmpty) throw const ApiException('Empty choices in response');
-      return choices.first['text'] as String;
+      final choices = res.data['choices'] as List?;
+      if (choices == null || choices.isEmpty) throw const ApiException('Empty choices in response');
+      final text = (choices.first as Map?)?['text'] as String?;
+      if (text == null) throw const ApiException('Missing text in response');
+      return text;
     } on DioException catch (e) {
       throw ApiException(_msg(e));
     }

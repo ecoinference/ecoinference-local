@@ -8,16 +8,8 @@ class SettingsService {
 
   late SharedPreferences _prefs;
 
-  // Dev-only: pre-populated token so setup doesn't require manual entry.
-  // Remove or replace before distributing the app.
-  static const String _devHfToken = 'hf_REDACTED_REVOKED_TOKEN';
-
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    // Inject dev token if none is stored yet.
-    if (!hasHfToken && _devHfToken.isNotEmpty) {
-      await setHfToken(_devHfToken);
-    }
   }
 
   // ── Port ────────────────────────────────────────────────────────────────────

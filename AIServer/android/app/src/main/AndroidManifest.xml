@@ -42,6 +42,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Required on Android 14+ (API 34): foreground service type must match
+             the declared FOREGROUND_SERVICE_DATA_SYNC permission.
+             background_downloader auto-starts this service for large downloads;
+             declaring it here ensures the foregroundServiceType attribute is set
+             even if the plugin's own manifest merge is incomplete. -->
+        <service
+            android:name="com.bbflight.background_downloader.TaskWorker"
+            android:foregroundServiceType="dataSync"
+            android:exported="false"/>
     </application>
 
     <queries>

@@ -33,43 +33,53 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
   Future<void> _connect() async {
     final port = int.tryParse(_portCtrl.text.trim());
-    if (port == null) {
+    if (port == null || port < 1 || port > 65535) {
       setState(() => _error = 'Invalid port number');
       return;
     }
 
-    final config = ServerConfig(
-      host: _hostCtrl.text.trim(),
-      port: port,
-    );
+    final host = _hostCtrl.text.trim();
+    // Validate host by constructing a URI and checking the host component.
+    final testUri = Uri.tryParse('http://$host:$port');
+    if (testUri == null || testUri.host.isEmpty) {
+      setState(() => _error = 'Invalid host address');
+      return;
+    }
+
+    final config = ServerConfig(host: host, port: port);
 
     setState(() {
       _checking = true;
       _error = null;
     });
 
-    final health = await ApiService(config).checkHealth();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('server_host', config.host);
-    await prefs.setInt('server_port', config.port);
+    try {
+      final health = await ApiService(config).checkHealth();
 
-    if (!mounted) return;
-    setState(() {
-      _checking = false;
-      _error = health.ok ? null : health.error;
-    });
+      if (!mounted) return;
 
-    if (health.ok && health.modelLoaded) {
-      final connectedConfig = config.copyWith(
-        modelId: health.modelId ?? config.modelId,
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(config: connectedConfig),
-        ),
-      );
-    } else if (health.ok && !health.modelLoaded) {
-      setState(() => _error = 'Server is running but no model is loaded yet.');
+      // Persist only after confirming the widget is still alive.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('server_host', config.host);
+      await prefs.setInt('server_port', config.port);
+
+      if (!mounted) return;
+      setState(() => _error = health.ok ? null : health.error);
+
+      if (health.ok && health.modelLoaded) {
+        final connectedConfig = config.copyWith(
+          modelId: health.modelId ?? config.modelId,
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(config: connectedConfig),
+          ),
+        );
+      } else if (health.ok && !health.modelLoaded) {
+        setState(() => _error = 'Server is running but no model is loaded yet.');
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
     }
   }
 
