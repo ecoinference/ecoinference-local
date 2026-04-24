@@ -9,6 +9,7 @@ class AppConstants {
   static const String settingsKeySelectedModel = 'selected_model_id';
   static const String settingsKeyHfToken = 'hf_token';
   static const String settingsKeySetupDone = 'setup_done';
+  static const String settingsKeyUseGpu    = 'use_gpu';
 
   /// Inference platform-channel name
   static const String inferenceChannel = 'com.gemma4.AIServer/inference';

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../models/model_info.dart';
 
 /// Platform-aware model catalogue.
@@ -17,7 +16,10 @@ class ModelCatalog {
   static const String _hfBase = 'https://huggingface.co';
 
   // ── Android models (Gemma 4, .litertlm) ──────────────────────────────────
-
+  // Intentionally kept; switch `models` getter to this once the
+  // litert_compiled_model.cc:353 regression is fixed in litertlm-android.
+  // Tracked: https://github.com/google-ai-edge/gallery/issues/557
+  // ignore: unused_field
   static final List<ModelInfo> _androidModels = [
     ModelInfo(
       id: 'gemma4-e2b-it',
@@ -81,10 +83,6 @@ class ModelCatalog {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  // TODO: Switch Android to _androidModels (Gemma 4 .litertlm) once
-  // litertlm-android gets a stable release that fixes the
-  // litert_compiled_model.cc:353 engine-init regression with Gemma 4.
-  // Tracked: https://github.com/google-ai-edge/gallery/issues/557
   static List<ModelInfo> get models => _iosModels;
 
   static ModelInfo? findById(String id) {

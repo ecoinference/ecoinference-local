@@ -21,6 +21,7 @@ class ChatCompletionRequest {
     required this.messages,
     this.maxTokens = 512,
     this.temperature = 0.8,
+    this.stream = false,
   });
 
   factory ChatCompletionRequest.fromJson(Map<String, dynamic> j) =>
@@ -31,12 +32,15 @@ class ChatCompletionRequest {
             .toList(),
         maxTokens: (j['max_tokens'] as int?) ?? 512,
         temperature: (j['temperature'] as num?)?.toDouble() ?? 0.8,
+        stream: j['stream'] == true,
       );
 
   final String model;
   final List<ChatMessage> messages;
   final int maxTokens;
   final double temperature;
+  /// When true the server responds with server-sent events (OpenAI streaming format).
+  final bool stream;
 }
 
 class ChatCompletionResponse {
@@ -81,6 +85,7 @@ class CompletionRequest {
     required this.prompt,
     this.maxTokens = 512,
     this.temperature = 0.8,
+    this.stream = false,
   });
 
   factory CompletionRequest.fromJson(Map<String, dynamic> j) =>
@@ -89,12 +94,15 @@ class CompletionRequest {
         prompt: j['prompt'] as String,
         maxTokens: (j['max_tokens'] as int?) ?? 512,
         temperature: (j['temperature'] as num?)?.toDouble() ?? 0.8,
+        stream: j['stream'] == true,
       );
 
   final String model;
   final String prompt;
   final int maxTokens;
   final double temperature;
+  /// When true the server responds with server-sent events (OpenAI streaming format).
+  final bool stream;
 }
 
 class CompletionResponse {

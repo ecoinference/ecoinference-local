@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 import '../constants/app_constants.dart';
+import '../constants/model_catalog.dart';
 import '../models/api_models.dart';
+import '../services/download_service.dart';
 import '../services/inference_service.dart';
 import '../services/settings_service.dart';
 
@@ -88,11 +91,53 @@ class ServerService {
       return _badRequest('model_id is required');
     }
 
-    // Resolve the path on disk.
-    final settings = SettingsService.instance;
-    settings.setSelectedModelId(modelId);
+    // Validate against the catalog so we can resolve a file path.
+    final model = ModelCatalog.findById(modelId);
+    if (model == null) {
+      final available = ModelCatalog.models.map((m) => m.id).join(', ');
+      return _badRequest(
+          'Unknown model_id "$modelId". Available: $available');
+    }
 
-    return _json({'status': 'queued', 'model_id': modelId});
+    final modelPath = await DownloadService.instance.modelFilePath(model);
+    if (!await _fileExists(modelPath)) {
+      return Response(
+        404,
+        body: jsonEncode({
+          'error': 'Model file not found on device. '
+              'Download the model first via the app.',
+        }),
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
+    // Persist the selection then hot-swap the running model.
+    await SettingsService.instance.setSelectedModelId(modelId);
+
+    final inference = InferenceService.instance;
+
+    // Unload whatever is currently active so the new load starts clean.
+    if (inference.modelLoaded) {
+      await inference.unloadModel();
+    }
+
+    try {
+      await inference.loadModel(modelPath, modelId);
+      return _json({
+        'status': 'loaded',
+        'model_id': modelId,
+        'model': {
+          'id': modelId,
+          'object': 'model',
+          'owned_by': 'google',
+        },
+      });
+    } catch (e) {
+      return Response.internalServerError(
+        body: jsonEncode({'error': e.toString()}),
+        headers: {'content-type': 'application/json'},
+      );
+    }
   }
 
   Future<Response> _chatCompletionsHandler(Request req) async {
@@ -115,10 +160,34 @@ class ServerService {
       return _badRequest('Malformed request: $e');
     }
 
+    final messages = chatReq.messages
+        .map((m) => {'role': m.role, 'content': m.content})
+        .toList();
+
+    final modelName = chatReq.model.isEmpty
+        ? (inference.loadedModelId ?? 'gemma')
+        : chatReq.model;
+
+    // ── Streaming (SSE) path ────────────────────────────────────────────────
+    if (chatReq.stream) {
+      final id = 'chatcmpl-${DateTime.now().millisecondsSinceEpoch}';
+      final tokenStream = inference.runChatInferenceStream(
+        messages,
+        maxTokens: chatReq.maxTokens,
+        temperature: chatReq.temperature,
+      );
+      return Response.ok(
+        _chatSseBytes(tokenStream, id: id, model: modelName),
+        headers: {
+          'content-type': 'text/event-stream; charset=utf-8',
+          'cache-control': 'no-cache',
+          'x-accel-buffering': 'no', // hint to proxies/nginx to disable buffering
+        },
+      );
+    }
+
+    // ── Non-streaming path ──────────────────────────────────────────────────
     try {
-      final messages = chatReq.messages
-          .map((m) => {'role': m.role, 'content': m.content})
-          .toList();
       final output = await inference.runChatInference(
         messages,
         maxTokens: chatReq.maxTokens,
@@ -127,9 +196,7 @@ class ServerService {
 
       final response = ChatCompletionResponse(
         id: 'chatcmpl-${DateTime.now().millisecondsSinceEpoch}',
-        model: chatReq.model.isEmpty
-            ? (inference.loadedModelId ?? 'gemma4')
-            : chatReq.model,
+        model: modelName,
         content: output,
         promptTokens: _estimateTokens(output),
         completionTokens: _estimateTokens(output),
@@ -163,6 +230,29 @@ class ServerService {
       return _badRequest('Malformed request: $e');
     }
 
+    final modelName = compReq.model.isEmpty
+        ? (inference.loadedModelId ?? 'gemma')
+        : compReq.model;
+
+    // ── Streaming (SSE) path ────────────────────────────────────────────────
+    if (compReq.stream) {
+      final id = 'cmpl-${DateTime.now().millisecondsSinceEpoch}';
+      final tokenStream = inference.runChatInferenceStream(
+        [{'role': 'user', 'content': compReq.prompt}],
+        maxTokens: compReq.maxTokens,
+        temperature: compReq.temperature,
+      );
+      return Response.ok(
+        _completionSseBytes(tokenStream, id: id, model: modelName),
+        headers: {
+          'content-type': 'text/event-stream; charset=utf-8',
+          'cache-control': 'no-cache',
+          'x-accel-buffering': 'no',
+        },
+      );
+    }
+
+    // ── Non-streaming path ──────────────────────────────────────────────────
     try {
       final output = await inference.runInference(
         compReq.prompt,
@@ -172,9 +262,7 @@ class ServerService {
 
       final response = CompletionResponse(
         id: 'cmpl-${DateTime.now().millisecondsSinceEpoch}',
-        model: compReq.model.isEmpty
-            ? (inference.loadedModelId ?? 'gemma4')
-            : compReq.model,
+        model: modelName,
         text: output,
       );
       return _json(response.toJson());
@@ -211,6 +299,104 @@ class ServerService {
 
   /// Rough token estimate: ~4 chars per token.
   int _estimateTokens(String text) => (text.length / 4).ceil();
+
+  Future<bool> _fileExists(String path) async =>
+      File(path).exists();
+
+  // ── SSE helpers ───────────────────────────────────────────────────────────
+
+  /// Wraps a token [Stream<String>] as an SSE byte stream in the
+  /// OpenAI `chat.completion.chunk` format.
+  ///
+  /// Format per chunk:
+  /// ```
+  /// data: {"id":"...","object":"chat.completion.chunk",...}\n\n
+  /// ```
+  /// Terminated with:
+  /// ```
+  /// data: [DONE]\n\n
+  /// ```
+  Stream<List<int>> _chatSseBytes(
+    Stream<String> tokens, {
+    required String id,
+    required String model,
+  }) async* {
+    final created = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    // First chunk signals the assistant role.
+    yield _sseEncode({
+      'id': id,
+      'object': 'chat.completion.chunk',
+      'created': created,
+      'model': model,
+      'choices': [
+        {'index': 0, 'delta': {'role': 'assistant', 'content': ''}, 'finish_reason': null}
+      ],
+    });
+
+    await for (final token in tokens) {
+      yield _sseEncode({
+        'id': id,
+        'object': 'chat.completion.chunk',
+        'created': created,
+        'model': model,
+        'choices': [
+          {'index': 0, 'delta': {'content': token}, 'finish_reason': null}
+        ],
+      });
+    }
+
+    // Final chunk with finish_reason.
+    yield _sseEncode({
+      'id': id,
+      'object': 'chat.completion.chunk',
+      'created': created,
+      'model': model,
+      'choices': [
+        {'index': 0, 'delta': <String, dynamic>{}, 'finish_reason': 'stop'}
+      ],
+    });
+
+    yield utf8.encode('data: [DONE]\n\n');
+  }
+
+  /// Wraps a token [Stream<String>] as an SSE byte stream in the
+  /// OpenAI `text_completion` chunk format (used by /v1/completions).
+  Stream<List<int>> _completionSseBytes(
+    Stream<String> tokens, {
+    required String id,
+    required String model,
+  }) async* {
+    final created = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    await for (final token in tokens) {
+      yield _sseEncode({
+        'id': id,
+        'object': 'text_completion',
+        'created': created,
+        'model': model,
+        'choices': [
+          {'text': token, 'index': 0, 'finish_reason': null}
+        ],
+      });
+    }
+
+    yield _sseEncode({
+      'id': id,
+      'object': 'text_completion',
+      'created': created,
+      'model': model,
+      'choices': [
+        {'text': '', 'index': 0, 'finish_reason': 'stop'}
+      ],
+    });
+
+    yield utf8.encode('data: [DONE]\n\n');
+  }
+
+  /// Encodes [data] as a single SSE `data:` line followed by two newlines.
+  List<int> _sseEncode(Map<String, dynamic> data) =>
+      utf8.encode('data: ${jsonEncode(data)}\n\n');
 
   Middleware _corsMiddleware() {
     return (Handler handler) {

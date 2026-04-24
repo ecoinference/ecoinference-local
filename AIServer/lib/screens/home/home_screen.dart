@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../constants/model_catalog.dart';
@@ -55,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen>
   final _testCtrl = TextEditingController();
   String? _testResult;
   bool _testRunning = false;
+  StreamSubscription<String>? _testSub;
 
   @override
   void initState() {
@@ -64,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _testSub?.cancel();
     _pulseCtrl.dispose();
     _testCtrl.dispose();
     super.dispose();
@@ -87,17 +90,35 @@ class _HomeScreenState extends State<HomeScreen>
     _setStep(0, _StepState.active);
     final model = _modelId != null ? ModelCatalog.findById(_modelId!) : null;
     if (model == null) {
-      _setStep(0, _StepState.error, 'No model selected — run setup again.');
-      setState(() { _booting = false; _error = 'No model selected.'; });
+      // Stale or missing model ID (e.g. catalog changed, fresh install).
+      // Clear setup state and send the user back to pick a model.
+      await SettingsService.instance.resetSetup();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/setup', (_) => false);
       return;
     }
     final modelPath = await DownloadService.instance.modelFilePath(model);
     _setStep(0, _StepState.done, model.displayName);
 
-    // Step 1 — load model
-    _setStep(1, _StepState.active, 'This may take a moment…');
+    // Step 1 — load model (two phases: register file, then warm-up engine)
+    _setStep(1, _StepState.active, 'Preparing…');
     try {
-      await InferenceService.instance.loadModel(modelPath, _modelId!);
+      await InferenceService.instance.loadModel(
+        modelPath,
+        _modelId!,
+        onProgress: (p) {
+          if (!mounted) return;
+          _setStep(
+            1,
+            _StepState.active,
+            p < 50
+                ? 'Registering model file…'
+                : p < 100
+                    ? 'Loading weights into memory… ($p%)'
+                    : 'Finalising…',
+          );
+        },
+      );
       _setStep(1, _StepState.done, 'Model ready');
     } catch (e) {
       _setStep(1, _StepState.error, e.toString());
@@ -132,23 +153,36 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Quick test inference ────────────────────────────────────────────────────
 
-  Future<void> _runTest() async {
+  void _runTest() {
     final prompt = _testCtrl.text.trim();
     if (prompt.isEmpty || _testRunning) return;
-    setState(() { _testRunning = true; _testResult = null; });
-    try {
-      final result = await InferenceService.instance.runInference(
-        InferenceService.instance.buildChatPrompt([
-          {'role': 'user', 'content': prompt}
-        ]),
-        maxTokens: 256,
-      );
-      setState(() => _testResult = result);
-    } catch (e) {
-      setState(() => _testResult = '⚠️ ${e.toString()}');
-    } finally {
-      setState(() => _testRunning = false);
-    }
+    setState(() { _testRunning = true; _testResult = ''; });
+
+    _testSub = InferenceService.instance
+        .runChatInferenceStream(
+          [{'role': 'user', 'content': prompt}],
+          maxTokens: 256,
+        )
+        .listen(
+          (token) {
+            if (mounted) setState(() => _testResult = (_testResult ?? '') + token);
+          },
+          onError: (Object e) {
+            if (mounted) setState(() {
+              _testResult = '⚠️ ${e.toString()}';
+              _testRunning = false;
+            });
+          },
+          onDone: () {
+            if (mounted) setState(() => _testRunning = false);
+          },
+        );
+  }
+
+  void _stopTest() {
+    _testSub?.cancel();
+    _testSub = null;
+    if (mounted) setState(() => _testRunning = false);
   }
 
   // ── Server toggle ───────────────────────────────────────────────────────────
@@ -174,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gemma 4 Server'),
+        title: const Text('AI Server'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -322,16 +356,20 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                onPressed: (_serverRunning && !_testRunning) ? _runTest : null,
-                child: _testRunning
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Send'),
-              ),
+              _testRunning
+                  ? FilledButton.icon(
+                      onPressed: _stopTest,
+                      icon: const Icon(Icons.stop_rounded, size: 18),
+                      label: const Text('Stop'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.error,
+                      ),
+                    )
+                  : FilledButton(
+                      onPressed: _serverRunning ? _runTest : null,
+                      child: const Text('Send'),
+                    ),
             ],
           ),
           if (_testResult != null) ...[

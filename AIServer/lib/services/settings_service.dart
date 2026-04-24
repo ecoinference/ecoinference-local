@@ -45,6 +45,16 @@ class SettingsService {
   Future<void> setSelectedModelId(String id) =>
       _prefs.setString(AppConstants.settingsKeySelectedModel, id);
 
+  // ── Inference backend ───────────────────────────────────────────────────────
+
+  /// When true, passes [PreferredBackend.gpu] to [FlutterGemma.getActiveModel].
+  /// Defaults to false (auto / let flutter_gemma decide).
+  bool get useGpu =>
+      _prefs.getBool(AppConstants.settingsKeyUseGpu) ?? false;
+
+  Future<void> setUseGpu(bool value) =>
+      _prefs.setBool(AppConstants.settingsKeyUseGpu, value);
+
   // ── Setup state ─────────────────────────────────────────────────────────────
 
   bool get setupDone =>

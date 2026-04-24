@@ -67,7 +67,16 @@ class _ModelPickerScreenState extends State<ModelPickerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose Model')),
+      appBar: AppBar(
+        title: const Text('Choose Model'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh download status',
+            onPressed: _refresh,
+          ),
+        ],
+      ),
       body: FutureBuilder<Map<String, bool>>(
         future: _downloadStatusFuture,
         builder: (context, snapshot) {
@@ -104,8 +113,7 @@ class _ModelPickerScreenState extends State<ModelPickerScreen> {
                 ),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 51),
                 child: SizedBox(
                   width: double.infinity,
                   height: 52,

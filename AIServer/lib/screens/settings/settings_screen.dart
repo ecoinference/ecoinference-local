@@ -15,6 +15,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _tokenCtrl = TextEditingController();
   bool _tokenVisible = false;
   bool _saving = false;
+  late bool _useGpu;
 
   @override
   void initState() {
@@ -22,6 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = SettingsService.instance;
     _portCtrl.text = s.port.toString();
     _tokenCtrl.text = s.hfToken;
+    _useGpu = s.useGpu;
   }
 
   @override
@@ -44,6 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = SettingsService.instance;
     await s.setPort(portVal);
     await s.setHfToken(_tokenCtrl.text.trim());
+    await s.setUseGpu(_useGpu);
     setState(() => _saving = false);
 
     if (!mounted) return;
@@ -140,6 +143,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Inference ────────────────────────────────────────────────────
+          _SectionHeader(title: 'Inference'),
+          Card(
+            child: SwitchListTile(
+              title: const Text('GPU acceleration'),
+              subtitle: const Text(
+                'Pass PreferredBackend.gpu to flutter_gemma. '
+                'Faster on most devices; disable if inference crashes or '
+                'produces garbled output.',
+              ),
+              value: _useGpu,
+              onChanged: (v) => setState(() => _useGpu = v),
+              secondary: const Icon(Icons.memory_outlined),
             ),
           ),
           const SizedBox(height: 24),

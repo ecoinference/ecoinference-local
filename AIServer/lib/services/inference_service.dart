@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'settings_service.dart';
 
 /// Wraps flutter_gemma 0.13.x for on-device Gemma inference.
 ///
@@ -22,13 +23,34 @@ class InferenceService {
 
   bool _modelLoaded = false;
   String? _loadedModelId;
+  String? _loadedFileName; // basename flutter_gemma uses as its model key
 
   bool get modelLoaded => _modelLoaded;
   String? get loadedModelId => _loadedModelId;
 
-  /// Registers a model file with flutter_gemma.
-  /// Automatically detects .litertlm vs .task from the file extension.
-  Future<bool> loadModel(String modelPath, String modelId) async {
+  /// Returns the preferred backend based on the current settings.
+  /// null = let flutter_gemma / MediaPipe auto-select (default).
+  PreferredBackend? get _preferredBackend =>
+      SettingsService.instance.useGpu ? PreferredBackend.gpu : null;
+
+  /// Registers a model file with flutter_gemma, then warms up the engine.
+  ///
+  /// Two-phase load:
+  ///   Phase 1 (0 → 50 %)  — `installModel().fromFile().withProgress()` registers
+  ///     the file path in flutter_gemma's metadata store.  For a local file this
+  ///     is near-instant, but the progress hook is in place for future network or
+  ///     bundled sources that may take longer.
+  ///   Phase 2 (50 → 100 %) — `getActiveModel()` triggers the native engine
+  ///     (MediaPipe / LiteRT) to memory-map the weight file and initialise the
+  ///     runtime.  The resulting model is closed immediately; the OS page-cache
+  ///     keeps the weights hot so every subsequent [runChatInference] call is fast.
+  ///
+  /// [onProgress] receives integer values 0-100 as the load advances.
+  Future<bool> loadModel(
+    String modelPath,
+    String modelId, {
+    void Function(int progress)? onProgress,
+  }) async {
     // ── Pre-flight checks ──────────────────────────────────────────────────
     final file = File(modelPath);
     if (!file.existsSync()) {
@@ -53,16 +75,35 @@ class InferenceService {
         : ModelFileType.task;
 
     try {
+      // ── Phase 1: register file path (0 → 50 %) ──────────────────────────
+      onProgress?.call(0);
       await FlutterGemma.installModel(
         modelType: ModelType.gemmaIt,
         fileType: fileType,
-      ).fromFile(cleanPath).install();
+      )
+          .fromFile(cleanPath)
+          .withProgress((p) => onProgress?.call((p * 0.5).round()))
+          .install();
+      onProgress?.call(50);
+
+      // ── Phase 2: warm-up engine (50 → 100 %) ────────────────────────────
+      // Creates a native LlmInference / LiteRT session, which maps the weight
+      // file into memory.  We close it immediately; subsequent calls to
+      // getActiveModel() in runChatInference() reuse the warm page-cache.
+      final warmUp = await FlutterGemma.getActiveModel(
+        maxTokens: 512,
+        preferredBackend: _preferredBackend,
+      );
+      await warmUp.close();
+      onProgress?.call(100);
 
       _modelLoaded = true;
       _loadedModelId = modelId;
+      _loadedFileName = cleanPath.split('/').last;
       return true;
     } catch (e) {
       _modelLoaded = false;
+      _loadedFileName = null;
       throw InferenceException(
           'loadModel failed.\n'
           'Path: $cleanPath\n'
@@ -96,7 +137,10 @@ class InferenceService {
           .join('\n')
           .trim();
 
-      final model = await FlutterGemma.getActiveModel(maxTokens: maxTokens);
+      final model = await FlutterGemma.getActiveModel(
+        maxTokens: maxTokens,
+        preferredBackend: _preferredBackend,
+      );
 
       final chat = await model.createChat(
         temperature: temperature,
@@ -125,6 +169,64 @@ class InferenceService {
     }
   }
 
+  /// Streaming variant of [runChatInference].
+  ///
+  /// Yields one decoded token string at a time using the
+  /// [InferenceChat.generateChatResponseAsync] stream.  Thinking tokens
+  /// ([ThinkingResponse]) are silently dropped so only visible assistant text
+  /// reaches the caller.  The underlying [InferenceModel] is closed in a
+  /// `finally` block, so it is released even if the consumer cancels early.
+  ///
+  /// Used by the `/v1/chat/completions` and `/v1/completions` SSE paths.
+  Stream<String> runChatInferenceStream(
+    List<Map<String, String>> messages, {
+    int maxTokens = 512,
+    double temperature = 0.8,
+  }) async* {
+    if (!_modelLoaded) {
+      throw InferenceException('No model loaded. Call loadModel() first.');
+    }
+
+    InferenceModel? model;
+    try {
+      final systemInstruction = messages
+          .where((m) => m['role'] == 'system')
+          .map((m) => m['content'] ?? '')
+          .join('\n')
+          .trim();
+
+      model = await FlutterGemma.getActiveModel(
+        maxTokens: maxTokens,
+        preferredBackend: _preferredBackend,
+      );
+
+      final chat = await model.createChat(
+        temperature: temperature,
+        systemInstruction: systemInstruction.isEmpty ? null : systemInstruction,
+      );
+
+      for (final msg in messages.where((m) => m['role'] != 'system')) {
+        final isUser = (msg['role'] ?? 'user') == 'user';
+        await chat.addQueryChunk(
+          Message.text(text: msg['content'] ?? '', isUser: isUser),
+        );
+      }
+
+      await for (final response in chat.generateChatResponseAsync()) {
+        final token = switch (response) {
+          TextResponse r     => r.token,
+          ThinkingResponse _ => '', // thinking tokens not exposed in stream
+          _                  => '',
+        };
+        if (token.isNotEmpty) yield token;
+      }
+    } catch (e) {
+      throw InferenceException('runChatInferenceStream failed: $e');
+    } finally {
+      await model?.close();
+    }
+  }
+
   /// Convenience wrapper for single-prompt (non-chat) inference.
   /// Used by the /v1/completions endpoint.
   Future<String> runInference(
@@ -138,9 +240,24 @@ class InferenceService {
         temperature: temperature,
       );
 
+  /// Unloads the current model from both Dart state and flutter_gemma's
+  /// metadata store.  Because the model was installed via [fromFile] the
+  /// weight file itself is protected and is never deleted — only the
+  /// registration entry is removed, giving the next [loadModel] call a
+  /// clean slate to re-register and re-warm-up.
   Future<void> unloadModel() async {
+    final fileName = _loadedFileName;
     _modelLoaded = false;
     _loadedModelId = null;
+    _loadedFileName = null;
+
+    if (fileName != null) {
+      try {
+        await FlutterGemma.uninstallModel(fileName);
+      } catch (_) {
+        // Best-effort: if the entry was already gone, ignore the error.
+      }
+    }
   }
 }
 

@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
 import '../../models/model_info.dart';
-import '../../services/download_service.dart';
+import '../../services/settings_service.dart';
 
 /// Shows download progress for a model file.
+///
+/// Uses flutter_gemma's [FlutterGemma.installModel] with [fromNetwork] so that
+/// on Android the download runs inside a foreground service (with a persistent
+/// notification), keeping it alive even when the user backgrounds the app.
+/// The foreground: null default in fromNetwork() auto-enables the foreground
+/// service for files >500 MB — all catalog models qualify.
+///
+/// After [install] returns the model is registered AND set as the active
+/// inference model, so [InferenceService.loadModel] will skip re-downloading
+/// on the first boot.
 class DownloadScreen extends StatefulWidget {
   const DownloadScreen({
     super.key,
@@ -19,16 +30,23 @@ class DownloadScreen extends StatefulWidget {
 
 class _DownloadScreenState extends State<DownloadScreen> {
   double _progress = 0;
-  int _receivedBytes = 0;
-  int _totalBytes = 0;
   bool _downloading = false;
   bool _done = false;
   String? _error;
+
+  CancelToken? _cancelToken;
 
   @override
   void initState() {
     super.initState();
     _startDownload();
+  }
+
+  @override
+  void dispose() {
+    // Cancel any in-flight download when the widget is torn down.
+    _cancelToken?.cancel('Screen disposed');
+    super.dispose();
   }
 
   Future<void> _startDownload() async {
@@ -38,18 +56,34 @@ class _DownloadScreenState extends State<DownloadScreen> {
       _progress = 0;
     });
 
+    _cancelToken = CancelToken();
+
+    // Detect .litertlm vs .task from the filename so the correct engine is used.
+    final fileType = widget.model.fileName.endsWith('.litertlm')
+        ? ModelFileType.litertlm
+        : ModelFileType.task;
+
+    final hfToken = SettingsService.instance.hfToken;
+
     try {
-      await DownloadService.instance.download(
-        widget.model,
-        onProgress: (progress, received, total) {
-          if (!mounted) return;
-          setState(() {
-            _progress = progress;
-            _receivedBytes = received;
-            _totalBytes = total;
-          });
-        },
-      );
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+        fileType: fileType,
+      )
+          .fromNetwork(
+            widget.model.downloadUrl,
+            // Pass the token only when one is configured; flutter_gemma will
+            // automatically use the global HF token for huggingface.co URLs.
+            token: hfToken.isNotEmpty ? hfToken : null,
+            // null = auto: uses foreground service on Android when file >500 MB.
+          )
+          .withProgress((int percent) {
+            if (!mounted) return;
+            setState(() => _progress = percent / 100.0);
+          })
+          .withCancelToken(_cancelToken!)
+          .install();
+
       if (!mounted) return;
       setState(() {
         _done = true;
@@ -57,6 +91,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      // Distinguish user-initiated cancellation from real errors.
+      if (e is DownloadCancelledException) {
+        Navigator.of(context).pop();
+        return;
+      }
       setState(() {
         _error = e.toString();
         _downloading = false;
@@ -65,13 +104,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   void _cancel() {
-    DownloadService.instance.cancel();
-    Navigator.of(context).pop();
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    _cancelToken?.cancel('User cancelled');
+    // Navigation happens in the catch block after cancellation propagates.
   }
 
   @override
@@ -117,10 +151,16 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _totalBytes > 0
-                      ? '${_formatBytes(_receivedBytes)} / ${_formatBytes(_totalBytes)}'
+                  _progress > 0
+                      ? '${(_progress * 100).toStringAsFixed(0)}%'
                       : 'Connecting…',
                   style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '~${widget.model.fileSizeMb >= 1024 ? '${(widget.model.fileSizeMb / 1024).toStringAsFixed(1)} GB' : '${widget.model.fileSizeMb} MB'} total',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 32),
                 TextButton.icon(
