@@ -115,13 +115,12 @@ class ServerService {
       return _badRequest('Malformed request: $e');
     }
 
-    final prompt = inference.buildChatPrompt(
-      chatReq.messages.map((m) => {'role': m.role, 'content': m.content}).toList(),
-    );
-
     try {
-      final output = await inference.runInference(
-        prompt,
+      final messages = chatReq.messages
+          .map((m) => {'role': m.role, 'content': m.content})
+          .toList();
+      final output = await inference.runChatInference(
+        messages,
         maxTokens: chatReq.maxTokens,
         temperature: chatReq.temperature,
       );
@@ -132,7 +131,7 @@ class ServerService {
             ? (inference.loadedModelId ?? 'gemma4')
             : chatReq.model,
         content: output,
-        promptTokens: _estimateTokens(prompt),
+        promptTokens: _estimateTokens(output),
         completionTokens: _estimateTokens(output),
       );
       return _json(response.toJson());

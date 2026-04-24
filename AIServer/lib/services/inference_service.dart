@@ -3,13 +3,14 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 
 /// Wraps flutter_gemma 0.13.x for on-device Gemma inference.
 ///
-/// New API (since v0.5.0 / v0.11.10):
+/// Uses the modern InferenceChat API:
 ///   FlutterGemma.initialize()           — called once in main()
-///   FlutterGemma.installModel().fromFile().install()  — registers model
+///   FlutterGemma.installModel()…        — registers model file
 ///   FlutterGemma.getActiveModel()       — returns InferenceModel
-///   model.createSession()               — per-request session
-///   session.addQueryChunk(Message)      — add prompt
-///   session.getResponse()               — blocking response
+///   model.createChat()                  — creates InferenceChat (handles
+///                                         history, thinking filter, fileType)
+///   chat.addQueryChunk(Message)         — add each turn
+///   chat.generateChatResponse()         — blocking response → ModelResponse
 ///
 /// iOS compatibility note:
 ///   Gemma 4 (.litertlm) crashes at inference on iOS with MediaPipe 0.10.33.
@@ -46,7 +47,7 @@ class InferenceService {
         ? Uri.parse(modelPath).toFilePath()
         : modelPath;
 
-    // Detect file type from extension so MediaPipe parses it correctly.
+    // Detect file type from extension so the correct engine is selected.
     final fileType = cleanPath.endsWith('.litertlm')
         ? ModelFileType.litertlm
         : ModelFileType.task;
@@ -70,9 +71,17 @@ class InferenceService {
     }
   }
 
-  /// Runs a single blocking inference call and returns the response string.
-  Future<String> runInference(
-    String prompt, {
+  /// Runs inference over a list of chat messages using the InferenceChat API.
+  ///
+  /// [messages] follows the OpenAI format: each map has 'role' (system /
+  /// user / assistant) and 'content'. System messages are extracted and
+  /// passed as [systemInstruction] to the chat session; user and assistant
+  /// turns are replayed in order to rebuild multi-turn context.
+  ///
+  /// Returns the assistant's reply as a plain string (thinking tokens are
+  /// automatically stripped by [generateChatResponse]).
+  Future<String> runChatInference(
+    List<Map<String, String>> messages, {
     int maxTokens = 512,
     double temperature = 0.8,
   }) async {
@@ -80,37 +89,54 @@ class InferenceService {
       throw InferenceException('No model loaded. Call loadModel() first.');
     }
     try {
+      // Collect system instruction(s) to pass natively where supported.
+      final systemInstruction = messages
+          .where((m) => m['role'] == 'system')
+          .map((m) => m['content'] ?? '')
+          .join('\n')
+          .trim();
+
       final model = await FlutterGemma.getActiveModel(maxTokens: maxTokens);
-      final session = await model.createSession();
-      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
-      final response = await session.getResponse();
-      await session.close();
+
+      final chat = await model.createChat(
+        temperature: temperature,
+        systemInstruction: systemInstruction.isEmpty ? null : systemInstruction,
+      );
+
+      // Replay all non-system turns to rebuild conversation context.
+      for (final msg in messages.where((m) => m['role'] != 'system')) {
+        final isUser = (msg['role'] ?? 'user') == 'user';
+        await chat.addQueryChunk(
+          Message.text(text: msg['content'] ?? '', isUser: isUser),
+        );
+      }
+
+      final response = await chat.generateChatResponse();
       await model.close();
-      return response ?? '';
+
+      // Extract text from the typed response.
+      return switch (response) {
+        TextResponse r     => r.token,
+        ThinkingResponse r => r.content,
+        _                  => '',
+      };
     } catch (e) {
-      throw InferenceException('runInference failed: $e');
+      throw InferenceException('runChatInference failed: $e');
     }
   }
 
-  /// Formats chat messages into a single prompt string for the model.
-  /// For the new API each call is treated as a standalone turn, so we
-  /// flatten the history into one user message here.
-  String buildChatPrompt(List<Map<String, String>> messages) {
-    final buf = StringBuffer();
-    for (final msg in messages) {
-      final role = msg['role'] ?? 'user';
-      final content = msg['content'] ?? '';
-      switch (role) {
-        case 'system':
-          buf.writeln('[System: $content]\n');
-        case 'assistant':
-          buf.writeln('Assistant: $content\n');
-        default:
-          buf.writeln('User: $content\n');
-      }
-    }
-    return buf.toString().trim();
-  }
+  /// Convenience wrapper for single-prompt (non-chat) inference.
+  /// Used by the /v1/completions endpoint.
+  Future<String> runInference(
+    String prompt, {
+    int maxTokens = 512,
+    double temperature = 0.8,
+  }) =>
+      runChatInference(
+        [{'role': 'user', 'content': prompt}],
+        maxTokens: maxTokens,
+        temperature: temperature,
+      );
 
   Future<void> unloadModel() async {
     _modelLoaded = false;
