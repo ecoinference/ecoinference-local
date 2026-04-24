@@ -53,7 +53,7 @@ class ApiService {
         },
       );
       final choices = res.data['choices'] as List;
-      if (choices.isEmpty) throw ApiException('Empty choices in response');
+      if (choices.isEmpty) throw const ApiException('Empty choices in response');
       return choices.first['message']['content'] as String;
     } on DioException catch (e) {
       throw ApiException(_msg(e));
@@ -78,7 +78,7 @@ class ApiService {
         },
       );
       final choices = res.data['choices'] as List;
-      if (choices.isEmpty) throw ApiException('Empty choices in response');
+      if (choices.isEmpty) throw const ApiException('Empty choices in response');
       return choices.first['text'] as String;
     } on DioException catch (e) {
       throw ApiException(_msg(e));

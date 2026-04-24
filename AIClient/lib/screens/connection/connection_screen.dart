@@ -16,7 +16,6 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   final _portCtrl = TextEditingController(text: '8080');
   bool _checking = false;
   String? _error;
-  HealthStatus? _lastHealth;
 
   @override
   void initState() {
@@ -47,7 +46,6 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     setState(() {
       _checking = true;
       _error = null;
-      _lastHealth = null;
     });
 
     final health = await ApiService(config).checkHealth();
@@ -58,7 +56,6 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     if (!mounted) return;
     setState(() {
       _checking = false;
-      _lastHealth = health;
       _error = health.ok ? null : health.error;
     });
 
