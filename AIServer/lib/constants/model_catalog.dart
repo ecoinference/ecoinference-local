@@ -81,11 +81,11 @@ class ModelCatalog {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  static List<ModelInfo> get models {
-    return defaultTargetPlatform == TargetPlatform.android
-        ? _androidModels
-        : _iosModels;
-  }
+  // TODO: Switch Android to _androidModels (Gemma 4 .litertlm) once
+  // litertlm-android gets a stable release that fixes the
+  // litert_compiled_model.cc:353 engine-init regression with Gemma 4.
+  // Tracked: https://github.com/google-ai-edge/gallery/issues/557
+  static List<ModelInfo> get models => _iosModels;
 
   static ModelInfo? findById(String id) {
     try {
