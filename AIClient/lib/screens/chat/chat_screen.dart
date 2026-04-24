@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../models/chat_message.dart';
 import '../../models/server_config.dart';
@@ -5,7 +7,7 @@ import '../../services/api_service.dart';
 import '../../widgets/message_bubble.dart';
 import '../connection/connection_screen.dart';
 
-/// Main chat interface. Stateful with setState — fully FlutterFlow-compatible.
+/// Main chat interface. Streams tokens from the server as they arrive.
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.config});
 
@@ -23,6 +25,11 @@ class _ChatScreenState extends State<ChatScreen> {
   late ApiService _api;
   String? _systemPrompt;
 
+  /// Accumulates tokens while a streaming response is in flight.
+  /// Null when no stream is active; empty string before the first token arrives.
+  String? _streamingContent;
+  StreamSubscription<String>? _streamSub;
+
   @override
   void initState() {
     super.initState();
@@ -31,12 +38,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _streamSub?.cancel();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _send() async {
+  // ── Sending ─────────────────────────────────────────────────────────────────
+
+  void _send() {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty || _loading) return;
 
@@ -45,33 +55,78 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(userMsg);
       _loading = true;
+      _streamingContent = '';
     });
     _scrollToBottom();
 
-    try {
-      final history = <ChatMessage>[];
-      if (_systemPrompt != null && _systemPrompt!.isNotEmpty) {
-        history.add(ChatMessage(
-            role: MessageRole.system, content: _systemPrompt!));
-      }
-      history.addAll(_messages);
-
-      final reply = await _api.chatCompletion(messages: history);
-      setState(() {
-        _messages.add(
-            ChatMessage(role: MessageRole.assistant, content: reply));
-      });
-    } on ApiException catch (e) {
-      setState(() {
-        _messages.add(ChatMessage(
-            role: MessageRole.assistant,
-            content: '⚠️ Error: ${e.message}'));
-      });
-    } finally {
-      setState(() => _loading = false);
-      _scrollToBottom();
+    // Build history including optional system prompt.
+    final history = <ChatMessage>[];
+    if (_systemPrompt != null && _systemPrompt!.isNotEmpty) {
+      history.add(ChatMessage(
+          role: MessageRole.system, content: _systemPrompt!));
     }
+    history.addAll(_messages);
+
+    _streamSub = _api
+        .chatCompletionStream(messages: history)
+        .listen(
+          (token) {
+            if (!mounted) return;
+            setState(
+                () => _streamingContent = (_streamingContent ?? '') + token);
+            _scrollToBottom();
+          },
+          onError: (Object e) {
+            if (!mounted) return;
+            final errMsg =
+                e is ApiException ? e.message : e.toString();
+            setState(() {
+              _messages.add(ChatMessage(
+                role: MessageRole.assistant,
+                content: '⚠️ Error: $errMsg',
+              ));
+              _streamingContent = null;
+              _loading = false;
+            });
+            _scrollToBottom();
+          },
+          onDone: () {
+            if (!mounted) return;
+            final content = _streamingContent;
+            setState(() {
+              if (content != null && content.isNotEmpty) {
+                _messages.add(ChatMessage(
+                  role: MessageRole.assistant,
+                  content: content,
+                ));
+              }
+              _streamingContent = null;
+              _loading = false;
+            });
+            _scrollToBottom();
+          },
+          cancelOnError: true,
+        );
   }
+
+  /// Cancels an in-flight stream and commits whatever tokens arrived so far.
+  void _stopStream() {
+    _streamSub?.cancel();
+    _streamSub = null;
+    final content = _streamingContent;
+    setState(() {
+      if (content != null && content.isNotEmpty) {
+        _messages.add(ChatMessage(
+          role: MessageRole.assistant,
+          content: content,
+        ));
+      }
+      _streamingContent = null;
+      _loading = false;
+    });
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -85,9 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _clearChat() {
-    setState(() => _messages.clear());
-  }
+  void _clearChat() => setState(() => _messages.clear());
 
   void _showSystemPromptDialog() {
     final ctrl = TextEditingController(text: _systemPrompt ?? '');
@@ -119,6 +172,8 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
+  // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -166,29 +221,40 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Messages list
           Expanded(
-            child: _messages.isEmpty
+            child: _messages.isEmpty && _streamingContent == null
                 ? _buildEmptyState(theme)
                 : ListView.builder(
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 16),
+                    // +1 slot for the live streaming bubble (or typing indicator).
                     itemCount:
                         _messages.length + (_loading ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i == _messages.length && _loading) {
+                        // Show tokens as they stream in; typing indicator before
+                        // the first token arrives.
+                        if (_streamingContent != null &&
+                            _streamingContent!.isNotEmpty) {
+                          return MessageBubble(
+                            message: ChatMessage(
+                              role: MessageRole.assistant,
+                              content: _streamingContent!,
+                            ),
+                          );
+                        }
                         return const _TypingIndicator();
                       }
                       return MessageBubble(message: _messages[i]);
                     },
                   ),
           ),
-          // Input bar
           _InputBar(
             controller: _inputCtrl,
             loading: _loading,
             onSend: _send,
+            onStop: _stopStream,
           ),
         ],
       ),
@@ -225,11 +291,13 @@ class _InputBar extends StatelessWidget {
     required this.controller,
     required this.loading,
     required this.onSend,
+    required this.onStop,
   });
 
   final TextEditingController controller;
   final bool loading;
   final VoidCallback onSend;
+  final VoidCallback onStop;
 
   @override
   Widget build(BuildContext context) {
@@ -268,14 +336,14 @@ class _InputBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FloatingActionButton.small(
-            onPressed: loading ? null : onSend,
+            onPressed: loading ? onStop : onSend,
             elevation: 0,
+            backgroundColor:
+                loading ? theme.colorScheme.error : null,
+            foregroundColor:
+                loading ? theme.colorScheme.onError : null,
             child: loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                ? const Icon(Icons.stop_rounded)
                 : const Icon(Icons.send_rounded),
           ),
         ],

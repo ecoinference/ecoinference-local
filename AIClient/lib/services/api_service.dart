@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import '../models/chat_message.dart';
 import '../models/server_config.dart';
@@ -36,7 +38,7 @@ class ApiService {
 
   // ── Chat completions ────────────────────────────────────────────────────────
 
-  /// Sends [messages] and returns the assistant reply string.
+  /// Sends [messages] and returns the full assistant reply as a single string.
   Future<String> chatCompletion({
     required List<ChatMessage> messages,
     int maxTokens = 512,
@@ -57,6 +59,57 @@ class ApiService {
       return choices.first['message']['content'] as String;
     } on DioException catch (e) {
       throw ApiException(_msg(e));
+    }
+  }
+
+  /// Streams the assistant reply token-by-token via SSE (`stream: true`).
+  ///
+  /// Yields each non-empty content token as it arrives. Throws [ApiException]
+  /// if the connection fails before the stream starts.
+  Stream<String> chatCompletionStream({
+    required List<ChatMessage> messages,
+    int maxTokens = 512,
+    double temperature = 0.8,
+  }) async* {
+    final Response<ResponseBody> response;
+    try {
+      response = await _dio.post<ResponseBody>(
+        '/v1/chat/completions',
+        data: {
+          'model': config.modelId,
+          'messages': messages.map((m) => m.toApiJson()).toList(),
+          'max_tokens': maxTokens,
+          'temperature': temperature,
+          'stream': true,
+        },
+        options: Options(responseType: ResponseType.stream),
+      );
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+
+    var buffer = '';
+    await for (final chunk in response.data!.stream) {
+      buffer += utf8.decode(chunk);
+      // Split on newlines; keep any trailing incomplete line in the buffer.
+      final lines = buffer.split('\n');
+      buffer = lines.removeLast();
+
+      for (final line in lines) {
+        if (!line.startsWith('data: ')) continue;
+        final payload = line.substring(6).trim();
+        if (payload == '[DONE]') return;
+        try {
+          final json = jsonDecode(payload) as Map<String, dynamic>;
+          final choices = json['choices'] as List?;
+          if (choices == null || choices.isEmpty) continue;
+          final delta = choices.first['delta'] as Map<String, dynamic>?;
+          final content = delta?['content'] as String?;
+          if (content != null && content.isNotEmpty) yield content;
+        } catch (_) {
+          // Skip malformed / partial JSON chunks.
+        }
+      }
     }
   }
 
