@@ -6,7 +6,15 @@ import 'services/settings_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SettingsService.instance.init();
-  // Required since flutter_gemma 0.11.10.
-  await FlutterGemma.initialize();
+
+  // Initialise flutter_gemma with the stored HuggingFace token so that any
+  // fromNetwork() call is automatically authenticated.  maxDownloadRetries
+  // defaults to 10 but is explicit here for clarity.
+  final hfToken = SettingsService.instance.hfToken;
+  await FlutterGemma.initialize(
+    huggingFaceToken: hfToken.isNotEmpty ? hfToken : null,
+    maxDownloadRetries: 10,
+  );
+
   runApp(const App());
 }
