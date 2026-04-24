@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> {
   StreamSubscription<String>? _streamSub;
 
   static const _kSystemPromptKey = 'system_prompt';
+  static const _kMessagesKey = 'chat_messages';
 
   /// Maximum number of messages (user + assistant) sent to the server.
   /// Older messages beyond this limit are shown in the UI but excluded from
@@ -43,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _api = ApiService(widget.config);
     _loadSystemPrompt();
+    _loadMessages();
   }
 
   Future<void> _loadSystemPrompt() async {
@@ -60,6 +63,31 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       await prefs.setString(_kSystemPromptKey, value);
     }
+  }
+
+  Future<void> _loadMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kMessagesKey);
+    if (raw == null || raw.isEmpty || !mounted) return;
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      final messages = list
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .toList();
+      setState(() => _messages.addAll(messages));
+      _scrollToBottom();
+    } catch (_) {
+      // Corrupted data — start fresh (existing key will be overwritten on next
+      // save, so no manual cleanup needed).
+    }
+  }
+
+  Future<void> _saveMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _kMessagesKey,
+      jsonEncode(_messages.map((m) => m.toJson()).toList()),
+    );
   }
 
   @override
@@ -83,6 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _loading = true;
       _streamingContent = '';
     });
+    _saveMessages(); // persist user message immediately
     _scrollToBottom();
 
     // Build history: system prompt + windowed messages.
@@ -117,6 +146,7 @@ class _ChatScreenState extends State<ChatScreen> {
               _streamingContent = null;
               _loading = false;
             });
+            _saveMessages();
             _scrollToBottom();
           },
           onDone: () {
@@ -132,6 +162,7 @@ class _ChatScreenState extends State<ChatScreen> {
               _streamingContent = null;
               _loading = false;
             });
+            _saveMessages();
             _scrollToBottom();
           },
           cancelOnError: true,
@@ -153,6 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _streamingContent = null;
       _loading = false;
     });
+    _saveMessages();
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -169,7 +201,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _clearChat() => setState(() => _messages.clear());
+  void _clearChat() {
+    setState(() => _messages.clear());
+    _saveMessages(); // overwrites with empty list
+  }
 
   void _showSystemPromptDialog() {
     final ctrl = TextEditingController(text: _systemPrompt ?? '');
