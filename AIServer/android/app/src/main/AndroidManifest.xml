@@ -3,16 +3,18 @@
     <!-- Required for downloading models from HuggingFace -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- Optional OpenCL libraries for GPU acceleration in LiteRT inference.
-         marked required=false so the app installs on devices without them. -->
-    <uses-native-library android:name="libOpenCL.so"          android:required="false"/>
-    <uses-native-library android:name="libOpenCL-car.so"      android:required="false"/>
-    <uses-native-library android:name="libOpenCL-pixel.so"    android:required="false"/>
-
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Optional OpenCL libraries for GPU acceleration in LiteRT inference.
+             Must be inside <application>; marked required=false so the app
+             installs on devices without OpenCL. -->
+        <uses-native-library android:name="libOpenCL.so"       android:required="false"/>
+        <uses-native-library android:name="libOpenCL-car.so"   android:required="false"/>
+        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
