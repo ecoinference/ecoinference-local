@@ -43,6 +43,9 @@ flutter {
     source "../.."
 }
 
-// flutter_gemma bundles MediaPipe tasks-genai 0.10.33 and LiteRT-LM
-// automatically — do NOT add a separate tasks-genai dependency here as
-// duplicate versions cause version-conflict build errors.
+// Force litertlm-android to 0.10.2 — flutter_gemma 0.13.6 bundles 0.10.0
+// which predates Gemma 4 support. 0.10.1+ is required for .litertlm files
+// generated with the Gemma 4 model format.
+configurations.all {
+    resolutionStrategy.force 'com.google.ai.edge.litertlm:litertlm-android:0.10.2'
+}

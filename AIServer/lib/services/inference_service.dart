@@ -80,7 +80,12 @@ class InferenceService {
       throw InferenceException('No model loaded. Call loadModel() first.');
     }
     try {
-      final model = await FlutterGemma.getActiveModel(maxTokens: maxTokens);
+      // Explicitly request CPU backend — GPU delegate compilation fails on
+      // many devices with Gemma 4's Multi-Token Prediction architecture.
+      final model = await FlutterGemma.getActiveModel(
+        maxTokens: maxTokens,
+        preferredBackend: PreferredBackend.cpu,
+      );
       final session = await model.createSession();
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
       final response = await session.getResponse();
