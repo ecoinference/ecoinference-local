@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat_message.dart';
 import '../../models/server_config.dart';
 import '../../services/api_service.dart';
@@ -30,10 +31,30 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _streamingContent;
   StreamSubscription<String>? _streamSub;
 
+  static const _kSystemPromptKey = 'system_prompt';
+
   @override
   void initState() {
     super.initState();
     _api = ApiService(widget.config);
+    _loadSystemPrompt();
+  }
+
+  Future<void> _loadSystemPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_kSystemPromptKey);
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() => _systemPrompt = saved);
+    }
+  }
+
+  Future<void> _saveSystemPrompt(String? value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null || value.isEmpty) {
+      await prefs.remove(_kSystemPromptKey);
+    } else {
+      await prefs.setString(_kSystemPromptKey, value);
+    }
   }
 
   @override
@@ -162,8 +183,10 @@ class _ChatScreenState extends State<ChatScreen> {
               child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
-              setState(() => _systemPrompt =
-                  ctrl.text.trim().isEmpty ? null : ctrl.text.trim());
+              final value =
+                  ctrl.text.trim().isEmpty ? null : ctrl.text.trim();
+              setState(() => _systemPrompt = value);
+              _saveSystemPrompt(value);
               Navigator.pop(context);
             },
             child: const Text('Set'),
