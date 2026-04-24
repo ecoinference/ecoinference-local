@@ -33,6 +33,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   static const _kSystemPromptKey = 'system_prompt';
 
+  /// Maximum number of messages (user + assistant) sent to the server.
+  /// Older messages beyond this limit are shown in the UI but excluded from
+  /// the request, keeping the context window manageable.
+  static const _kMaxHistoryMessages = 20;
+
   @override
   void initState() {
     super.initState();
@@ -80,13 +85,16 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _scrollToBottom();
 
-    // Build history including optional system prompt.
+    // Build history: system prompt + windowed messages.
     final history = <ChatMessage>[];
     if (_systemPrompt != null && _systemPrompt!.isNotEmpty) {
       history.add(ChatMessage(
           role: MessageRole.system, content: _systemPrompt!));
     }
-    history.addAll(_messages);
+    final window = _messages.length > _kMaxHistoryMessages
+        ? _messages.sublist(_messages.length - _kMaxHistoryMessages)
+        : _messages;
+    history.addAll(window);
 
     _streamSub = _api
         .chatCompletionStream(messages: history)
@@ -252,8 +260,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 16),
                     // +1 slot for the live streaming bubble (or typing indicator).
-                    itemCount:
-                        _messages.length + (_loading ? 1 : 0),
+                    itemCount: _messages.length + (_loading ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i == _messages.length && _loading) {
                         // Show tokens as they stream in; typing indicator before
@@ -269,7 +276,20 @@ class _ChatScreenState extends State<ChatScreen> {
                         }
                         return const _TypingIndicator();
                       }
-                      return MessageBubble(message: _messages[i]);
+                      // Show a divider at the start of the context window so
+                      // the user knows which messages are actually sent.
+                      final windowStart = _messages.length > _kMaxHistoryMessages
+                          ? _messages.length - _kMaxHistoryMessages
+                          : 0;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (i == windowStart && windowStart > 0)
+                            _ContextWindowDivider(
+                                excluded: windowStart),
+                          MessageBubble(message: _messages[i]),
+                        ],
+                      );
                     },
                   ),
           ),
@@ -369,6 +389,39 @@ class _InputBar extends StatelessWidget {
                 ? const Icon(Icons.stop_rounded)
                 : const Icon(Icons.send_rounded),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown once in the list at the point where older messages fall outside the
+/// context window and will not be sent to the model.
+class _ContextWindowDivider extends StatelessWidget {
+  const _ContextWindowDivider({required this.excluded});
+
+  /// Number of messages above this divider that are excluded from context.
+  final int excluded;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const Expanded(child: Divider()),
+          const SizedBox(width: 8),
+          Icon(Icons.history_toggle_off_outlined,
+              size: 14, color: theme.colorScheme.outline),
+          const SizedBox(width: 4),
+          Text(
+            '$excluded message${excluded == 1 ? '' : 's'} outside context window',
+            style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: Divider()),
         ],
       ),
     );
