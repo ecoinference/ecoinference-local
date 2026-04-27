@@ -64,13 +64,10 @@ fun Route.modelRoutes(
             )
         }
 
-        // Resolve the HF token: request overrides stored value.
-        val token = req.hfToken?.takeIf { it.isNotBlank() }
-            ?: settings.hfToken().takeIf { it.isNotBlank() }
-
         // Launch download in the service scope so it outlives this HTTP call.
+        // Gemma 4 models are ungated — no HF token required.
         downloadJob = serviceScope.launch(Dispatchers.IO) {
-            runCatching { download.download(req.modelId, token) }
+            runCatching { download.download(req.modelId) }
             downloadJob = null
         }
 

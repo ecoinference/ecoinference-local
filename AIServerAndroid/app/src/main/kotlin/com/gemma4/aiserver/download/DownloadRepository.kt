@@ -47,7 +47,7 @@ class DownloadRepository(private val context: Context) {
      * Cancellation (via coroutine cancellation) cancels the download and
      * emits a "cancelled" progress event.
      */
-    suspend fun download(modelId: String, hfToken: String?) {
+    suspend fun download(modelId: String) {
         val model = ModelCatalog.findById(modelId)
             ?: throw IllegalArgumentException("Unknown model_id: $modelId")
 
@@ -68,11 +68,8 @@ class DownloadRepository(private val context: Context) {
 
         try {
             withContext(Dispatchers.IO) {
-                val requestBuilder = Request.Builder().url(model.downloadUrl)
-                if (!hfToken.isNullOrBlank()) {
-                    requestBuilder.addHeader("Authorization", "Bearer $hfToken")
-                }
-                val request = requestBuilder.build()
+                // Gemma 4 models are ungated — no Authorization header needed.
+                val request = Request.Builder().url(model.downloadUrl).build()
 
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {

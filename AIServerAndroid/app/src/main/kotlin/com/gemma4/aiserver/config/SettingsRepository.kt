@@ -18,7 +18,6 @@ class SettingsRepository(private val context: Context) {
 
     companion object {
         private val KEY_PORT         = intPreferencesKey("port")
-        private val KEY_HF_TOKEN     = stringPreferencesKey("hf_token")
         private val KEY_USE_GPU      = booleanPreferencesKey("use_gpu")
         private val KEY_LOADED_MODEL = stringPreferencesKey("loaded_model_id")
 
@@ -33,16 +32,6 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setPort(port: Int) {
         context.dataStore.edit { it[KEY_PORT] = port }
-    }
-
-    // ── HuggingFace token ─────────────────────────────────────────────────────
-
-    val hfTokenFlow = context.dataStore.data.map { it[KEY_HF_TOKEN] ?: "" }
-
-    suspend fun hfToken(): String = hfTokenFlow.first()
-
-    suspend fun setHfToken(token: String) {
-        context.dataStore.edit { it[KEY_HF_TOKEN] = token.trim() }
     }
 
     // ── GPU backend ───────────────────────────────────────────────────────────

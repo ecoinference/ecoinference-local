@@ -300,8 +300,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     Text(
                       (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
                           ? '1. Tap "Start AIServer" above.\n'
-                              '2. Tap Connect → choose and download a model.\n'
-                              '3. Load the model and start chatting.'
+                              '2. Tap Connect → choose a Gemma 4 model.\n'
+                              '3. Download, load, and start chatting.\n'
+                              '   (No Hugging Face token required.)'
                           : '1. Launch AIServer on the same device.\n'
                               '2. Complete model setup and wait for '
                               '"Server running".\n'

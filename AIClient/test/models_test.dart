@@ -97,7 +97,7 @@ void main() {
   // ── ModelInfo ───────────────────────────────────────────────────────────────
 
   group('ModelInfo', () {
-    const _sampleJson = {
+    const sampleJson = {
       'id': 'gemma4-e2b-it',
       'name': 'Gemma 4 E2B',
       'file_name': 'gemma4-e2b-it.litertlm',
@@ -108,7 +108,7 @@ void main() {
     };
 
     test('fromJson parses all fields', () {
-      final model = ModelInfo.fromJson(_sampleJson);
+      final model = ModelInfo.fromJson(sampleJson);
       expect(model.id, 'gemma4-e2b-it');
       expect(model.name, 'Gemma 4 E2B');
       expect(model.fileName, 'gemma4-e2b-it.litertlm');
@@ -131,7 +131,7 @@ void main() {
     });
 
     test('copyWith updates only specified live-state fields', () {
-      final base = ModelInfo.fromJson(_sampleJson);
+      final base = ModelInfo.fromJson(sampleJson);
       final updated = base.copyWith(loaded: true);
       expect(updated.loaded, isTrue);
       expect(updated.downloaded, isTrue); // unchanged

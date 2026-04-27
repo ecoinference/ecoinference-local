@@ -25,7 +25,6 @@ data class CatalogResponse(val models: List<ModelInfo>)
 @Serializable
 data class DownloadRequest(
     @SerialName("model_id") val modelId: String,
-    @SerialName("hf_token") val hfToken: String? = null,
 )
 
 @Serializable

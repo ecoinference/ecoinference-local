@@ -92,14 +92,12 @@ class ApiService {
 
   /// Triggers a download for [modelId]. Returns immediately (202 Accepted).
   /// Monitor progress with [watchDownloadProgress].
-  Future<void> startDownload(String modelId, {String? hfToken}) async {
+  /// Gemma 4 models are ungated — no HF token required.
+  Future<void> startDownload(String modelId) async {
     try {
       await _dio.post(
         '/v1/models/download',
-        data: {
-          'model_id': modelId,
-          if (hfToken != null && hfToken.isNotEmpty) 'hf_token': hfToken,
-        },
+        data: {'model_id': modelId},
       );
     } on DioException catch (e) {
       throw ApiException(_msg(e));

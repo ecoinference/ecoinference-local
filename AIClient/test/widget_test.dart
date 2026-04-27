@@ -84,25 +84,25 @@ void main() {
     });
 
     testWidgets('renders without crashing', (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
     });
 
     testWidgets('shows empty-state prompt when no messages', (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump(); // allow _loadMessages async to settle
 
       expect(find.text('Start a conversation'), findsOneWidget);
     });
 
     testWidgets('shows send button in idle state', (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump();
 
       expect(find.byIcon(Icons.send_rounded), findsOneWidget);
     });
 
     testWidgets('send button is inactive when input is empty', (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump();
 
       // Tap send with empty input — nothing should happen and no crash.
@@ -113,7 +113,7 @@ void main() {
     });
 
     testWidgets('AppBar shows server URL subtitle', (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump();
 
       expect(find.text(config.baseUrl), findsOneWidget);
@@ -121,7 +121,7 @@ void main() {
 
     testWidgets('AppBar has system-prompt and models action buttons',
         (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump();
 
       expect(find.byIcon(Icons.tune_outlined), findsOneWidget);
@@ -130,7 +130,7 @@ void main() {
 
     testWidgets('system prompt dialog opens and closes without crash',
         (tester) async {
-      await tester.pumpWidget(wrap(ChatScreen(config: config)));
+      await tester.pumpWidget(wrap(const ChatScreen(config: config)));
       await tester.pump();
 
       await tester.tap(find.byIcon(Icons.tune_outlined));

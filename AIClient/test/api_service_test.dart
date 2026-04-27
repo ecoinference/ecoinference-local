@@ -9,8 +9,8 @@ import 'package:ai_client/services/api_service.dart';
 void main() {
   // Use a loopback address that will refuse connections immediately so any
   // accidental network call fails fast rather than timing out.
-  const _cfg = ServerConfig(host: '127.0.0.1', port: 19999);
-  const _cfg2 = ServerConfig(host: '10.0.0.1', port: 8080, modelId: 'alt');
+  const cfg = ServerConfig(host: '127.0.0.1', port: 19999);
+  const cfg2 = ServerConfig(host: '10.0.0.1', port: 8080, modelId: 'alt');
 
   // ── Singleton lifecycle ─────────────────────────────────────────────────────
 
@@ -32,43 +32,43 @@ void main() {
       if (!ApiService.isConfigured) {
         expect(ApiService.isConfigured, isFalse);
       }
-      ApiService.configure(_cfg);
+      ApiService.configure(cfg);
       expect(ApiService.isConfigured, isTrue);
     });
 
     test('instance returns the configured service', () {
-      ApiService.configure(_cfg);
+      ApiService.configure(cfg);
       final svc = ApiService.instance;
-      expect(svc.config.host, _cfg.host);
-      expect(svc.config.port, _cfg.port);
+      expect(svc.config.host, cfg.host);
+      expect(svc.config.port, cfg.port);
     });
 
     test('configure() replaces the previous instance', () {
-      ApiService.configure(_cfg);
-      ApiService.configure(_cfg2);
-      expect(ApiService.instance.config.host, _cfg2.host);
-      expect(ApiService.instance.config.port, _cfg2.port);
-      expect(ApiService.instance.config.modelId, _cfg2.modelId);
+      ApiService.configure(cfg);
+      ApiService.configure(cfg2);
+      expect(ApiService.instance.config.host, cfg2.host);
+      expect(ApiService.instance.config.port, cfg2.port);
+      expect(ApiService.instance.config.modelId, cfg2.modelId);
     });
 
     test('configure() twice in a row does not throw', () {
       expect(() {
-        ApiService.configure(_cfg);
-        ApiService.configure(_cfg);
+        ApiService.configure(cfg);
+        ApiService.configure(cfg);
       }, returnsNormally);
     });
 
     test('instance is the same object between calls (no re-creation)', () {
-      ApiService.configure(_cfg);
+      ApiService.configure(cfg);
       final a = ApiService.instance;
       final b = ApiService.instance;
       expect(identical(a, b), isTrue);
     });
 
     test('configure() with new config returns different object', () {
-      ApiService.configure(_cfg);
+      ApiService.configure(cfg);
       final a = ApiService.instance;
-      ApiService.configure(_cfg2);
+      ApiService.configure(cfg2);
       final b = ApiService.instance;
       expect(identical(a, b), isFalse);
     });
@@ -77,7 +77,7 @@ void main() {
   // ── Config propagation ──────────────────────────────────────────────────────
 
   group('ApiService config', () {
-    setUp(() => ApiService.configure(_cfg));
+    setUp(() => ApiService.configure(cfg));
 
     test('baseUrl matches configured host and port', () {
       expect(ApiService.instance.config.baseUrl, 'http://127.0.0.1:19999');

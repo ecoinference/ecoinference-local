@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/download_progress.dart';
 import '../../models/model_info.dart';
 import '../../services/api_service.dart';
@@ -39,17 +38,9 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   /// Model ID currently being loaded into the inference engine, or null.
   String? _loadingId;
 
-  // ── HF token ───────────────────────────────────────────────────────────────
-
-  /// Persisted across screen re-entries via SharedPreferences.
-  String? _hfToken;
-
-  static const _kHfTokenKey = 'hf_token';
-
   @override
   void initState() {
     super.initState();
-    _loadHfToken();
     _fetchCatalog();
   }
 
@@ -57,25 +48,6 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   void dispose() {
     _progressSub?.cancel();
     super.dispose();
-  }
-
-  // ── Persistence ────────────────────────────────────────────────────────────
-
-  Future<void> _loadHfToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_kHfTokenKey);
-    if (saved != null && saved.isNotEmpty && mounted) {
-      setState(() => _hfToken = saved);
-    }
-  }
-
-  Future<void> _saveHfToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (token.isEmpty) {
-      await prefs.remove(_kHfTokenKey);
-    } else {
-      await prefs.setString(_kHfTokenKey, token);
-    }
   }
 
   // ── Catalog ────────────────────────────────────────────────────────────────
@@ -98,16 +70,8 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   // ── Download ───────────────────────────────────────────────────────────────
 
   Future<void> _startDownload(ModelInfo model) async {
-    // Prompt for an HF token the first time; reuse stored value on retries.
-    if (_hfToken == null || _hfToken!.isEmpty) {
-      final token = await _promptHfToken();
-      if (token == null) return; // user cancelled
-      setState(() => _hfToken = token.isEmpty ? null : token);
-      await _saveHfToken(token);
-    }
-
     try {
-      await ApiService.instance.startDownload(model.id, hfToken: _hfToken);
+      await ApiService.instance.startDownload(model.id);
     } on ApiException catch (e) {
       if (mounted) _showSnack('Download failed: ${e.message}');
       return;
@@ -249,17 +213,6 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
     }
   }
 
-  // ── HF token dialog ────────────────────────────────────────────────────────
-
-  /// Shows the HF token dialog. The [TextEditingController] is created and
-  /// disposed inside a [StatefulBuilder] so it has a proper lifecycle.
-  Future<String?> _promptHfToken() {
-    return showDialog<String>(
-      context: context,
-      builder: (_) => _HfTokenDialog(initialToken: _hfToken ?? ''),
-    );
-  }
-
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _showSnack(String message) {
@@ -315,68 +268,6 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
           onDelete: () => _deleteModel(_models[i]),
         ),
       ),
-    );
-  }
-}
-
-// ── HF token dialog (own StatefulWidget so controller is properly disposed) ────
-
-class _HfTokenDialog extends StatefulWidget {
-  const _HfTokenDialog({required this.initialToken});
-  final String initialToken;
-
-  @override
-  State<_HfTokenDialog> createState() => _HfTokenDialogState();
-}
-
-class _HfTokenDialogState extends State<_HfTokenDialog> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.initialToken);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose(); // FIX: controller always disposed with the widget
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Hugging Face Token'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Gemma 4 models require a Hugging Face token with model access. '
-            'Leave blank to attempt an unauthenticated download.',
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _ctrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'hf_...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _ctrl.text.trim()),
-          child: const Text('Continue'),
-        ),
-      ],
     );
   }
 }
