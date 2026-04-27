@@ -1,0 +1,50 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Network -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Foreground service — required for long-running HTTP server + downloads -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
+    <!-- Post notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Optional OpenCL for GPU inference acceleration -->
+    <uses-feature android:name="android.hardware.opengles.aep" android:required="false"/>
+
+    <application
+        android:name=".AiServerApplication"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher">
+
+        <!-- Optional OpenCL libraries for GPU inference -->
+        <uses-native-library android:name="libOpenCL.so"       android:required="false"/>
+        <uses-native-library android:name="libOpenCL-car.so"   android:required="false"/>
+        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
+
+        <!--
+            Headless foreground service — no Activity.
+            AIClient starts this service via explicit Intent.
+            The service binds a loopback HTTP server and runs until stopped.
+        -->
+        <service
+            android:name=".service.AiServerService"
+            android:foregroundServiceType="dataSync"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.gemma4.aiserver.ACTION_START"/>
+                <action android:name="com.gemma4.aiserver.ACTION_STOP"/>
+            </intent-filter>
+        </service>
+
+    </application>
+
+    <!-- AIClient needs this to discover AIServer by action -->
+    <queries>
+        <package android:name="com.gemma4.aiclient"/>
+    </queries>
+
+</manifest>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI Server</string>
+    <string name="notification_channel_name">AI Server</string>
+    <string name="notification_channel_desc">AI Server background service status</string>
+    <string name="notification_title_running">AI Server running</string>
+    <string name="notification_title_loading">AI Server loading model…</string>
+    <string name="notification_title_idle">AI Server idle</string>
+</resources>
