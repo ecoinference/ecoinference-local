@@ -74,8 +74,8 @@ class InferenceRepository(private val context: Context) {
             .setModelPath(modelPath)
             .setMaxTokens(maxTokens)
             .setPreferredBackend(
-                if (useGpu) LlmInferenceOptions.Backend.GPU
-                else LlmInferenceOptions.Backend.CPU
+                if (useGpu) LlmInference.Backend.GPU
+                else LlmInference.Backend.CPU
             )
             .build()
 
