@@ -21,6 +21,11 @@ object ModelCatalog {
 
     // ── Gemma 4 — Android (.litertlm, LiteRT) ────────────────────────────────
     // Requires MediaPipe Tasks GenAI 0.10.20+ on Android API 26+.
+    //
+    // Gemma 4 is Apache 2.0 but hosted on HuggingFace with gated access —
+    // users must accept the licence once at the model page before the
+    // download URL becomes accessible.  The server returns HTTP 401 if they
+    // have not yet done so; AIClient uses licenseUrl to guide them there.
 
     private val gemma4E2b = ModelInfo(
         id = "gemma4-e2b-it",
@@ -32,7 +37,8 @@ object ModelCatalog {
         downloadUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm" +
                 "/resolve/main/gemma-4-E2B-it.litertlm",
         fileName = "gemma-4-E2B-it.litertlm",
-        requiresHfToken = false,
+        requiresHfToken = true,
+        licenseUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,
     )
@@ -47,7 +53,8 @@ object ModelCatalog {
         downloadUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm" +
                 "/resolve/main/gemma-4-E4B-it.litertlm",
         fileName = "gemma-4-E4B-it.litertlm",
-        requiresHfToken = false,
+        requiresHfToken = true,
+        licenseUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,
     )

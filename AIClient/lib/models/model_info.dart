@@ -6,17 +6,19 @@ class ModelInfo {
     required this.fileName,
     required this.sizeGb,
     required this.platform,
+    this.requiresHfToken = false,
+    this.licenseUrl,
     this.downloaded = false,
     this.loaded = false,
   });
 
-  /// Catalog identifier, e.g. `gemma4-e2b-it-litert-preview`.
+  /// Catalog identifier, e.g. `gemma4-e2b-it`.
   final String id;
 
   /// Human-readable name, e.g. `Gemma 4 E2B`.
   final String name;
 
-  /// File name on disk, e.g. `gemma4-e2b-it-lm-v1.litertlm`.
+  /// File name on disk, e.g. `gemma-4-E2B-it.litertlm`.
   final String fileName;
 
   /// Approximate model size in GB (for display only).
@@ -24,6 +26,14 @@ class ModelInfo {
 
   /// `"android"` | `"ios"` | `"all"`.
   final String platform;
+
+  /// True when the model requires a HuggingFace access token.
+  /// The token is only needed after accepting the licence once in a browser.
+  final bool requiresHfToken;
+
+  /// HuggingFace model page URL — opened so the user can accept the licence.
+  /// Null for models that never require auth.
+  final String? licenseUrl;
 
   /// True when the model file is present on the server device.
   final bool downloaded;
@@ -37,6 +47,8 @@ class ModelInfo {
         fileName: json['file_name'] as String,
         sizeGb: (json['size_gb'] as num).toDouble(),
         platform: json['platform'] as String,
+        requiresHfToken: json['requires_hf_token'] as bool? ?? false,
+        licenseUrl: json['license_url'] as String?,
         downloaded: json['downloaded'] as bool? ?? false,
         loaded: json['loaded'] as bool? ?? false,
       );
@@ -48,6 +60,8 @@ class ModelInfo {
         fileName: fileName,
         sizeGb: sizeGb,
         platform: platform,
+        requiresHfToken: requiresHfToken,
+        licenseUrl: licenseUrl,
         downloaded: downloaded ?? this.downloaded,
         loaded: loaded ?? this.loaded,
       );

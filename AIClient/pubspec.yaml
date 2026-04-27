@@ -16,6 +16,8 @@ dependencies:
   shared_preferences: ^2.2.3
   # Start/stop AIServerAndroid via explicit Intent (Android only — no-op on iOS)
   android_intent_plus: '>=4.0.0 <5.0.0'
+  # Open HuggingFace licence pages in the device browser
+  url_launcher: ^6.2.0
 
 dev_dependencies:
   flutter_test:

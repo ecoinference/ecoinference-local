@@ -92,13 +92,18 @@ class ApiService {
 
   /// Triggers a download for [modelId]. Returns immediately (202 Accepted).
   /// Monitor progress with [watchDownloadProgress].
-  /// Gemma 4 models are ungated — no HF token required.
-  Future<void> startDownload(String modelId) async {
+  ///
+  /// Pass [hfToken] if the model is gated on HuggingFace — the token is
+  /// forwarded to the server so it can authenticate the download request.
+  /// Leave null on the first attempt; if the download progress stream emits
+  /// a `license_required` error, prompt the user and retry with a token.
+  Future<void> startDownload(String modelId, {String? hfToken}) async {
     try {
-      await _dio.post(
-        '/v1/models/download',
-        data: {'model_id': modelId},
-      );
+      final body = <String, dynamic>{'model_id': modelId};
+      if (hfToken != null && hfToken.isNotEmpty) {
+        body['hf_token'] = hfToken;
+      }
+      await _dio.post('/v1/models/download', data: body);
     } on DioException catch (e) {
       throw ApiException(_msg(e));
     }

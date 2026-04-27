@@ -14,6 +14,10 @@ data class ModelInfo(
     @SerialName("download_url") val downloadUrl: String,
     @SerialName("file_name") val fileName: String,
     @SerialName("requires_hf_token") val requiresHfToken: Boolean,
+    /** HuggingFace model page URL — shown to the user when a 401/403 is
+     *  returned so they can accept the licence with one tap. Null for models
+     *  that never require auth. */
+    @SerialName("license_url") val licenseUrl: String? = null,
     /** "android" | "ios" | "all" */
     val platform: String,
     @SerialName("gemma_version") val gemmaVersion: Int,

@@ -65,9 +65,9 @@ fun Route.modelRoutes(
         }
 
         // Launch download in the service scope so it outlives this HTTP call.
-        // Gemma 4 models are ungated — no HF token required.
+        // Pass the optional HF token; it may be null for ungated models.
         downloadJob = serviceScope.launch(Dispatchers.IO) {
-            runCatching { download.download(req.modelId) }
+            runCatching { download.download(req.modelId, hfToken = req.hfToken) }
             downloadJob = null
         }
 

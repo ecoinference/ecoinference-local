@@ -43,11 +43,17 @@ class DownloadRepository(private val context: Context) {
     /**
      * Downloads [modelId] from its catalog URL.
      *
+     * Pass [hfToken] when the model is gated on HuggingFace and the user has
+     * already accepted the licence on the HF website.  If the download returns
+     * HTTP 401 or 403 and no token was supplied, the error message will contain
+     * the string "license_required" so the caller can detect it and prompt the
+     * user to accept the licence and supply a token.
+     *
      * Progress is emitted on [progressFlow]. Throws on network error.
      * Cancellation (via coroutine cancellation) cancels the download and
      * emits a "cancelled" progress event.
      */
-    suspend fun download(modelId: String) {
+    suspend fun download(modelId: String, hfToken: String? = null) {
         val model = ModelCatalog.findById(modelId)
             ?: throw IllegalArgumentException("Unknown model_id: $modelId")
 
@@ -68,10 +74,22 @@ class DownloadRepository(private val context: Context) {
 
         try {
             withContext(Dispatchers.IO) {
-                // Gemma 4 models are ungated — no Authorization header needed.
-                val request = Request.Builder().url(model.downloadUrl).build()
+                val requestBuilder = Request.Builder().url(model.downloadUrl)
+                if (!hfToken.isNullOrBlank()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $hfToken")
+                }
+                val request = requestBuilder.build()
 
                 client.newCall(request).execute().use { response ->
+                    if (response.code == 401 || response.code == 403) {
+                        // Surface a machine-readable token so AIClient can show
+                        // the "accept licence → enter token" dialog.
+                        throw Exception(
+                            "license_required: HTTP ${response.code} — " +
+                            "accept the licence at ${model.licenseUrl ?: model.downloadUrl} " +
+                            "then retry with a HuggingFace token."
+                        )
+                    }
                     if (!response.isSuccessful) {
                         throw Exception("HTTP ${response.code}: ${response.message}")
                     }

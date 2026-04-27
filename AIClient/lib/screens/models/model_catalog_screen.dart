@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/download_progress.dart';
 import '../../models/model_info.dart';
 import '../../services/api_service.dart';
@@ -33,6 +35,14 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
 
   StreamSubscription<DownloadProgress>? _progressSub;
 
+  // ── HF token ──────────────────────────────────────────────────────────────
+
+  /// HuggingFace access token — loaded from SharedPreferences on init and
+  /// updated whenever the user supplies one via the licence dialog.
+  String? _hfToken;
+
+  static const _kHfTokenKey = 'hf_token';
+
   // ── Load state ─────────────────────────────────────────────────────────────
 
   /// Model ID currently being loaded into the inference engine, or null.
@@ -42,6 +52,20 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   void initState() {
     super.initState();
     _fetchCatalog();
+    _loadSavedToken();
+  }
+
+  Future<void> _loadSavedToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_kHfTokenKey);
+    if (mounted && token != null && token.isNotEmpty) {
+      setState(() => _hfToken = token);
+    }
+  }
+
+  Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kHfTokenKey, token);
   }
 
   @override
@@ -69,9 +93,11 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
 
   // ── Download ───────────────────────────────────────────────────────────────
 
-  Future<void> _startDownload(ModelInfo model) async {
+  Future<void> _startDownload(ModelInfo model, {String? hfToken}) async {
+    // Use the explicitly supplied token first, then fall back to the saved one.
+    final tokenToUse = hfToken ?? _hfToken;
     try {
-      await ApiService.instance.startDownload(model.id);
+      await ApiService.instance.startDownload(model.id, hfToken: tokenToUse);
     } on ApiException catch (e) {
       if (mounted) _showSnack('Download failed: ${e.message}');
       return;
@@ -128,19 +154,59 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
     _progressSub?.cancel();
     _progressSub = null;
 
-    if (progress.status == 'complete') {
-      _fetchCatalog();
-      _showSnack('Download complete');
-    } else if (progress.status == 'error') {
-      _showSnack('Download error: ${progress.error ?? 'Unknown'}');
-    } else if (progress.status == 'cancelled') {
-      _showSnack('Download cancelled');
-    }
+    // Capture the downloading ID before clearing state — needed for the
+    // license dialog to know which model to retry.
+    final failedModelId = _downloadingId;
 
     setState(() {
       _downloadingId = null;
       _downloadProgress = null;
     });
+
+    if (progress.status == 'complete') {
+      _fetchCatalog();
+      _showSnack('Download complete');
+    } else if (progress.status == 'error') {
+      final err = progress.error ?? 'Unknown error';
+      if (err.startsWith('license_required') && failedModelId != null) {
+        // The server got a 401/403 from HuggingFace — the user needs to accept
+        // the licence and supply an HF token.
+        final model =
+            _models.where((m) => m.id == failedModelId).firstOrNull;
+        if (model != null) {
+          _showLicenseDialog(model);
+        } else {
+          _showSnack('Licence required — could not find model to retry.');
+        }
+      } else {
+        _showSnack('Download error: $err');
+      }
+    } else if (progress.status == 'cancelled') {
+      _showSnack('Download cancelled');
+    }
+  }
+
+  /// Shows the licence-acceptance dialog, waits for a token, persists it, and
+  /// retries the download.
+  Future<void> _showLicenseDialog(ModelInfo model) async {
+    if (!mounted) return;
+    final token = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _LicenseRequiredDialog(
+        model: model,
+        savedToken: _hfToken,
+      ),
+    );
+    if (token == null || token.isEmpty || !mounted) return;
+
+    // Persist the token so future downloads don't need it entered again.
+    await _saveToken(token);
+    if (!mounted) return;
+    setState(() => _hfToken = token);
+
+    // Retry with the new token.
+    await _startDownload(model, hfToken: token);
   }
 
   Future<void> _cancelDownload() async {
@@ -591,6 +657,171 @@ class _ErrorState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Licence-required dialog ───────────────────────────────────────────────────
+
+/// Shown when the HuggingFace download returns 401/403.
+///
+/// Guides the user through:
+///   1. Opening the HF model page to accept the licence.
+///   2. Generating a HuggingFace access token.
+///   3. Pasting the token here and tapping Retry.
+///
+/// Returns the token string, or null if the user cancels.
+class _LicenseRequiredDialog extends StatefulWidget {
+  const _LicenseRequiredDialog({
+    required this.model,
+    this.savedToken,
+  });
+
+  final ModelInfo model;
+
+  /// Pre-fills the token field if a token was previously saved.
+  final String? savedToken;
+
+  @override
+  State<_LicenseRequiredDialog> createState() => _LicenseRequiredDialogState();
+}
+
+class _LicenseRequiredDialogState extends State<_LicenseRequiredDialog> {
+  late final TextEditingController _tokenController;
+  bool _tokenVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tokenController = TextEditingController(text: widget.savedToken);
+  }
+
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openLicensePage() async {
+    final url = widget.model.licenseUrl;
+    if (url == null) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Licence Acceptance Required'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${widget.model.name} is hosted on HuggingFace with a '
+              'one-time licence acceptance requirement.\n\n'
+              'Follow these steps:',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            const _Step(
+              number: '1',
+              text: 'Tap "Open Model Page" and sign in to HuggingFace.',
+            ),
+            const _Step(
+              number: '2',
+              text:
+                  'Click "Agree and access repository" to accept the licence.',
+            ),
+            const _Step(
+              number: '3',
+              text:
+                  'Go to huggingface.co/settings/tokens, create a token '
+                  '(Read access), and copy it.',
+            ),
+            const _Step(number: '4', text: 'Paste the token below and tap Retry.'),
+            if (widget.model.licenseUrl != null) ...[
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: _openLicensePage,
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: const Text('Open Model Page'),
+              ),
+            ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: _tokenController,
+              decoration: InputDecoration(
+                labelText: 'HuggingFace Access Token',
+                hintText: 'hf_…',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _tokenVisible ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  tooltip: _tokenVisible ? 'Hide token' : 'Show token',
+                  onPressed: () =>
+                      setState(() => _tokenVisible = !_tokenVisible),
+                ),
+              ),
+              obscureText: !_tokenVisible,
+              autocorrect: false,
+              enableSuggestions: false,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final token = _tokenController.text.trim();
+            if (token.isEmpty) return;
+            Navigator.pop(context, token);
+          },
+          child: const Text('Retry'),
+        ),
+      ],
+    );
+  }
+}
+
+/// A single numbered step row used inside [_LicenseRequiredDialog].
+class _Step extends StatelessWidget {
+  const _Step({required this.number, required this.text});
+
+  final String number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$number.',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(text, style: theme.textTheme.bodyMedium),
+          ),
+        ],
       ),
     );
   }

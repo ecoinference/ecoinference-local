@@ -25,6 +25,8 @@ data class CatalogResponse(val models: List<ModelInfo>)
 @Serializable
 data class DownloadRequest(
     @SerialName("model_id") val modelId: String,
+    /** Optional HF token — only needed if the model page returns 401. */
+    @SerialName("hf_token") val hfToken: String? = null,
 )
 
 @Serializable
