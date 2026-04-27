@@ -28,19 +28,25 @@ class ApiService {
 
   static ApiService? _instance;
 
-  /// The configured singleton. Throws if [configure] has not been called.
+  /// The configured singleton. Throws a [StateError] if [configure] has not
+  /// been called. Works correctly in both debug and release builds.
   static ApiService get instance {
-    assert(_instance != null,
-        'Call ApiService.configure(config) before accessing instance.');
+    if (_instance == null) {
+      throw StateError(
+        'ApiService is not configured. '
+        'Call ApiService.configure(config) before accessing instance.',
+      );
+    }
     return _instance!;
   }
 
   /// True after [configure] has been called at least once.
   static bool get isConfigured => _instance != null;
 
-  /// (Re-)configures the singleton. Safe to call multiple times — replaces
-  /// the previous instance. Call this whenever the server address changes.
+  /// (Re-)configures the singleton. Safe to call multiple times — closes the
+  /// previous Dio connection pool before replacing the instance.
   static void configure(ServerConfig config) {
+    _instance?._dio.close(force: false); // drain in-flight requests gracefully
     _instance = ApiService._internal(config);
   }
 
@@ -109,7 +115,13 @@ class ApiService {
     try {
       response = await _dio.get<ResponseBody>(
         '/v1/models/download/progress',
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          // Disable receive timeout for SSE: a large model (4 GB+) can take
+          // 30+ minutes to download. The base 3-min timeout would cut the
+          // stream long before the download finishes.
+          receiveTimeout: Duration.zero,
+        ),
       );
     } on DioException catch (e) {
       throw ApiException(_msg(e));

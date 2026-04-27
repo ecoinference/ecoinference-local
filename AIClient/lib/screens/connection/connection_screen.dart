@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/server_config.dart';
@@ -60,7 +60,15 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Could not start server: $e');
+      if (mounted) {
+        // android_intent_plus throws ActivityNotFoundException when the
+        // AIServerAndroid package is not installed on this device.
+        final msg = e.toString().contains('ActivityNotFoundException') ||
+                e.toString().contains('No Activity found')
+            ? 'AIServerAndroid is not installed on this device.'
+            : 'Could not start AIServer. Is AIServerAndroid installed?';
+        setState(() => _error = msg);
+      }
     } finally {
       if (mounted) setState(() => _launching = false);
     }
@@ -167,7 +175,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
               const SizedBox(height: 40),
 
               // ── Start Server button (Android only) ─────────────────────────
-              if (Platform.isAndroid) ...[
+              if ((!kIsWeb && defaultTargetPlatform == TargetPlatform.android)) ...[
                 Text(
                   'Server',
                   style: theme.textTheme.titleMedium
@@ -290,7 +298,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      Platform.isAndroid
+                      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
                           ? '1. Tap "Start AIServer" above.\n'
                               '2. Tap Connect → choose and download a model.\n'
                               '3. Load the model and start chatting.'

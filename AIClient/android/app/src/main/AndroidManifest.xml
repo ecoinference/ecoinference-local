@@ -44,5 +44,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!--
+            Android 11+ (API 30) package-visibility: without this declaration
+            android_intent_plus cannot see or start AIServerAndroid and
+            intent.launch() silently fails.
+        -->
+        <package android:name="com.gemma4.aiserver"/>
     </queries>
 </manifest>

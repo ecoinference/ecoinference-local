@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/download_progress.dart';
 import '../../models/model_info.dart';
 import '../../services/api_service.dart';
@@ -9,8 +10,8 @@ import '../../services/api_service.dart';
 /// unload, and delete models.
 ///
 /// Call with `await Navigator.push(...)` from ChatScreen or ConnectionScreen.
-/// Returns the loaded model ID (String) when the user confirms a model is
-/// ready, or null if they navigate back without loading one.
+/// Returns the loaded model ID (String) when the user loads a model,
+/// or null if they navigate back without loading one.
 class ModelCatalogScreen extends StatefulWidget {
   const ModelCatalogScreen({super.key});
 
@@ -38,13 +39,17 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   /// Model ID currently being loaded into the inference engine, or null.
   String? _loadingId;
 
-  // ── HF token (optional) ───────────────────────────────────────────────────
+  // ── HF token ───────────────────────────────────────────────────────────────
 
+  /// Persisted across screen re-entries via SharedPreferences.
   String? _hfToken;
+
+  static const _kHfTokenKey = 'hf_token';
 
   @override
   void initState() {
     super.initState();
+    _loadHfToken();
     _fetchCatalog();
   }
 
@@ -54,7 +59,26 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
     super.dispose();
   }
 
-  // ── Data ───────────────────────────────────────────────────────────────────
+  // ── Persistence ────────────────────────────────────────────────────────────
+
+  Future<void> _loadHfToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_kHfTokenKey);
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() => _hfToken = saved);
+    }
+  }
+
+  Future<void> _saveHfToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (token.isEmpty) {
+      await prefs.remove(_kHfTokenKey);
+    } else {
+      await prefs.setString(_kHfTokenKey, token);
+    }
+  }
+
+  // ── Catalog ────────────────────────────────────────────────────────────────
 
   Future<void> _fetchCatalog() async {
     setState(() {
@@ -74,11 +98,12 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   // ── Download ───────────────────────────────────────────────────────────────
 
   Future<void> _startDownload(ModelInfo model) async {
-    // If no token stored yet, prompt first.
+    // Prompt for an HF token the first time; reuse stored value on retries.
     if (_hfToken == null || _hfToken!.isEmpty) {
       final token = await _promptHfToken();
-      if (token == null) return;
-      _hfToken = token;
+      if (token == null) return; // user cancelled
+      setState(() => _hfToken = token.isEmpty ? null : token);
+      await _saveHfToken(token);
     }
 
     try {
@@ -88,6 +113,7 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       _downloadingId = model.id;
       _downloadProgress = null;
@@ -113,15 +139,33 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
               _downloadProgress = null;
             });
           },
+          // FIX: handle stream closing without a terminal event (network
+          // drop, server restart) — clear downloading state so the UI
+          // doesn't stay stuck.
+          onDone: () {
+            if (!mounted) return;
+            if (_downloadingId != null) {
+              setState(() {
+                _downloadingId = null;
+                _downloadProgress = null;
+              });
+              _fetchCatalog();
+            }
+          },
+          cancelOnError: true,
         );
   }
 
   void _onDownloadTerminal(DownloadProgress progress) {
+    // Guard against use-after-dispose: callbacks can fire just after dispose
+    // cancels the subscription due to microtask scheduling.
+    if (!mounted) return;
+
     _progressSub?.cancel();
     _progressSub = null;
 
     if (progress.status == 'complete') {
-      _fetchCatalog(); // refresh downloaded state
+      _fetchCatalog();
       _showSnack('Download complete');
     } else if (progress.status == 'error') {
       _showSnack('Download error: ${progress.error ?? 'Unknown'}');
@@ -139,9 +183,9 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
     try {
       await ApiService.instance.cancelDownload();
     } on ApiException catch (e) {
-      _showSnack('Cancel failed: ${e.message}');
+      if (mounted) _showSnack('Cancel failed: ${e.message}');
     }
-    // Terminal event from the SSE stream will clean up state.
+    // Terminal event from the SSE stream will clean up _downloadingId state.
   }
 
   // ── Load / Unload ──────────────────────────────────────────────────────────
@@ -151,7 +195,6 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
     try {
       await ApiService.instance.loadModel(model.id);
       if (!mounted) return;
-      // Refresh catalog so loaded badge updates, then pop with the model id.
       await _fetchCatalog();
       if (!mounted) return;
       Navigator.of(context).pop(model.id);
@@ -165,9 +208,10 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
   Future<void> _unloadModel(ModelInfo model) async {
     try {
       await ApiService.instance.unloadModel();
+      if (!mounted) return; // FIX: guard before async _fetchCatalog
       await _fetchCatalog();
     } on ApiException catch (e) {
-      _showSnack('Unload failed: ${e.message}');
+      if (mounted) _showSnack('Unload failed: ${e.message}');
     }
   }
 
@@ -194,10 +238,11 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       await ApiService.instance.deleteModel(model.id);
+      if (!mounted) return;
       await _fetchCatalog();
     } on ApiException catch (e) {
       if (mounted) _showSnack('Delete failed: ${e.message}');
@@ -206,48 +251,19 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
 
   // ── HF token dialog ────────────────────────────────────────────────────────
 
-  Future<String?> _promptHfToken() async {
-    final ctrl = TextEditingController();
+  /// Shows the HF token dialog. The [TextEditingController] is created and
+  /// disposed inside a [StatefulBuilder] so it has a proper lifecycle.
+  Future<String?> _promptHfToken() {
     return showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Hugging Face Token'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Gemma 4 models require a Hugging Face token with model access. '
-              'Leave blank to attempt an unauthenticated download.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: ctrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'hf_...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
+      builder: (_) => _HfTokenDialog(initialToken: _hfToken ?? ''),
     );
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _showSnack(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
@@ -290,6 +306,8 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
               ? _downloadProgress
               : null,
           isLoadingModel: _models[i].id == _loadingId,
+          // Disable all destructive actions while any download is active.
+          actionsEnabled: _downloadingId == null && _loadingId == null,
           onDownload: () => _startDownload(_models[i]),
           onCancelDownload: _cancelDownload,
           onLoad: () => _loadModel(_models[i]),
@@ -297,6 +315,68 @@ class _ModelCatalogScreenState extends State<ModelCatalogScreen> {
           onDelete: () => _deleteModel(_models[i]),
         ),
       ),
+    );
+  }
+}
+
+// ── HF token dialog (own StatefulWidget so controller is properly disposed) ────
+
+class _HfTokenDialog extends StatefulWidget {
+  const _HfTokenDialog({required this.initialToken});
+  final String initialToken;
+
+  @override
+  State<_HfTokenDialog> createState() => _HfTokenDialogState();
+}
+
+class _HfTokenDialogState extends State<_HfTokenDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialToken);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose(); // FIX: controller always disposed with the widget
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Hugging Face Token'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Gemma 4 models require a Hugging Face token with model access. '
+            'Leave blank to attempt an unauthenticated download.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ctrl,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'hf_...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _ctrl.text.trim()),
+          child: const Text('Continue'),
+        ),
+      ],
     );
   }
 }
@@ -309,6 +389,7 @@ class _ModelCard extends StatelessWidget {
     required this.isDownloading,
     required this.downloadProgress,
     required this.isLoadingModel,
+    required this.actionsEnabled,
     required this.onDownload,
     required this.onCancelDownload,
     required this.onLoad,
@@ -320,6 +401,7 @@ class _ModelCard extends StatelessWidget {
   final bool isDownloading;
   final DownloadProgress? downloadProgress;
   final bool isLoadingModel;
+  final bool actionsEnabled;
   final VoidCallback onDownload;
   final VoidCallback onCancelDownload;
   final VoidCallback onLoad;
@@ -337,7 +419,7 @@ class _ModelCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header row ───────────────────────────────────────────────────
+            // ── Header row ────────────────────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -357,7 +439,7 @@ class _ModelCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
 
-            // ── Status chips ─────────────────────────────────────────────────
+            // ── Status chips ──────────────────────────────────────────────────
             Wrap(
               spacing: 6,
               children: [
@@ -395,6 +477,7 @@ class _ModelCard extends StatelessWidget {
               model: model,
               isDownloading: isDownloading,
               isLoadingModel: isLoadingModel,
+              actionsEnabled: actionsEnabled,
               onDownload: onDownload,
               onCancelDownload: onCancelDownload,
               onLoad: onLoad,
@@ -420,6 +503,8 @@ class _DownloadProgressBar extends StatelessWidget {
     final theme = Theme.of(context);
     final pct = progress?.percent ?? 0;
     final isIndeterminate = pct == 0;
+    final received = progress?.bytesReceived ?? 0;
+    final total = progress?.totalBytes ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,8 +516,7 @@ class _DownloadProgressBar extends StatelessWidget {
         Text(
           isIndeterminate
               ? 'Starting…'
-              : '$pct% — ${_mb(progress?.bytesReceived ?? 0)} / '
-                  '${_mb(progress?.totalBytes ?? 0)} MB',
+              : '$pct% — ${_formatBytes(received)} / ${_formatBytes(total)}',
           style: theme.textTheme.labelSmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -440,7 +524,14 @@ class _DownloadProgressBar extends StatelessWidget {
     );
   }
 
-  String _mb(int bytes) => (bytes / 1024 / 1024).toStringAsFixed(0);
+  /// FIX: shows GB for large models instead of a 4-digit MB number.
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 MB';
+    final gb = bytes / 1024 / 1024 / 1024;
+    if (gb >= 1.0) return '${gb.toStringAsFixed(1)} GB';
+    final mb = bytes / 1024 / 1024;
+    return '${mb.toStringAsFixed(0)} MB';
+  }
 }
 
 // ── Action row ────────────────────────────────────────────────────────────────
@@ -450,6 +541,7 @@ class _ActionRow extends StatelessWidget {
     required this.model,
     required this.isDownloading,
     required this.isLoadingModel,
+    required this.actionsEnabled,
     required this.onDownload,
     required this.onCancelDownload,
     required this.onLoad,
@@ -460,6 +552,11 @@ class _ActionRow extends StatelessWidget {
   final ModelInfo model;
   final bool isDownloading;
   final bool isLoadingModel;
+
+  /// When false (another model is loading/downloading), buttons are disabled
+  /// to prevent concurrent operations.
+  final bool actionsEnabled;
+
   final VoidCallback onDownload;
   final VoidCallback onCancelDownload;
   final VoidCallback onLoad;
@@ -496,34 +593,40 @@ class _ActionRow extends StatelessWidget {
       children: [
         if (!model.downloaded)
           FilledButton.icon(
-            onPressed: onDownload,
+            // Disable if another operation is in progress.
+            onPressed: actionsEnabled ? onDownload : null,
             icon: const Icon(Icons.download_outlined, size: 18),
             label: const Text('Download'),
           ),
         if (model.downloaded && !model.loaded)
           FilledButton.icon(
-            onPressed: onLoad,
+            onPressed: actionsEnabled ? onLoad : null,
             icon: const Icon(Icons.play_arrow_rounded, size: 18),
             label: const Text('Load'),
           ),
         if (model.loaded)
           OutlinedButton.icon(
-            onPressed: onUnload,
+            onPressed: actionsEnabled ? onUnload : null,
             icon: const Icon(Icons.stop_circle_outlined, size: 18),
             label: const Text('Unload'),
           ),
         if (model.downloaded)
           OutlinedButton.icon(
-            onPressed: onDelete,
+            onPressed: actionsEnabled ? onDelete : null,
             icon: Icon(
               Icons.delete_outline,
               size: 18,
-              color: Theme.of(context).colorScheme.error,
+              color: actionsEnabled
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.outline,
             ),
             label: Text(
               'Delete',
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.error),
+                color: actionsEnabled
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.outline,
+              ),
             ),
           ),
       ],
@@ -531,7 +634,7 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
-// ── Reusable chip ──────────────────────────────────────────────────────────────
+// ── Reusable chip ─────────────────────────────────────────────────────────────
 
 class _Chip extends StatelessWidget {
   const _Chip({
@@ -563,7 +666,7 @@ class _Chip extends StatelessWidget {
   }
 }
 
-// ── Error state ────────────────────────────────────────────────────────────────
+// ── Error state ───────────────────────────────────────────────────────────────
 
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});
@@ -583,10 +686,12 @@ class _ErrorState extends StatelessWidget {
             Icon(Icons.cloud_off_outlined,
                 size: 64, color: theme.colorScheme.outlineVariant),
             const SizedBox(height: 16),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onRetry,

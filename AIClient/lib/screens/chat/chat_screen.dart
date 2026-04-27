@@ -27,6 +27,11 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _loading = false;
   String? _systemPrompt;
 
+  /// Tracks the model ID that is currently active in ApiService.instance.
+  /// Starts from widget.config.modelId but may be updated when the user
+  /// swaps models from the catalog screen — widget.config is immutable.
+  late String _currentModelId;
+
   /// Accumulates tokens while a streaming response is in flight.
   /// Null when no stream is active; empty string before the first token arrives.
   String? _streamingContent;
@@ -43,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _currentModelId = widget.config.modelId;
     _loadSystemPrompt();
     _loadMessages();
   }
@@ -73,7 +79,12 @@ class _ChatScreenState extends State<ChatScreen> {
       final messages = list
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
           .toList();
-      setState(() => _messages.addAll(messages));
+      // FIX: clear before adding to prevent duplicates on hot reload /
+      // widget rebuild (initState can be called more than once).
+      setState(() {
+        _messages.clear();
+        _messages.addAll(messages);
+      });
       _scrollToBottom();
     } catch (_) {
       // Corrupted data — start fresh (existing key will be overwritten on next
@@ -206,49 +217,37 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Opens the model catalog. If the user loads a different model, updates
-  /// the config so subsequent messages use the new model ID.
+  /// [_currentModelId] and re-configures the singleton for subsequent messages.
   Future<void> _openModelCatalog() async {
     final newModelId = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const ModelCatalogScreen()),
     );
     if (!mounted) return;
-    if (newModelId != null && newModelId != widget.config.modelId) {
-      // Re-configure the singleton with the updated model ID.
+    // FIX: compare against _currentModelId (not widget.config.modelId which
+    // is the original immutable value from construction time and becomes stale
+    // after the first model swap).
+    if (newModelId != null && newModelId != _currentModelId) {
+      setState(() => _currentModelId = newModelId);
       ApiService.configure(widget.config.copyWith(modelId: newModelId));
     }
   }
 
-  void _showSystemPromptDialog() {
-    final ctrl = TextEditingController(text: _systemPrompt ?? '');
-    showDialog(
+  Future<void> _showSystemPromptDialog() async {
+    // FIX: use a dedicated StatefulWidget so TextEditingController is
+    // properly disposed when the dialog closes.
+    final result = await showDialog<String?>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('System Prompt'),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            hintText: 'Optional instruction for the model…',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final value =
-                  ctrl.text.trim().isEmpty ? null : ctrl.text.trim();
-              setState(() => _systemPrompt = value);
-              _saveSystemPrompt(value);
-              Navigator.pop(context);
-            },
-            child: const Text('Set'),
-          ),
-        ],
-      ),
+      builder: (_) => _SystemPromptDialog(initialValue: _systemPrompt ?? ''),
     );
+    if (!mounted) return;
+    // result == null  → user cancelled (no change)
+    // result == ''    → user cleared the prompt
+    // result == '...' → user set a new prompt
+    if (result != null) {
+      final value = result.isEmpty ? null : result;
+      setState(() => _systemPrompt = value);
+      _saveSystemPrompt(value);
+    }
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
@@ -476,6 +475,64 @@ class _ContextWindowDivider extends StatelessWidget {
           const Expanded(child: Divider()),
         ],
       ),
+    );
+  }
+}
+
+// ── System prompt dialog ──────────────────────────────────────────────────────
+
+/// Dedicated StatefulWidget so [TextEditingController] is always disposed
+/// when the dialog is dismissed — avoids the leak from inline creation.
+///
+/// Returns:
+/// - `null`  if the user cancelled (no change should be applied)
+/// - `''`    if the user cleared the prompt
+/// - `'...'` if the user entered text
+class _SystemPromptDialog extends StatefulWidget {
+  const _SystemPromptDialog({required this.initialValue});
+  final String initialValue;
+
+  @override
+  State<_SystemPromptDialog> createState() => _SystemPromptDialogState();
+}
+
+class _SystemPromptDialogState extends State<_SystemPromptDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('System Prompt'),
+      content: TextField(
+        controller: _ctrl,
+        maxLines: 5,
+        decoration: const InputDecoration(
+          hintText: 'Optional instruction for the model…',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context), // null → no change
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _ctrl.text.trim()),
+          child: const Text('Set'),
+        ),
+      ],
     );
   }
 }
