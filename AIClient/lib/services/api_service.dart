@@ -2,26 +2,56 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import '../models/chat_message.dart';
+import '../models/download_progress.dart';
+import '../models/model_info.dart';
 import '../models/server_config.dart';
 
 /// REST client for the AIServer inference server.
+///
+/// Usage pattern (FlutterFlow-friendly singleton):
+/// ```dart
+/// ApiService.configure(config);          // once at connect time
+/// final models = await ApiService.instance.getCatalog();
+/// ```
+///
 /// All methods throw [ApiException] on failure.
 class ApiService {
-  ApiService(this.config)
+  ApiService._internal(this.config)
       : _dio = Dio(BaseOptions(
           baseUrl: config.baseUrl,
           connectTimeout: const Duration(seconds: 5),
-          // Long receive timeout for inference (up to 3 min for large models).
           receiveTimeout: const Duration(minutes: 3),
           headers: {'Content-Type': 'application/json'},
         ));
+
+  // ── Singleton ───────────────────────────────────────────────────────────────
+
+  static ApiService? _instance;
+
+  /// The configured singleton. Throws if [configure] has not been called.
+  static ApiService get instance {
+    assert(_instance != null,
+        'Call ApiService.configure(config) before accessing instance.');
+    return _instance!;
+  }
+
+  /// True after [configure] has been called at least once.
+  static bool get isConfigured => _instance != null;
+
+  /// (Re-)configures the singleton. Safe to call multiple times — replaces
+  /// the previous instance. Call this whenever the server address changes.
+  static void configure(ServerConfig config) {
+    _instance = ApiService._internal(config);
+  }
+
+  // ── Fields ──────────────────────────────────────────────────────────────────
 
   final ServerConfig config;
   final Dio _dio;
 
   // ── Health ──────────────────────────────────────────────────────────────────
 
-  /// Returns true if AIServer is reachable and a model is loaded.
+  /// Returns the current server health snapshot.
   Future<HealthStatus> checkHealth() async {
     try {
       final res = await _dio.get('/health');
@@ -30,9 +60,137 @@ class ApiService {
         modelLoaded: res.data['model_loaded'] as bool? ?? false,
         modelId: res.data['model_id'] as String?,
         port: res.data['port'] as int? ?? config.port,
+        downloadActive: res.data['download_active'] as bool? ?? false,
       );
     } on DioException catch (e) {
       return HealthStatus(ok: false, modelLoaded: false, error: _msg(e));
+    }
+  }
+
+  // ── Catalog ─────────────────────────────────────────────────────────────────
+
+  /// Returns the full model catalog with live downloaded / loaded state.
+  Future<List<ModelInfo>> getCatalog() async {
+    try {
+      final res = await _dio.get('/v1/catalog');
+      final models = res.data['models'] as List? ?? [];
+      return models
+          .map((e) => ModelInfo.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+  }
+
+  // ── Download ─────────────────────────────────────────────────────────────────
+
+  /// Triggers a download for [modelId]. Returns immediately (202 Accepted).
+  /// Monitor progress with [watchDownloadProgress].
+  Future<void> startDownload(String modelId, {String? hfToken}) async {
+    try {
+      await _dio.post(
+        '/v1/models/download',
+        data: {
+          'model_id': modelId,
+          if (hfToken != null && hfToken.isNotEmpty) 'hf_token': hfToken,
+        },
+      );
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+  }
+
+  /// Streams [DownloadProgress] events via SSE until a terminal status arrives.
+  ///
+  /// Yields the current snapshot immediately, then streams updates. The stream
+  /// closes after status becomes `complete`, `error`, or `cancelled`.
+  Stream<DownloadProgress> watchDownloadProgress() async* {
+    final Response<ResponseBody> response;
+    try {
+      response = await _dio.get<ResponseBody>(
+        '/v1/models/download/progress',
+        options: Options(responseType: ResponseType.stream),
+      );
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+
+    var buffer = '';
+    await for (final chunk in response.data!.stream) {
+      buffer += utf8.decode(chunk);
+      final lines = buffer.split('\n');
+      buffer = lines.removeLast();
+
+      for (final line in lines) {
+        if (!line.startsWith('data: ')) continue;
+        final payload = line.substring(6).trim();
+        if (payload == '[DONE]') return;
+        try {
+          final json = jsonDecode(payload) as Map<String, dynamic>;
+          final progress = DownloadProgress.fromJson(json);
+          yield progress;
+          if (progress.isTerminal) return;
+        } catch (_) {
+          // Skip malformed / partial JSON chunks.
+        }
+      }
+    }
+  }
+
+  /// Cancels the active download. Throws [ApiException] if none is in progress.
+  Future<void> cancelDownload() async {
+    try {
+      await _dio.delete('/v1/models/download');
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+  }
+
+  /// Deletes the downloaded model file for [modelId] from the server device.
+  Future<void> deleteModel(String modelId) async {
+    try {
+      await _dio.delete('/v1/models/$modelId');
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+  }
+
+  // ── Load / unload ────────────────────────────────────────────────────────────
+
+  /// Loads [modelId] into the inference engine. This call blocks until the
+  /// model is fully loaded and ready (synchronous on the server side).
+  Future<void> loadModel(
+    String modelId, {
+    bool useGpu = false,
+    int maxTokens = 1024,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/v1/models/load',
+        data: {
+          'model_id': modelId,
+          'use_gpu': useGpu,
+          'max_tokens': maxTokens,
+        },
+        // Loading a large model can take 20–60 s — override default timeout.
+        options: Options(receiveTimeout: const Duration(minutes: 2)),
+      );
+      final status = res.data['status'] as String?;
+      if (status == 'error') {
+        final err = res.data['error'] as String? ?? 'Unknown load error';
+        throw ApiException('Load failed: $err');
+      }
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
+    }
+  }
+
+  /// Unloads the currently loaded model and frees inference resources.
+  Future<void> unloadModel() async {
+    try {
+      await _dio.post('/v1/models/unload');
+    } on DioException catch (e) {
+      throw ApiException(_msg(e));
     }
   }
 
@@ -55,9 +213,14 @@ class ApiService {
         },
       );
       final choices = res.data['choices'] as List?;
-      if (choices == null || choices.isEmpty) throw const ApiException('Empty choices in response');
-      final content = (choices.first as Map?)?['message']?['content'] as String?;
-      if (content == null) throw const ApiException('Missing content in response');
+      if (choices == null || choices.isEmpty) {
+        throw const ApiException('Empty choices in response');
+      }
+      final content =
+          (choices.first as Map?)?['message']?['content'] as String?;
+      if (content == null) {
+        throw const ApiException('Missing content in response');
+      }
       return content;
     } on DioException catch (e) {
       throw ApiException(_msg(e));
@@ -65,9 +228,6 @@ class ApiService {
   }
 
   /// Streams the assistant reply token-by-token via SSE (`stream: true`).
-  ///
-  /// Yields each non-empty content token as it arrives. Throws [ApiException]
-  /// if the connection fails before the stream starts.
   Stream<String> chatCompletionStream({
     required List<ChatMessage> messages,
     int maxTokens = 512,
@@ -93,7 +253,6 @@ class ApiService {
     var buffer = '';
     await for (final chunk in response.data!.stream) {
       buffer += utf8.decode(chunk);
-      // Split on newlines; keep any trailing incomplete line in the buffer.
       final lines = buffer.split('\n');
       buffer = lines.removeLast();
 
@@ -105,40 +264,14 @@ class ApiService {
           final json = jsonDecode(payload) as Map<String, dynamic>;
           final choices = json['choices'] as List?;
           if (choices == null || choices.isEmpty) continue;
-          final delta = choices.first['delta'] as Map<String, dynamic>?;
+          final delta =
+              choices.first['delta'] as Map<String, dynamic>?;
           final content = delta?['content'] as String?;
           if (content != null && content.isNotEmpty) yield content;
         } catch (_) {
           // Skip malformed / partial JSON chunks.
         }
       }
-    }
-  }
-
-  // ── Text completions ────────────────────────────────────────────────────────
-
-  Future<String> completion({
-    required String prompt,
-    int maxTokens = 512,
-    double temperature = 0.8,
-  }) async {
-    try {
-      final res = await _dio.post(
-        '/v1/completions',
-        data: {
-          'model': config.modelId,
-          'prompt': prompt,
-          'max_tokens': maxTokens,
-          'temperature': temperature,
-        },
-      );
-      final choices = res.data['choices'] as List?;
-      if (choices == null || choices.isEmpty) throw const ApiException('Empty choices in response');
-      final text = (choices.first as Map?)?['text'] as String?;
-      if (text == null) throw const ApiException('Missing text in response');
-      return text;
-    } on DioException catch (e) {
-      throw ApiException(_msg(e));
     }
   }
 
@@ -155,7 +288,8 @@ class ApiService {
     final status = e.response?.statusCode;
     final body = e.response?.data;
     if (status != null) {
-      final errMsg = body is Map ? body['error'] ?? body.toString() : body;
+      final errMsg =
+          body is Map ? body['error'] ?? body.toString() : body;
       return 'Server error $status: $errMsg';
     }
     return e.message ?? 'Unknown error';
@@ -170,6 +304,7 @@ class HealthStatus {
     required this.modelLoaded,
     this.modelId,
     this.port,
+    this.downloadActive = false,
     this.error,
   });
 
@@ -177,6 +312,7 @@ class HealthStatus {
   final bool modelLoaded;
   final String? modelId;
   final int? port;
+  final bool downloadActive;
   final String? error;
 }
 

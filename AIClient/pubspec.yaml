@@ -14,6 +14,8 @@ dependencies:
   dio: '>=5.4.3 <6.0.0'
   # Persist server config and chat history
   shared_preferences: ^2.2.3
+  # Start/stop AIServerAndroid via explicit Intent (Android only — no-op on iOS)
+  android_intent_plus: '>=4.0.0 <5.0.0'
 
 dev_dependencies:
   flutter_test:

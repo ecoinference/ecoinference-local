@@ -8,6 +8,7 @@ import '../../models/server_config.dart';
 import '../../services/api_service.dart';
 import '../../widgets/message_bubble.dart';
 import '../connection/connection_screen.dart';
+import '../models/model_catalog_screen.dart';
 
 /// Main chat interface. Streams tokens from the server as they arrive.
 class ChatScreen extends StatefulWidget {
@@ -24,7 +25,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _loading = false;
-  late ApiService _api;
   String? _systemPrompt;
 
   /// Accumulates tokens while a streaming response is in flight.
@@ -43,7 +43,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _api = ApiService(widget.config);
     _loadSystemPrompt();
     _loadMessages();
   }
@@ -125,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
         : _messages;
     history.addAll(window);
 
-    _streamSub = _api
+    _streamSub = ApiService.instance
         .chatCompletionStream(messages: history)
         .listen(
           (token) {
@@ -206,6 +205,19 @@ class _ChatScreenState extends State<ChatScreen> {
     _saveMessages(); // overwrites with empty list
   }
 
+  /// Opens the model catalog. If the user loads a different model, updates
+  /// the config so subsequent messages use the new model ID.
+  Future<void> _openModelCatalog() async {
+    final newModelId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ModelCatalogScreen()),
+    );
+    if (!mounted) return;
+    if (newModelId != null && newModelId != widget.config.modelId) {
+      // Re-configure the singleton with the updated model ID.
+      ApiService.configure(widget.config.copyWith(modelId: newModelId));
+    }
+  }
+
   void _showSystemPromptDialog() {
     final ctrl = TextEditingController(text: _systemPrompt ?? '');
     showDialog(
@@ -277,6 +289,11 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.tune_outlined),
             tooltip: 'System prompt',
             onPressed: _showSystemPromptDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.model_training_outlined),
+            tooltip: 'Manage models',
+            onPressed: _openModelCatalog,
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
