@@ -16,37 +16,43 @@ class ServerLauncher {
   static const _actionStart = 'com.gemma4.aiserver.ACTION_START';
   static const _actionStop  = 'com.gemma4.aiserver.ACTION_STOP';
 
-  // Targets the BroadcastReceiver in AIServerAndroid.
-  // android_intent_plus only supports startActivity / sendBroadcast — it
-  // cannot call startForegroundService directly. The receiver bridges the gap.
-  static const _receiverComponent = 'com.gemma4.aiserver.ServerControlReceiver';
+  // Targets the transparent trampoline Activity in AIServerAndroid.
+  // On Android 12+ startForegroundService() is blocked from a cross-app
+  // BroadcastReceiver; an Activity being launched IS granted BFSL, so this
+  // is the only reliable cross-app trigger on modern Android.
+  static const _activityComponent = 'com.gemma4.aiserver.StartServerActivity';
 
-  /// Sends `ACTION_START` to AIServerAndroid via broadcast.
-  ///
-  /// ServerControlReceiver forwards it to AiServerService via
-  /// startForegroundService. The HTTP server is ready within ~1 second.
+  /// Launches the trampoline Activity in AIServerAndroid, which immediately
+  /// starts AiServerService and finishes. Transparent — user sees nothing.
   static Future<void> start() async {
     if (!_isAndroid) return;
     const intent = AndroidIntent(
       action: _actionStart,
       package: _package,
-      componentName: _receiverComponent,
-      // FLAG_INCLUDE_STOPPED_PACKAGES allows waking the app even if it has
-      // never been opened by the user.
-      flags: [Flag.FLAG_INCLUDE_STOPPED_PACKAGES],
+      componentName: _activityComponent,
+      // FLAG_INCLUDE_STOPPED_PACKAGES wakes the app even if it has never
+      // been opened. FLAG_ACTIVITY_NEW_TASK is required when starting an
+      // Activity from a non-Activity context.
+      flags: [
+        Flag.FLAG_ACTIVITY_NEW_TASK,
+        Flag.FLAG_INCLUDE_STOPPED_PACKAGES,
+      ],
     );
-    await intent.sendBroadcast();
+    await intent.launch();
   }
 
-  /// Sends `ACTION_STOP` to AIServerAndroid, shutting down the HTTP server.
+  /// Stops the AIServerAndroid foreground service.
   static Future<void> stop() async {
     if (!_isAndroid) return;
     const intent = AndroidIntent(
       action: _actionStop,
       package: _package,
-      componentName: _receiverComponent,
-      flags: [Flag.FLAG_INCLUDE_STOPPED_PACKAGES],
+      componentName: _activityComponent,
+      flags: [
+        Flag.FLAG_ACTIVITY_NEW_TASK,
+        Flag.FLAG_INCLUDE_STOPPED_PACKAGES,
+      ],
     );
-    await intent.sendBroadcast();
+    await intent.launch();
   }
 }

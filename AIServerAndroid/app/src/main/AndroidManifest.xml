@@ -26,9 +26,8 @@
         <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
 
         <!--
-            Headless foreground service — no Activity.
-            AIClient starts this service via ServerControlReceiver (below).
-            The service binds a loopback HTTP server and runs until stopped.
+            Headless foreground service.
+            Not exported — only started internally by StartServerActivity.
         -->
         <service
             android:name=".service.AiServerService"
@@ -37,24 +36,39 @@
         </service>
 
         <!--
-            BroadcastReceiver bridge for AIClient.
-            android_intent_plus only supports startActivity/sendBroadcast — it
-            cannot call startForegroundService directly. AIClient sends a
-            broadcast here; this receiver forwards it to AiServerService.
-            Must be exported so AIClient (different package) can target it.
+            Transparent trampoline Activity for AIClient.
+
+            On Android 12+ startForegroundService() from a cross-app
+            BroadcastReceiver is blocked (ForegroundServiceStartNotAllowed-
+            Exception). An Activity that is being launched IS granted the
+            foreground-service-launch allowance (BFSL) while it executes
+            onCreate(), so this is the only fully reliable cross-app
+            trigger on modern Android.
+
+            The Activity is transparent and calls finish() in onCreate
+            before a frame is drawn — the user sees nothing.
+
+            android:excludeFromRecents prevents it appearing in the task
+            switcher; android:noHistory prevents it being added to the
+            back stack.
         -->
-        <receiver
-            android:name=".ServerControlReceiver"
-            android:exported="true">
+        <activity
+            android:name=".StartServerActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="com.gemma4.aiserver.ACTION_START"/>
                 <action android:name="com.gemma4.aiserver.ACTION_STOP"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
-        </receiver>
+        </activity>
 
     </application>
 
-    <!-- AIClient needs this to discover AIServer by action -->
+    <!-- AIClient needs this to discover AIServer by package name -->
     <queries>
         <package android:name="com.gemma4.aiclient"/>
     </queries>
