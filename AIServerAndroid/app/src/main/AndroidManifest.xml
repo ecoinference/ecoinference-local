@@ -27,18 +27,30 @@
 
         <!--
             Headless foreground service — no Activity.
-            AIClient starts this service via explicit Intent.
+            AIClient starts this service via ServerControlReceiver (below).
             The service binds a loopback HTTP server and runs until stopped.
         -->
         <service
             android:name=".service.AiServerService"
             android:foregroundServiceType="dataSync"
+            android:exported="false">
+        </service>
+
+        <!--
+            BroadcastReceiver bridge for AIClient.
+            android_intent_plus only supports startActivity/sendBroadcast — it
+            cannot call startForegroundService directly. AIClient sends a
+            broadcast here; this receiver forwards it to AiServerService.
+            Must be exported so AIClient (different package) can target it.
+        -->
+        <receiver
+            android:name=".ServerControlReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.gemma4.aiserver.ACTION_START"/>
                 <action android:name="com.gemma4.aiserver.ACTION_STOP"/>
             </intent-filter>
-        </service>
+        </receiver>
 
     </application>
 

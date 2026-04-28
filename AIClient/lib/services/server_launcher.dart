@@ -14,22 +14,28 @@ class ServerLauncher {
 
   static const _package = 'com.gemma4.aiserver';
   static const _actionStart = 'com.gemma4.aiserver.ACTION_START';
-  static const _actionStop = 'com.gemma4.aiserver.ACTION_STOP';
+  static const _actionStop  = 'com.gemma4.aiserver.ACTION_STOP';
 
-  /// Sends `ACTION_START` to AIServerAndroid.
+  // Targets the BroadcastReceiver in AIServerAndroid.
+  // android_intent_plus only supports startActivity / sendBroadcast — it
+  // cannot call startForegroundService directly. The receiver bridges the gap.
+  static const _receiverComponent = 'com.gemma4.aiserver.ServerControlReceiver';
+
+  /// Sends `ACTION_START` to AIServerAndroid via broadcast.
   ///
-  /// The OS starts the service as a foreground service; the HTTP server will
-  /// be available within a second or two after this returns.
+  /// ServerControlReceiver forwards it to AiServerService via
+  /// startForegroundService. The HTTP server is ready within ~1 second.
   static Future<void> start() async {
     if (!_isAndroid) return;
     const intent = AndroidIntent(
       action: _actionStart,
       package: _package,
-      // FLAG_INCLUDE_STOPPED_PACKAGES allows starting even if the server app
-      // has never been opened by the user.
+      componentName: _receiverComponent,
+      // FLAG_INCLUDE_STOPPED_PACKAGES allows waking the app even if it has
+      // never been opened by the user.
       flags: [Flag.FLAG_INCLUDE_STOPPED_PACKAGES],
     );
-    await intent.launch();
+    await intent.sendBroadcast();
   }
 
   /// Sends `ACTION_STOP` to AIServerAndroid, shutting down the HTTP server.
@@ -38,8 +44,9 @@ class ServerLauncher {
     const intent = AndroidIntent(
       action: _actionStop,
       package: _package,
+      componentName: _receiverComponent,
       flags: [Flag.FLAG_INCLUDE_STOPPED_PACKAGES],
     );
-    await intent.launch();
+    await intent.sendBroadcast();
   }
 }
