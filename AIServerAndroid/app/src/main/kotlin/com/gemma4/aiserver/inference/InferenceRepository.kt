@@ -1,43 +1,40 @@
 package com.gemma4.aiserver.inference
 
 import android.content.Context
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
-import com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions
+import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.Engine
+import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Wraps the MediaPipe Tasks GenAI [LlmInference] API directly.
+ * Wraps the LiteRT-LM [Engine] API for on-device inference.
  *
- * No flutter_gemma intermediary — this gives immediate access to every
- * option in the native SDK and tracks Google's release cadence without
- * waiting for a wrapper library update.
+ * Uses [com.google.ai.edge.litertlm:litertlm-android] which natively supports
+ * the `.litertlm` LiteRT Language Model bundle format used by Gemma 4 and other
+ * models on the LiteRT Community HuggingFace organisation.
  *
- * Gemma chat prompt format (all Gemma instruction-tuned variants):
- *   <start_of_turn>user
- *   {optional system instruction}
+ * Conversation history is handled natively by [ConversationConfig.initialMessages]
+ * rather than by building a raw Gemma prompt string — no manual turn formatting.
  *
- *   {user message}<end_of_turn>
- *   <start_of_turn>model
- *   {assistant reply}<end_of_turn>
- *   <start_of_turn>user
- *   ...
- *   <start_of_turn>model
- *
- * The trailing "<start_of_turn>model\n" signals the model to generate.
+ * Thread safety: [load] and [unload] must be called from a single coroutine;
+ * [chat] / [chatStream] may be called concurrently (each creates its own
+ * short-lived [com.google.ai.edge.litertlm.Conversation] instance).
  */
 class InferenceRepository(private val context: Context) {
 
-    private var llmInference: LlmInference? = null
+    private var engine: Engine? = null
     private var _loadedModelId: String? = null
-    private var _modelPath: String? = null
 
-    val isLoaded: Boolean get() = llmInference != null
+    val isLoaded: Boolean get() = engine != null
     val loadedModelId: String? get() = _loadedModelId
 
     // ── Load / unload ─────────────────────────────────────────────────────────
@@ -45,15 +42,15 @@ class InferenceRepository(private val context: Context) {
     /**
      * Loads a model from [modelPath] on disk.
      *
-     * This is a blocking operation (MediaPipe maps the weight file into memory)
-     * and should be called from a non-UI coroutine. The previous model is
-     * unloaded automatically before loading the new one.
+     * Blocking — [Engine.initialize] maps the weight file into memory.
+     * Call from a non-UI coroutine. The previous model is unloaded first.
      *
      * @param modelId   Catalogue ID — stored for status reporting.
      * @param modelPath Absolute path to the .litertlm file.
-     * @param useGpu    When true, prefers the GPU backend (LiteRT accelerated).
-     *                  Falls back to CPU automatically if GPU is unavailable.
-     * @param maxTokens Maximum token budget for generation sessions.
+     * @param useGpu    When true, requests the GPU backend (OpenCL/VNDK).
+     *                  Falls back to CPU automatically when GPU is unavailable.
+     * @param maxTokens Unused (LiteRT-LM manages context length internally;
+     *                  kept for API compatibility with existing routes).
      */
     suspend fun load(
         modelId: String,
@@ -70,79 +67,81 @@ class InferenceRepository(private val context: Context) {
             "Model file too small (${file.length()} bytes) — partial download?"
         }
 
-        val options = LlmInferenceOptions.builder()
-            .setModelPath(modelPath)
-            .setMaxTokens(maxTokens)
-            .setPreferredBackend(
-                if (useGpu) LlmInference.Backend.GPU
-                else LlmInference.Backend.CPU
-            )
-            .build()
+        val engineConfig = EngineConfig(
+            modelPath = modelPath,
+            backend = if (useGpu) Backend.GPU() else Backend.CPU(),
+            // Optional cache dir improves second-load latency.
+            cacheDir = context.cacheDir.path,
+        )
 
-        llmInference = LlmInference.createFromOptions(context, options)
+        val newEngine = Engine(engineConfig)
+        newEngine.initialize()
+        engine = newEngine
         _loadedModelId = modelId
-        _modelPath = modelPath
     }
 
-    /** Closes the native inference session and frees resources. */
+    /** Closes the LiteRT-LM Engine and releases all native resources. */
     fun unload() {
-        llmInference?.close()
-        llmInference = null
+        engine?.close()
+        engine = null
         _loadedModelId = null
-        _modelPath = null
     }
 
     // ── Inference ─────────────────────────────────────────────────────────────
 
     /**
      * Generates a response for [messages] and returns the full text.
-     * Blocking — call from Dispatchers.IO.
+     *
+     * Creates a short-lived Conversation, collects all tokens, closes it.
+     * Call from Dispatchers.IO.
      */
     suspend fun chat(
         messages: List<Map<String, String>>,
         maxTokens: Int = 512,
         temperature: Float = 0.8f,
     ): String = withContext(Dispatchers.IO) {
-        val engine = llmInference
+        val eng = engine
             ?: throw InferenceException("No model loaded. Call load() first.")
 
-        val prompt = buildGemmaPrompt(messages)
-        engine.generateResponse(prompt)
+        val (systemText, history, lastUserMessage) = parseMessages(messages)
+        val config = buildConversationConfig(systemText, history, temperature)
+
+        eng.createConversation(config).use { conversation ->
+            val sb = StringBuilder()
+            conversation.sendMessageAsync(lastUserMessage).collect { message ->
+                sb.append(message.contents.toString())
+            }
+            sb.toString()
+        }
     }
 
     /**
      * Streaming variant of [chat].
      *
-     * Wraps the callback-based [LlmInference.generateResponseAsync] in a
-     * [callbackFlow] so callers can use idiomatic Kotlin Flow collection,
-     * including coroutine cancellation.
+     * Emits tokens as they are generated. The underlying [Engine.createConversation]
+     * call is wrapped in a [flow] so coroutine cancellation propagates correctly.
      */
     fun chatStream(
         messages: List<Map<String, String>>,
         maxTokens: Int = 512,
         temperature: Float = 0.8f,
-    ): Flow<String> = callbackFlow {
-        val engine = llmInference
+    ): Flow<String> = flow {
+        val eng = engine
             ?: throw InferenceException("No model loaded. Call load() first.")
 
-        val prompt = buildGemmaPrompt(messages)
+        val (systemText, history, lastUserMessage) = parseMessages(messages)
+        val config = buildConversationConfig(systemText, history, temperature)
 
-        engine.generateResponseAsync(prompt) { partialResult, done ->
-            if (partialResult.isNotEmpty()) {
-                trySend(partialResult)
-            }
-            if (done) {
-                close()
+        eng.createConversation(config).use { conversation ->
+            conversation.sendMessageAsync(lastUserMessage).collect { message ->
+                emit(message.contents.toString())
             }
         }
-
-        // Keep the flow alive until the callbacks close it or the collector cancels.
-        awaitClose()
     }.flowOn(Dispatchers.IO)
 
     /**
      * Single-turn text completion (non-chat).
-     * Wraps the prompt in a minimal Gemma user turn.
+     * Wraps the prompt in a minimal user turn.
      */
     suspend fun complete(
         prompt: String,
@@ -164,51 +163,60 @@ class InferenceRepository(private val context: Context) {
         temperature = temperature,
     )
 
-    // ── Prompt formatting ─────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private data class ParsedMessages(
+        val systemText: String,
+        val history: List<Message>,
+        val lastUserMessage: String,
+    )
 
     /**
-     * Formats an OpenAI-style message list into a Gemma instruction prompt.
+     * Splits an OpenAI-style message list into:
+     * - [systemText]: concatenated system message content (if any)
+     * - [history]: prior user/assistant turns as [Message] objects
+     * - [lastUserMessage]: the final user message to send
      *
-     * System messages are prepended to the first user turn's content.
-     * Assistant turns are replayed to give the model multi-turn context.
-     * The prompt ends with "<start_of_turn>model\n" to trigger generation.
+     * The last message in [messages] must have role "user".
      */
-    private fun buildGemmaPrompt(messages: List<Map<String, String>>): String {
-        val sb = StringBuilder()
-
-        // Collect system instructions to prepend to the first user message.
+    private fun parseMessages(messages: List<Map<String, String>>): ParsedMessages {
         val systemText = messages
             .filter { it["role"] == "system" }
             .joinToString("\n") { it["content"] ?: "" }
             .trim()
 
-        var systemInjected = false
+        val nonSystem = messages.filter { it["role"] != "system" }
 
-        for (msg in messages) {
+        val lastMsg = nonSystem.lastOrNull()
+            ?: throw InferenceException("Message list contains no user message.")
+        require(lastMsg["role"] == "user") {
+            "Last message must have role 'user', got '${lastMsg["role"]}'."
+        }
+
+        val historyMsgs = nonSystem.dropLast(1).mapNotNull { msg ->
             when (msg["role"]) {
-                "system" -> continue // handled above
-                "user" -> {
-                    sb.append("<start_of_turn>user\n")
-                    // Inject system instruction before first user message.
-                    if (systemText.isNotEmpty() && !systemInjected) {
-                        sb.append(systemText).append("\n\n")
-                        systemInjected = true
-                    }
-                    sb.append(msg["content"] ?: "")
-                    sb.append("<end_of_turn>\n")
-                }
-                "assistant" -> {
-                    sb.append("<start_of_turn>model\n")
-                    sb.append(msg["content"] ?: "")
-                    sb.append("<end_of_turn>\n")
-                }
+                "user"      -> Message.user(msg["content"] ?: "")
+                "assistant" -> Message.model(Contents.of(msg["content"] ?: ""))
+                else        -> null
             }
         }
 
-        // Signal the model to generate the next turn.
-        sb.append("<start_of_turn>model\n")
-        return sb.toString()
+        return ParsedMessages(
+            systemText = systemText,
+            history    = historyMsgs,
+            lastUserMessage = lastMsg["content"] ?: "",
+        )
     }
+
+    private fun buildConversationConfig(
+        systemText: String,
+        history: List<Message>,
+        temperature: Float,
+    ): ConversationConfig = ConversationConfig(
+        systemInstruction = if (systemText.isNotEmpty()) Contents.of(systemText) else null,
+        initialMessages   = history,
+        samplerConfig     = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble()),
+    )
 }
 
 class InferenceException(message: String) : Exception(message)

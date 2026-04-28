@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.gemma4.aiserver"
-        minSdk = 26          // MediaPipe Tasks GenAI requires API 26+
+        minSdk = 26          // LiteRT-LM requires API 26+
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -31,8 +31,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
     }
 
     // Netty ships its own native libs — keep them all.
@@ -61,8 +63,8 @@ dependencies {
     // Downloads
     implementation(libs.okhttp)
 
-    // On-device inference — MediaPipe Tasks GenAI (direct, no flutter_gemma wrapper)
-    implementation(libs.mediapipe.tasks.genai)
+    // On-device inference — LiteRT-LM (native .litertlm support)
+    implementation(libs.litertlm.android)
 
     // Settings persistence
     implementation(libs.datastore.preferences)
