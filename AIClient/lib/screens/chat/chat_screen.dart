@@ -344,11 +344,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
           ),
-          _InputBar(
-            controller: _inputCtrl,
-            loading: _loading,
-            onSend: _send,
-            onStop: _stopStream,
+          SafeArea(
+            top: false,
+            child: _InputBar(
+              controller: _inputCtrl,
+              loading: _loading,
+              onSend: _send,
+              onStop: _stopStream,
+            ),
           ),
         ],
       ),
@@ -397,8 +400,7 @@ class _InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: EdgeInsets.fromLTRB(
-          12, 8, 12, MediaQuery.of(context).viewInsets.bottom + 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
