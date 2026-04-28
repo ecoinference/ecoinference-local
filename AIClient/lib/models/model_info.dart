@@ -43,9 +43,14 @@ class ModelInfo {
 
   factory ModelInfo.fromJson(Map<String, dynamic> json) => ModelInfo(
         id: json['id'] as String,
-        name: json['name'] as String,
+        // Server sends 'display_name'; accept legacy 'name' for test fixtures.
+        name: (json['display_name'] ?? json['name']) as String,
         fileName: json['file_name'] as String,
-        sizeGb: (json['size_gb'] as num).toDouble(),
+        // Server sends size as integer MB ('file_size_mb'); convert to GB.
+        // Accept 'size_gb' for test fixtures that already use that key.
+        sizeGb: json['size_gb'] != null
+            ? (json['size_gb'] as num).toDouble()
+            : (json['file_size_mb'] as num).toDouble() / 1024,
         platform: json['platform'] as String,
         requiresHfToken: json['requires_hf_token'] as bool? ?? false,
         licenseUrl: json['license_url'] as String?,
