@@ -218,16 +218,19 @@ class InferenceRepository(private val context: Context) {
         )
     }
 
+    // maxNumTokens is not a ConversationConfig constructor parameter in this
+    // SDK version — output length is bounded by the EngineConfig.maxNumTokens
+    // set at load time (8192). The unused maxTokens call-site arg is kept for
+    // API consistency but has no effect here.
     private fun buildConversationConfig(
         systemText: String,
         history: List<Message>,
         temperature: Float,
-        maxNumTokens: Int = 2048,
+        @Suppress("UNUSED_PARAMETER") maxTokens: Int = 2048,
     ): ConversationConfig = ConversationConfig(
         systemInstruction = if (systemText.isNotEmpty()) Contents.of(systemText) else null,
         initialMessages   = history,
         samplerConfig     = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble()),
-        maxNumTokens      = maxNumTokens,
     )
 }
 
