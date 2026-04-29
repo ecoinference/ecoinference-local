@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat_message.dart';
 import '../../models/server_config.dart';
 import '../../services/api_service.dart';
+import '../../services/server_launcher.dart';
 import '../../widgets/message_bubble.dart';
 import '../connection/connection_screen.dart';
 import '../models/model_catalog_screen.dart';
@@ -250,6 +251,67 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ── Stop server ─────────────────────────────────────────────────────────────
+
+  /// Shows a confirmation dialog then:
+  ///   1. HTTP POST /v1/models/unload  (frees native model memory)
+  ///   2. Platform stop signal         (terminates the server process)
+  ///   3. Navigates back to ConnectionScreen
+  Future<void> _confirmStopServer() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Stop Server?'),
+        content: const Text(
+          'This will unload the model and shut down the server.\n\n'
+          'All model memory will be freed to the OS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Stop Server'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    // Cancel any in-flight inference stream first.
+    _stopStream();
+
+    // Step 1: unload model (best-effort, 5 s timeout).
+    try {
+      await ApiService.instance
+          .unloadModel()
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Server may be unreachable — proceed with platform stop anyway.
+    }
+
+    // Step 2: send platform stop signal.
+    try {
+      await ServerLauncher.stop();
+    } catch (_) {
+      // Ignore — don't block navigation on launcher errors.
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Server stopped — model memory freed.')),
+    );
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const ConnectionScreen()),
+    );
+  }
+
   // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
@@ -298,6 +360,34 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: 'Clear chat',
             onPressed: _messages.isEmpty ? null : _clearChat,
+          ),
+          PopupMenuButton<_ChatMenuAction>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'More options',
+            onSelected: (action) {
+              switch (action) {
+                case _ChatMenuAction.stopServer:
+                  _confirmStopServer();
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: _ChatMenuAction.stopServer,
+                child: Row(
+                  children: [
+                    Icon(Icons.stop_circle_outlined,
+                        color: Theme.of(context).colorScheme.error,
+                        size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Stop Server',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -380,6 +470,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum _ChatMenuAction { stopServer }
 
 // ── Sub-widgets ───────────────────────────────────────────────────────────────
 

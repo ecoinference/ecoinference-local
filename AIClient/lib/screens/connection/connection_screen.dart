@@ -20,6 +20,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   final _portCtrl = TextEditingController(text: '8080');
   bool _checking = false;
   bool _launching = false;
+  bool _stopping = false;
   String? _error;
 
   @override
@@ -43,7 +44,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     });
   }
 
-  // ── Launch AIServerAndroid (Android only) ──────────────────────────────────
+  // ── Launch server ──────────────────────────────────────────────────────────
 
   Future<void> _launchServer() async {
     setState(() {
@@ -71,6 +72,47 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       }
     } finally {
       if (mounted) setState(() => _launching = false);
+    }
+  }
+
+  // ── Stop server ────────────────────────────────────────────────────────────
+
+  /// Stops the server companion app and frees model memory.
+  ///
+  /// Stop sequence (critical for memory):
+  ///   1. HTTP POST /v1/models/unload — frees the native model allocation while
+  ///      the server is still reachable.
+  ///   2. Platform signal (Android intent / iOS URL scheme) — terminates the
+  ///      server process so the OS can reclaim all remaining memory.
+  Future<void> _stopServer() async {
+    setState(() {
+      _stopping = true;
+      _error = null;
+    });
+    try {
+      // Step 1: unload model via HTTP (best-effort — server may already be down).
+      if (ApiService.isConfigured) {
+        try {
+          await ApiService.instance
+              .unloadModel()
+              .timeout(const Duration(seconds: 5));
+        } catch (_) {
+          // Ignore — server may be unreachable; proceed with platform stop.
+        }
+      }
+      // Step 2: send the platform stop signal.
+      await ServerLauncher.stop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Server stopped — model memory freed.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Could not stop server: $e');
+    } finally {
+      if (mounted) setState(() => _stopping = false);
     }
   }
 
@@ -174,28 +216,71 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
               ),
               const SizedBox(height: 40),
 
-              // ── Start Server button (Android only) ─────────────────────────
-              if ((!kIsWeb && defaultTargetPlatform == TargetPlatform.android)) ...[
+              // ── Server controls (Android + iOS) ────────────────────────────
+              if (!kIsWeb &&
+                  (defaultTargetPlatform == TargetPlatform.android ||
+                      defaultTargetPlatform == TargetPlatform.iOS)) ...[
                 Text(
                   'Server',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: (_launching || _checking) ? null : _launchServer,
-                    icon: _launching
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.rocket_launch_outlined),
-                    label: const Text('Start AIServer'),
-                  ),
+                Row(
+                  children: [
+                    // Start button
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              (_launching || _stopping || _checking)
+                                  ? null
+                                  : _launchServer,
+                          icon: _launching
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : const Icon(Icons.rocket_launch_outlined),
+                          label: const Text('Start'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Stop button (destructive style)
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              (_stopping || _launching || _checking)
+                                  ? null
+                                  : _stopServer,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                            side: BorderSide(
+                                color: _stopping
+                                    ? theme.colorScheme.outline
+                                    : theme.colorScheme.error),
+                          ),
+                          icon: _stopping
+                              ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                )
+                              : const Icon(Icons.stop_circle_outlined),
+                          label: const Text('Stop'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
               ],
@@ -298,15 +383,23 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-                          ? '1. Tap "Start AIServer" above.\n'
+                      (!kIsWeb &&
+                              defaultTargetPlatform == TargetPlatform.android)
+                          ? '1. Tap Start above to launch AIServerAndroid.\n'
                               '2. Tap Connect → choose a Gemma 4 model.\n'
                               '3. Download, load, and start chatting.\n'
+                              '4. Tap Stop when finished to free memory.\n'
                               '   (No Hugging Face token required.)'
-                          : '1. Launch AIServer on the same device.\n'
-                              '2. Complete model setup and wait for '
-                              '"Server running".\n'
-                              '3. Enter the same port here and tap Connect.',
+                          : (!kIsWeb &&
+                                  defaultTargetPlatform == TargetPlatform.iOS)
+                              ? '1. Tap Start above to launch AIServeriOS.\n'
+                                  '2. Tap Connect → choose a Gemma 4 model.\n'
+                                  '3. Download, load, and start chatting.\n'
+                                  '4. Tap Stop when finished to free memory.'
+                              : '1. Launch AIServer on the same device.\n'
+                                  '2. Complete model setup and wait for '
+                                  '"Server running".\n'
+                                  '3. Enter the same port here and tap Connect.',
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant),
                     ),

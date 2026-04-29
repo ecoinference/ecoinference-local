@@ -177,7 +177,7 @@ class ApiService {
   Future<void> loadModel(
     String modelId, {
     bool useGpu = false,
-    int maxTokens = 1024,
+    int maxNumTokens = 8192,
   }) async {
     try {
       final res = await _dio.post(
@@ -185,7 +185,7 @@ class ApiService {
         data: {
           'model_id': modelId,
           'use_gpu': useGpu,
-          'max_tokens': maxTokens,
+          'max_num_tokens': maxNumTokens,
         },
         // Loading a large model can take 20–60 s — override default timeout.
         options: Options(receiveTimeout: const Duration(minutes: 2)),

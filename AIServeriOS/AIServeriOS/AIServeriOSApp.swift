@@ -26,6 +26,11 @@ struct AIServeriOSApp: App {
                 appState.startServer()
             }
         case "stop":
+            // Unload the model first so native memory is returned to the OS
+            // before the HTTP listener closes and the process goes idle.
+            if appState.modelLoaded {
+                appState.unloadModel()
+            }
             if appState.serverRunning {
                 appState.stopServer()
             }
