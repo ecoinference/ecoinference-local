@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import android.os.Process
 
 /**
  * Headless foreground service that hosts the Ktor HTTP server.
@@ -97,11 +98,18 @@ class AiServerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null   // not a bound service
 
     override fun onDestroy() {
-        Log.i(TAG, "Service destroying — stopping HTTP server")
+        Log.i(TAG, "Service destroying — stopping HTTP server and freeing model memory")
         httpServer.stop()
         inference.unload()
         serviceScope.cancel()
         super.onDestroy()
+        // Kill the process so the OS reclaims native memory immediately.
+        // stopSelf() stops the service but leaves the process alive as an empty
+        // shell, and Android's native allocator does not return freed pages to
+        // the OS until the process exits. For a server app that holds ~400 MB+
+        // of native model weights this matters, so we exit explicitly.
+        Log.i(TAG, "Killing process to return native memory to OS")
+        Process.killProcess(Process.myPid())
     }
 
     // ── HTTP server ───────────────────────────────────────────────────────────
