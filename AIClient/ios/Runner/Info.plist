@@ -47,6 +47,13 @@
 			</array>
 		</dict>
 	</dict>
+	<!-- Whitelist the aiserver:// URL scheme so url_launcher canLaunchUrl() works on iOS 9+.
+	     Without this entry canLaunchUrl returns false even if AIServeriOS is installed. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>aiserver</string>
+	</array>
+
 	<!-- Allow plain HTTP connections to the local AIServer instance.
 	     NSAllowsLocalNetworking covers localhost, *.local, and link-local
 	     addresses without the broad NSAllowsArbitraryLoads flag. -->

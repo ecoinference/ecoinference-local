@@ -1,0 +1,50 @@
+name: AIServeriOS
+options:
+  bundleIdPrefix: com.gemma4
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    DEVELOPMENT_TEAM: ""          # fill in your Team ID
+    SWIFT_OBJC_BRIDGING_HEADER: AIServeriOS/LiteRtLm-Bridging-Header.h
+    OTHER_LDFLAGS:
+      - "-rpath"
+      - "@executable_path/Frameworks"
+
+targets:
+  AIServeriOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+
+    info:
+      path: AIServeriOS/Info.plist
+
+    entitlements:
+      path: AIServeriOS/AIServeriOS.entitlements
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gemma4.aiserver
+        PRODUCT_NAME: AIServer
+        INFOPLIST_FILE: AIServeriOS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AIServeriOS/AIServeriOS.entitlements
+
+    sources:
+      - path: AIServeriOS
+        excludes:
+          - "**/*.md"
+
+    dependencies:
+      # LiteRT-LM dylibs — built into xcframeworks by download_frameworks.sh
+      - framework: Frameworks/libLiteRtLm.xcframework
+        embed: true
+      - framework: Frameworks/libGemmaModelConstraintProvider.xcframework
+        embed: true
+      - framework: Frameworks/libLiteRtMetalAccelerator.xcframework
+        embed: true
+      - framework: Frameworks/libStreamProxy.xcframework
+        embed: true
