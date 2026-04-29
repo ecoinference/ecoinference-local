@@ -23,19 +23,23 @@ func registerModelRoutes(router: Router) {
         let inference = InferenceService.shared
         let modelPath = download.filePath(for: modelInfo).path
 
-        do {
-            try inference.load(
+        // inference.load() is blocking (5–30 s); run off the cooperative pool
+        let result = await Task.detached(priority: .userInitiated) {
+            Result { try inference.load(
                 modelId:   req.modelId,
                 modelPath: modelPath,
                 useGpu:    req.useGpu,
                 maxTokens: req.maxTokens
-            )
+            )}
+        }.value
+        switch result {
+        case .success:
             return HttpResponse.json(LoadResponse(
                 modelId: req.modelId,
                 status:  "loaded",
                 error:   nil
             ))
-        } catch {
+        case .failure(let error):
             return HttpResponse.json(
                 LoadResponse(modelId: req.modelId, status: "error",
                              error: error.localizedDescription),

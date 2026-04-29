@@ -204,11 +204,16 @@ final class LiteRtLmEngine {
 
                 // Bridge AsyncThrowingStream → C callback via an AsyncStream intermediary
                 let innerStream = AsyncStream<String> { innerCont in
-                    // Create context — retained until final callback fires
+                    // Create context — retained until final callback fires.
+                    // The C library calls the callback on its own thread after
+                    // generate_content_stream returns, so the input buffer must
+                    // stay alive for the entire operation.  ctx owns the buffer
+                    // via ctx.inputBuffer; we call withUnsafeBufferPointer on
+                    // that copy so the pointer lifetime is tied to the retained ctx.
                     let ctx = StreamContext(continuation: innerCont, inputBuffer: promptBytes)
                     let ctxPtr = Unmanaged.passRetained(ctx).toOpaque()
 
-                    promptBytes.withUnsafeBufferPointer { buf in
+                    ctx.inputBuffer.withUnsafeBufferPointer { buf in
                         var input = LiteRtLmInputData(
                             type: kLiteRtLmInputDataTypeText,
                             data: UnsafeRawPointer(buf.baseAddress),

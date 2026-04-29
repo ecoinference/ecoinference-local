@@ -8,7 +8,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    DEVELOPMENT_TEAM: ""          # fill in your Team ID
+    # DEVELOPMENT_TEAM: "XXXXXXXXXX"   ← uncomment and set your 10-char Team ID
+    #                                    before archiving for distribution.
+    #                                    Leave commented for local device builds —
+    #                                    Xcode auto-assigns from your account.
     SWIFT_OBJC_BRIDGING_HEADER: AIServeriOS/LiteRtLm-Bridging-Header.h
     OTHER_LDFLAGS:
       - "-rpath"

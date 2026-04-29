@@ -18,16 +18,27 @@ enum DownloadError: LocalizedError {
 
 /// Downloads model files from HuggingFace using URLSession.
 /// Progress is reported via a closure (0.0–1.0).
+///
+/// Thread-safety: `isDownloading` and `cancellationRequested` are guarded by
+/// an NSLock so they are safe to read from any thread (HTTP handlers, UI).
 final class DownloadService {
 
     static let shared = DownloadService()
     private init() {}
 
-    private var activeTask: URLSessionDataTask?
-    private(set) var isDownloading = false
-    private var cancellationRequested = false
+    // ── State (lock-protected) ────────────────────────────────────────────────
 
-    /// Absolute path on disk for a given model.
+    private let lock = NSLock()
+    private var _isDownloading         = false
+    private var _cancellationRequested = false
+
+    var isDownloading: Bool {
+        lock.withLock { _isDownloading }
+    }
+
+    // ── File helpers ──────────────────────────────────────────────────────────
+
+    /// Absolute URL on disk for a given model.
     func filePath(for model: ModelInfo) -> URL {
         let docs = FileManager.default.urls(
             for: .documentDirectory, in: .userDomainMask
@@ -35,12 +46,12 @@ final class DownloadService {
         return docs.appendingPathComponent(model.fileName)
     }
 
-    /// True if the model file is present and reasonably large.
+    /// True if the model file is present and reasonably large (> 1 MB).
     func isDownloaded(_ model: ModelInfo) -> Bool {
         let url = filePath(for: model)
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let size = attrs[.size] as? Int else { return false }
-        return size > 1024 * 1024
+        return size > 1_048_576
     }
 
     /// Delete a downloaded model file.
@@ -51,24 +62,29 @@ final class DownloadService {
         }
     }
 
-    /// Cancel the active download.
+    // ── Cancel ────────────────────────────────────────────────────────────────
+
     func cancel() {
-        cancellationRequested = true
-        activeTask?.cancel()
+        lock.withLock { _cancellationRequested = true }
     }
 
-    /// Download [model] to the Documents directory, calling [onProgress] as data arrives.
+    // ── Download ──────────────────────────────────────────────────────────────
+
+    /// Download [model] to the Documents directory, calling [onProgress] (0.0–1.0) as data arrives.
     /// Throws DownloadError on network or auth failure.
     func download(
         model: ModelInfo,
         hfToken: String?,
         onProgress: @escaping (Double) -> Void
     ) async throws {
-        guard !isDownloading else { throw DownloadError.alreadyDownloading }
-
-        isDownloading = true
-        cancellationRequested = false
-        defer { isDownloading = false }
+        // Atomically check-and-set isDownloading to avoid races between
+        // concurrent HTTP requests or a UI tap + HTTP request arriving together.
+        try lock.withLock {
+            guard !_isDownloading else { throw DownloadError.alreadyDownloading }
+            _isDownloading         = true
+            _cancellationRequested = false
+        }
+        defer { lock.withLock { _isDownloading = false } }
 
         var request = URLRequest(url: URL(string: model.downloadUrl)!)
         request.timeoutInterval = 30
@@ -78,29 +94,35 @@ final class DownloadService {
 
         let destination = filePath(for: model)
 
-        // Write to a temp file first to avoid partial writes
+        // Write to a temp file first to avoid partial writes landing at destination.
         let tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".tmp")
 
-        defer { try? FileManager.default.removeItem(at: tmp) }
-
-        // Pre-create file so FileHandle can open it
+        // Pre-create so FileHandle can open it.
         FileManager.default.createFile(atPath: tmp.path, contents: nil)
         let fileHandle = try FileHandle(forWritingTo: tmp)
-        defer { try? fileHandle.close() }
+
+        // Single defer for cleanup: removes tmp (no-op if already moved).
+        defer { try? FileManager.default.removeItem(at: tmp) }
 
         let (asyncBytes, response) = try await URLSession.shared.bytes(for: request)
 
+        // On error, close fileHandle before the defer removes tmp.
+        func closeHandle() { try? fileHandle.close() }
+
         guard let http = response as? HTTPURLResponse else {
+            closeHandle()
             throw DownloadError.httpError(0)
         }
 
         if http.statusCode == 401 || http.statusCode == 403 {
+            closeHandle()
             let licenseURL = model.licenseUrl ?? model.downloadUrl
             throw DownloadError.licenseRequired(licenseURL)
         }
 
         guard http.statusCode == 200 else {
+            closeHandle()
             throw DownloadError.httpError(http.statusCode)
         }
 
@@ -109,7 +131,7 @@ final class DownloadService {
         var buffer = Data(capacity: 256 * 1024)
 
         for try await byte in asyncBytes {
-            if cancellationRequested { break }
+            if lock.withLock({ _cancellationRequested }) { break }
             buffer.append(byte)
             receivedBytes += 1
 
@@ -120,15 +142,17 @@ final class DownloadService {
             }
         }
 
-        if !buffer.isEmpty && !cancellationRequested {
+        // Flush remaining bytes.
+        if !buffer.isEmpty && !lock.withLock({ _cancellationRequested }) {
             fileHandle.write(buffer)
         }
 
-        if cancellationRequested { return }
-
+        // Close the handle exactly once before moving the file.
         try fileHandle.close()
 
-        // Move temp → final destination (atomic)
+        if lock.withLock({ _cancellationRequested }) { return }
+
+        // Atomic move: remove existing destination if present.
         if FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }

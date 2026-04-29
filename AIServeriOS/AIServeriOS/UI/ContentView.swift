@@ -98,8 +98,8 @@ private struct ModelRow: View {
                     .foregroundStyle(.secondary)
             }
 
-            // Load error
-            if let err = state.loadError, state.loadedModelId == nil {
+            // Load error — only show on the row whose load actually failed
+            if let err = state.loadError, state.loadErrorModelId == model.id {
                 Text(err)
                     .font(.caption)
                     .foregroundStyle(.red)

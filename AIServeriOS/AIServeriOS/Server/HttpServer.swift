@@ -41,7 +41,7 @@ private struct EmptyBody: Encodable {}
 final class HttpServer {
 
     private var listener: NWListener?
-    private(set) var port: UInt16
+    var port: UInt16
     let router = Router()
 
     enum State { case stopped, starting, running, error(String) }
@@ -107,6 +107,8 @@ final class HttpServer {
                 let resp = HttpResponse.error("Bad request", status: 400).addCors()
                 try? await send(resp, to: connection)
             }
+            // Graceful TCP FIN before cancel so the client can finish reading.
+            await connection.sendFin()
             connection.cancel()
         }
     }
@@ -155,12 +157,17 @@ final class HttpServer {
             }
         }
 
-        // Read body
+        // Read body — guard against excessively large payloads (10 MB limit)
+        let maxBodySize = 10 * 1024 * 1024
         if let lenStr = headers["content-length"], let contentLength = Int(lenStr), contentLength > 0 {
+            guard contentLength <= maxBodySize else {
+                throw NWConnection.ConnectionError.closed
+            }
             while bodyBuffer.count < contentLength {
                 let chunk = try await conn.receiveData()
                 if chunk.isEmpty { break }
                 bodyBuffer.append(chunk)
+                if bodyBuffer.count > maxBodySize { break }
             }
         }
 
@@ -221,5 +228,22 @@ final class HttpServer {
 private extension Data {
     func contains(sequence: Data) -> Bool {
         range(of: sequence) != nil
+    }
+}
+
+// MARK: - NWConnection graceful close
+
+private extension NWConnection {
+    /// Sends a TCP FIN (half-close the write side) so the remote peer can
+    /// finish reading before we call cancel().  Best-effort — errors ignored.
+    func sendFin() async {
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            send(
+                content: nil,
+                contentContext: .finalMessage,
+                isComplete: true,
+                completion: .contentProcessed { _ in cont.resume() }
+            )
+        }
     }
 }

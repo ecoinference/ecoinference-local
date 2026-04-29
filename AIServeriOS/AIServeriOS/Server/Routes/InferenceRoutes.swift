@@ -95,12 +95,17 @@ private func registerChatCompletions(router: Router) {
 
         } else {
             // ── Non-streaming ─────────────────────────────────────────────────
-            do {
-                let text = try inference.chat(
+            // chat() is a long-running synchronous call; run it on a detached
+            // task to avoid blocking the cooperative thread pool.
+            let result = await Task.detached(priority: .userInitiated) {
+                Result { try inference.chat(
                     messages:    messages,
                     maxTokens:   req.maxTokens,
                     temperature: req.temperature
-                )
+                )}
+            }.value
+            switch result {
+            case .success(let text):
                 let promptText = req.messages.map { $0.content }.joined(separator: "\n")
                 return HttpResponse.json(ChatCompletionResponse(
                     id:      "chatcmpl-\(UUID().uuidString)",
@@ -113,7 +118,7 @@ private func registerChatCompletions(router: Router) {
                     )],
                     usage: TokenUsage(prompt: promptText, completion: text)
                 ))
-            } catch {
+            case .failure(let error):
                 return HttpResponse.error(error.localizedDescription, status: 500)
             }
         }
@@ -183,12 +188,15 @@ private func registerCompletions(router: Router) {
             return HttpResponse.sse(sseStream)
 
         } else {
-            do {
-                let text = try inference.chat(
+            let result = await Task.detached(priority: .userInitiated) {
+                Result { try inference.chat(
                     messages:    messages,
                     maxTokens:   req.maxTokens,
                     temperature: req.temperature
-                )
+                )}
+            }.value
+            switch result {
+            case .success(let text):
                 return HttpResponse.json(CompletionResponse(
                     id:      "cmpl-\(UUID().uuidString)",
                     object:  "text_completion",
@@ -196,7 +204,7 @@ private func registerCompletions(router: Router) {
                     choices: [CompletionChoice(text: text, index: 0, finishReason: "stop")],
                     usage:   TokenUsage(prompt: req.prompt, completion: text)
                 ))
-            } catch {
+            case .failure(let error):
                 return HttpResponse.error(error.localizedDescription, status: 500)
             }
         }

@@ -15,8 +15,10 @@ final class AppState: ObservableObject {
 
     @Published private(set) var modelLoaded   = false
     @Published private(set) var loadedModelId: String?
-    @Published private(set) var isLoading     = false
+    @Published private(set) var isLoading        = false
     @Published private(set) var loadError: String?
+    /// Which model was being loaded when `loadError` was set.
+    @Published private(set) var loadErrorModelId: String?
 
     // ── Download ──────────────────────────────────────────────────────────────
 
@@ -40,17 +42,35 @@ final class AppState: ObservableObject {
         serverPort = settings.serverPort
         refreshCatalog()
         registerRoutes()
+        wireServerCallbacks()
     }
 
     // MARK: - Server control
 
+    private func wireServerCallbacks() {
+        server.onStateChange = { [weak self] newState in
+            // NWListener fires on a background queue; hop to MainActor.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                switch newState {
+                case .running:
+                    self.serverRunning = true
+                case .stopped, .error:
+                    self.serverRunning = false
+                case .starting:
+                    break
+                }
+            }
+        }
+    }
+
     func startServer() {
         guard !serverRunning else { return }
         server.port = settings.serverPort
+        serverPort  = settings.serverPort
         do {
             try server.start()
-            serverRunning = true
-            serverPort    = settings.serverPort
+            // serverRunning is set to true by onStateChange when .ready fires.
         } catch {
             serverRunning = false
         }
@@ -58,7 +78,7 @@ final class AppState: ObservableObject {
 
     func stopServer() {
         server.stop()
-        serverRunning = false
+        // serverRunning is set to false by onStateChange(.stopped).
     }
 
     // MARK: - Catalog
@@ -84,28 +104,29 @@ final class AppState: ObservableObject {
         downloadingModelId = modelId
         downloadError      = nil
 
-        Task.detached(priority: .background) { [weak self] in
-            guard let self else { return }
-            let token = self.settings.hfToken
+        // Capture service references and token on the MainActor before
+        // entering the task, avoiding cross-actor property access.
+        let downloadSvc = download
+        let token       = settings.hfToken.isEmpty ? nil : settings.hfToken
+
+        // download() is async (URLSession.bytes suspension points), so a
+        // Task inheriting @MainActor is fine — it suspends without blocking.
+        Task {
             do {
-                try await self.download.download(model: info, hfToken: token.isEmpty ? nil : token) { progress in
+                try await downloadSvc.download(model: info, hfToken: token) { [weak self] progress in
                     Task { @MainActor [weak self] in
                         self?.downloadProgress = progress * 100
                     }
                 }
-                await MainActor.run { [weak self] in
-                    self?.downloadActive     = false
-                    self?.downloadProgress   = 100
-                    self?.downloadingModelId = nil
-                    self?.refreshCatalog()
-                }
+                downloadActive     = false
+                downloadProgress   = 100
+                downloadingModelId = nil
+                refreshCatalog()
             } catch {
-                await MainActor.run { [weak self] in
-                    self?.downloadActive     = false
-                    self?.downloadError      = error.localizedDescription
-                    self?.downloadingModelId = nil
-                    self?.refreshCatalog()
-                }
+                downloadActive     = false
+                downloadError      = error.localizedDescription
+                downloadingModelId = nil
+                refreshCatalog()
             }
         }
     }
@@ -120,30 +141,38 @@ final class AppState: ObservableObject {
         guard let info = ModelCatalog.find(id: modelId),
               download.isDownloaded(info) else { return }
 
-        isLoading = true
-        loadError = nil
+        isLoading        = true
+        loadError        = nil
+        loadErrorModelId = nil
 
-        let modelPath = download.filePath(for: info).path
+        // Capture service and path on the MainActor before entering the
+        // detached task, so no @MainActor-isolated property is accessed
+        // from a non-isolated context.
+        let inferenceSvc = inference
+        let modelPath    = download.filePath(for: info).path
 
+        // inference.load() is blocking (5–30 s) — must run detached.
         Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self else { return }
             do {
-                try self.inference.load(
+                try inferenceSvc.load(
                     modelId:   modelId,
                     modelPath: modelPath,
                     useGpu:    useGpu,
                     maxTokens: 1024
                 )
                 await MainActor.run { [weak self] in
-                    self?.modelLoaded   = true
-                    self?.loadedModelId = modelId
-                    self?.isLoading     = false
+                    self?.modelLoaded       = true
+                    self?.loadedModelId     = modelId
+                    self?.isLoading         = false
+                    self?.loadError         = nil
+                    self?.loadErrorModelId  = nil
                     self?.refreshCatalog()
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.loadError   = error.localizedDescription
-                    self?.isLoading   = false
+                    self?.loadError         = error.localizedDescription
+                    self?.loadErrorModelId  = modelId
+                    self?.isLoading         = false
                     self?.refreshCatalog()
                 }
             }
@@ -152,8 +181,10 @@ final class AppState: ObservableObject {
 
     func unloadModel() {
         inference.unload()
-        modelLoaded   = false
-        loadedModelId = nil
+        modelLoaded      = false
+        loadedModelId    = nil
+        loadError        = nil
+        loadErrorModelId = nil
         refreshCatalog()
     }
 
@@ -161,7 +192,7 @@ final class AppState: ObservableObject {
 
     private func registerRoutes() {
         let router = server.router
-        registerHealthRoutes(router: router, port: settings.serverPort)
+        registerHealthRoutes(router: router)
         registerCatalogRoutes(router: router)
         registerModelRoutes(router: router)
         registerDownloadRoutes(router: router)
