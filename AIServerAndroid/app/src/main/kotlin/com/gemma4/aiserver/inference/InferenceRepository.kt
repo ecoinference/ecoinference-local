@@ -222,12 +222,12 @@ class InferenceRepository(private val context: Context) {
         systemText: String,
         history: List<Message>,
         temperature: Float,
-        maxOutputTokens: Int = 2048,
+        maxNumTokens: Int = 2048,
     ): ConversationConfig = ConversationConfig(
         systemInstruction = if (systemText.isNotEmpty()) Contents.of(systemText) else null,
         initialMessages   = history,
         samplerConfig     = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble()),
-        maxOutputTokens   = maxOutputTokens,
+        maxNumTokens      = maxNumTokens,
     )
 }
 
