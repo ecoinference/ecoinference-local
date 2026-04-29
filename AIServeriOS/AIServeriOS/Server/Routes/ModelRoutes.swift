@@ -26,10 +26,10 @@ func registerModelRoutes(router: Router) {
         // inference.load() is blocking (5–30 s); run off the cooperative pool
         let result = await Task.detached(priority: .userInitiated) {
             Result { try inference.load(
-                modelId:   req.modelId,
-                modelPath: modelPath,
-                useGpu:    req.useGpu,
-                maxTokens: req.maxTokens
+                modelId:      req.modelId,
+                modelPath:    modelPath,
+                useGpu:       req.useGpu,
+                maxNumTokens: req.maxNumTokens
             )}
         }.value
         switch result {

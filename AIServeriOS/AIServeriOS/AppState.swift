@@ -155,10 +155,10 @@ final class AppState: ObservableObject {
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
                 try inferenceSvc.load(
-                    modelId:   modelId,
-                    modelPath: modelPath,
-                    useGpu:    useGpu,
-                    maxTokens: 1024
+                    modelId:      modelId,
+                    modelPath:    modelPath,
+                    useGpu:       useGpu,
+                    maxNumTokens: 8192
                 )
                 await MainActor.run { [weak self] in
                     self?.modelLoaded       = true

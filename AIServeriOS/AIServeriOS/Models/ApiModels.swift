@@ -29,19 +29,21 @@ struct CatalogResponse: Codable {
 struct LoadRequest: Codable {
     let modelId: String
     let useGpu: Bool
-    let maxTokens: Int
+    /// KV-cache budget: prompt + history + output combined.
+    /// Default 8192 uses the full context window of the Gemma 4 E2B export.
+    let maxNumTokens: Int
 
     enum CodingKeys: String, CodingKey {
-        case modelId   = "model_id"
-        case useGpu    = "use_gpu"
-        case maxTokens = "max_tokens"
+        case modelId      = "model_id"
+        case useGpu       = "use_gpu"
+        case maxNumTokens = "max_num_tokens"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        modelId   = try c.decode(String.self, forKey: .modelId)
-        useGpu    = try c.decodeIfPresent(Bool.self,   forKey: .useGpu)    ?? false
-        maxTokens = try c.decodeIfPresent(Int.self,    forKey: .maxTokens) ?? 1024
+        modelId      = try c.decode(String.self, forKey: .modelId)
+        useGpu       = try c.decodeIfPresent(Bool.self, forKey: .useGpu)       ?? false
+        maxNumTokens = try c.decodeIfPresent(Int.self,  forKey: .maxNumTokens) ?? 8192
     }
 }
 
@@ -129,7 +131,7 @@ struct ChatCompletionRequest: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         model       = try c.decode(String.self,      forKey: .model)
         messages    = try c.decode([ChatMessage].self, forKey: .messages)
-        maxTokens   = try c.decodeIfPresent(Int.self,   forKey: .maxTokens)   ?? 512
+        maxTokens   = try c.decodeIfPresent(Int.self,   forKey: .maxTokens)   ?? 2048
         temperature = try c.decodeIfPresent(Float.self,  forKey: .temperature) ?? 0.8
         stream      = try c.decodeIfPresent(Bool.self,   forKey: .stream)      ?? false
     }
@@ -209,7 +211,7 @@ struct CompletionRequest: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         model       = try c.decode(String.self,  forKey: .model)
         prompt      = try c.decode(String.self,  forKey: .prompt)
-        maxTokens   = try c.decodeIfPresent(Int.self,   forKey: .maxTokens)   ?? 512
+        maxTokens   = try c.decodeIfPresent(Int.self,   forKey: .maxTokens)   ?? 2048
         temperature = try c.decodeIfPresent(Float.self,  forKey: .temperature) ?? 0.8
         stream      = try c.decodeIfPresent(Bool.self,   forKey: .stream)      ?? false
     }

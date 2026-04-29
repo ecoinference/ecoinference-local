@@ -52,7 +52,10 @@ data class DownloadProgress(
 data class LoadRequest(
     @SerialName("model_id") val modelId: String,
     @SerialName("use_gpu") val useGpu: Boolean = false,
-    @SerialName("max_tokens") val maxTokens: Int = 1024,
+    /** KV-cache budget (input + history + output combined).
+     *  The model binary is the hard ceiling; default 8192 uses the
+     *  full context window of the Gemma 4 E2B .litertlm export. */
+    @SerialName("max_num_tokens") val maxNumTokens: Int = 8192,
 )
 
 @Serializable
@@ -74,7 +77,8 @@ data class ChatMessage(
 data class ChatCompletionRequest(
     val model: String,
     val messages: List<ChatMessage>,
-    @SerialName("max_tokens") val maxTokens: Int = 512,
+    /** Max tokens to generate in this response (not counting the prompt). */
+    @SerialName("max_tokens") val maxTokens: Int = 2048,
     val temperature: Float = 0.8f,
     val stream: Boolean = false,
 )
@@ -83,7 +87,8 @@ data class ChatCompletionRequest(
 data class CompletionRequest(
     val model: String,
     val prompt: String,
-    @SerialName("max_tokens") val maxTokens: Int = 512,
+    /** Max tokens to generate in this response (not counting the prompt). */
+    @SerialName("max_tokens") val maxTokens: Int = 2048,
     val temperature: Float = 0.8f,
     val stream: Boolean = false,
 )

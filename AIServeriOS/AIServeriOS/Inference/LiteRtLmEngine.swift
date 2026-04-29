@@ -84,11 +84,16 @@ final class LiteRtLmEngine {
     // ── Load ──────────────────────────────────────────────────────────────────
 
     /// Load a .litertlm model file. Blocking — call from a background task.
+    ///
+    /// - Parameter maxNumTokens: Total KV-cache budget (prompt + history + output
+    ///   combined). The model binary is the hard ceiling; the engine silently clamps
+    ///   to its compiled limit. Default 8192 uses the full context window of the
+    ///   Gemma 4 E2B .litertlm export.
     func load(
-        modelId:   String,
-        modelPath: String,
-        useGpu:    Bool,
-        maxTokens: Int = 1024
+        modelId:      String,
+        modelPath:    String,
+        useGpu:       Bool,
+        maxNumTokens: Int = 8192
     ) throws {
         unload()
 
@@ -106,16 +111,16 @@ final class LiteRtLmEngine {
             for: .cachesDirectory, in: .userDomainMask
         ).first!.path
 
-        let settings = litert_lm_engine_settings_create(
+        let engineSettings = litert_lm_engine_settings_create(
             modelPath, backendStr, nil, nil
         )!
-        defer { litert_lm_engine_settings_delete(settings) }
+        defer { litert_lm_engine_settings_delete(engineSettings) }
 
-        litert_lm_engine_settings_set_max_num_tokens(settings, Int32(maxTokens))
-        litert_lm_engine_settings_set_cache_dir(settings, cacheDir)
+        litert_lm_engine_settings_set_max_num_tokens(engineSettings, Int32(maxNumTokens))
+        litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
         litert_lm_set_min_log_level(2) // INFO
 
-        guard let newEngine = litert_lm_engine_create(settings) else {
+        guard let newEngine = litert_lm_engine_create(engineSettings) else {
             throw InferenceError.engineCreationFailed("litert_lm_engine_create returned nil")
         }
 

@@ -182,10 +182,10 @@ fun Route.modelRoutes(
 
         runCatching {
             inference.load(
-                modelId = req.modelId,
-                modelPath = modelPath,
-                useGpu = req.useGpu,
-                maxTokens = req.maxTokens,
+                modelId      = req.modelId,
+                modelPath    = modelPath,
+                useGpu       = req.useGpu,
+                maxNumTokens = req.maxNumTokens,
             )
             settings.setLoadedModelId(req.modelId)
         }.fold(

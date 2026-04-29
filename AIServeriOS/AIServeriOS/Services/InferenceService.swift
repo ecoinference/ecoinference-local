@@ -24,15 +24,18 @@ final class InferenceService {
     // ── Load ──────────────────────────────────────────────────────────────────
 
     /// Loads a .litertlm model. Blocking — may take 5–30 s for large models.
+    ///
+    /// - Parameter maxNumTokens: KV-cache budget (input + history + output).
+    ///   Default 8192 uses the full context window of the Gemma 4 E2B export.
     func load(
-        modelId:   String,
-        modelPath: String,
-        useGpu:    Bool,
-        maxTokens: Int = 1024
+        modelId:      String,
+        modelPath:    String,
+        useGpu:       Bool,
+        maxNumTokens: Int = 8192
     ) throws {
         lock.lock(); defer { lock.unlock() }
         try engine.load(modelId: modelId, modelPath: modelPath,
-                        useGpu: useGpu, maxTokens: maxTokens)
+                        useGpu: useGpu, maxNumTokens: maxNumTokens)
     }
 
     func unload() {
@@ -48,7 +51,7 @@ final class InferenceService {
 
     func chatStream(
         messages:    [[String: String]],
-        maxTokens:   Int   = 512,
+        maxTokens:   Int   = 2048,
         temperature: Float = 0.8
     ) -> AsyncThrowingStream<String, Error> {
         engine.chatStream(messages: messages, maxTokens: maxTokens,
@@ -57,7 +60,7 @@ final class InferenceService {
 
     func chat(
         messages:    [[String: String]],
-        maxTokens:   Int   = 512,
+        maxTokens:   Int   = 2048,
         temperature: Float = 0.8
     ) throws -> String {
         try engine.chat(messages: messages, maxTokens: maxTokens,

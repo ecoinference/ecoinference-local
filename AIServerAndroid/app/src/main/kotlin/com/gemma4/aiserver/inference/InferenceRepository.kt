@@ -45,18 +45,21 @@ class InferenceRepository(private val context: Context) {
      * Blocking — [Engine.initialize] maps the weight file into memory.
      * Call from a non-UI coroutine. The previous model is unloaded first.
      *
-     * @param modelId   Catalogue ID — stored for status reporting.
-     * @param modelPath Absolute path to the .litertlm file.
-     * @param useGpu    When true, requests the GPU backend (OpenCL/VNDK).
-     *                  Falls back to CPU automatically when GPU is unavailable.
-     * @param maxTokens Unused (LiteRT-LM manages context length internally;
-     *                  kept for API compatibility with existing routes).
+     * @param modelId      Catalogue ID — stored for status reporting.
+     * @param modelPath    Absolute path to the .litertlm file.
+     * @param useGpu       When true, requests the GPU backend (OpenCL/VNDK).
+     *                     Falls back to CPU automatically when GPU is unavailable.
+     * @param maxNumTokens Total KV-cache budget: prompt + history + response
+     *                     combined. The .litertlm file for Gemma 4 E2B supports
+     *                     up to 8 192 tokens; the SDK default is ~4 096. Set
+     *                     this as high as the model supports and your RAM allows.
+     *                     The engine silently clamps it to the model's hard limit.
      */
     suspend fun load(
         modelId: String,
         modelPath: String,
         useGpu: Boolean = false,
-        maxTokens: Int = 1024,
+        maxNumTokens: Int = 8192,
     ) = withContext(Dispatchers.IO) {
         // Unload any previously loaded model first.
         unload()
@@ -68,10 +71,13 @@ class InferenceRepository(private val context: Context) {
         }
 
         val engineConfig = EngineConfig(
-            modelPath = modelPath,
-            backend = if (useGpu) Backend.GPU() else Backend.CPU(),
+            modelPath    = modelPath,
+            backend      = if (useGpu) Backend.GPU() else Backend.CPU(),
+            // Sets the KV-cache size.  The model binary is the hard ceiling;
+            // the engine clamps silently if maxNumTokens exceeds it.
+            maxNumTokens = maxNumTokens,
             // Optional cache dir improves second-load latency.
-            cacheDir = context.cacheDir.path,
+            cacheDir     = context.cacheDir.path,
         )
 
         val newEngine = Engine(engineConfig)
@@ -94,17 +100,21 @@ class InferenceRepository(private val context: Context) {
      *
      * Creates a short-lived Conversation, collects all tokens, closes it.
      * Call from Dispatchers.IO.
+     *
+     * @param maxTokens Maximum tokens to generate in this response.
+     *                  Must be less than the engine's [maxNumTokens] minus the
+     *                  prompt length.  Default 2 048 suits most interactions.
      */
     suspend fun chat(
         messages: List<Map<String, String>>,
-        maxTokens: Int = 512,
+        maxTokens: Int = 2048,
         temperature: Float = 0.8f,
     ): String = withContext(Dispatchers.IO) {
         val eng = engine
             ?: throw InferenceException("No model loaded. Call load() first.")
 
         val (systemText, history, lastUserMessage) = parseMessages(messages)
-        val config = buildConversationConfig(systemText, history, temperature)
+        val config = buildConversationConfig(systemText, history, temperature, maxTokens)
 
         eng.createConversation(config).use { conversation ->
             val sb = StringBuilder()
@@ -123,14 +133,14 @@ class InferenceRepository(private val context: Context) {
      */
     fun chatStream(
         messages: List<Map<String, String>>,
-        maxTokens: Int = 512,
+        maxTokens: Int = 2048,
         temperature: Float = 0.8f,
     ): Flow<String> = flow {
         val eng = engine
             ?: throw InferenceException("No model loaded. Call load() first.")
 
         val (systemText, history, lastUserMessage) = parseMessages(messages)
-        val config = buildConversationConfig(systemText, history, temperature)
+        val config = buildConversationConfig(systemText, history, temperature, maxTokens)
 
         eng.createConversation(config).use { conversation ->
             conversation.sendMessageAsync(lastUserMessage).collect { message ->
@@ -145,7 +155,7 @@ class InferenceRepository(private val context: Context) {
      */
     suspend fun complete(
         prompt: String,
-        maxTokens: Int = 512,
+        maxTokens: Int = 2048,
         temperature: Float = 0.8f,
     ): String = chat(
         messages = listOf(mapOf("role" to "user", "content" to prompt)),
@@ -155,7 +165,7 @@ class InferenceRepository(private val context: Context) {
 
     fun completeStream(
         prompt: String,
-        maxTokens: Int = 512,
+        maxTokens: Int = 2048,
         temperature: Float = 0.8f,
     ): Flow<String> = chatStream(
         messages = listOf(mapOf("role" to "user", "content" to prompt)),
@@ -212,10 +222,12 @@ class InferenceRepository(private val context: Context) {
         systemText: String,
         history: List<Message>,
         temperature: Float,
+        maxOutputTokens: Int = 2048,
     ): ConversationConfig = ConversationConfig(
         systemInstruction = if (systemText.isNotEmpty()) Contents.of(systemText) else null,
         initialMessages   = history,
         samplerConfig     = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble()),
+        maxOutputTokens   = maxOutputTokens,
     )
 }
 
