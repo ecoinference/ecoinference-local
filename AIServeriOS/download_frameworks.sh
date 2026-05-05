@@ -80,6 +80,18 @@ for DYLIB in "${DYLIBS[@]}"; do
     install_name_tool -id "@rpath/${BASENAME}.framework/${BASENAME}" \
         "$TMP_FW/$BASENAME"
 
+    # Rewrite any cross-references between our dylibs from bare
+    # "@rpath/libFoo.dylib" to "@rpath/libFoo.framework/libFoo".
+    # libLiteRtLm references libGemmaModelConstraintProvider as a bare .dylib
+    # which dyld cannot resolve once the library is wrapped in a .framework.
+    for OTHER in "${DYLIBS[@]}"; do
+        OTHER_BASE="${OTHER%.dylib}"
+        OLD_REF="@rpath/${OTHER_BASE}.dylib"
+        NEW_REF="@rpath/${OTHER_BASE}.framework/${OTHER_BASE}"
+        # install_name_tool -change is a no-op if OLD_REF isn't present.
+        install_name_tool -change "$OLD_REF" "$NEW_REF" "$TMP_FW/$BASENAME" 2>/dev/null || true
+    done
+
     # Minimal Info.plist required by xcodebuild -create-xcframework.
     # CFBundleExecutable is mandatory — iOS installd rejects the bundle without it.
     cat > "$TMP_FW/Info.plist" <<PLIST
