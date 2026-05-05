@@ -74,6 +74,12 @@ for DYLIB in "${DYLIBS[@]}"; do
     mkdir -p "$TMP_FW"
     cp "$SRC" "$TMP_FW/$BASENAME"
 
+    # Fix the dylib install name so dyld resolves it via @rpath at runtime.
+    # Without this the install name is an absolute build-time path and the app
+    # crashes immediately with dyld __abort_with_payload on device.
+    install_name_tool -id "@rpath/${BASENAME}.framework/${BASENAME}" \
+        "$TMP_FW/$BASENAME"
+
     # Minimal Info.plist required by xcodebuild -create-xcframework.
     # CFBundleExecutable is mandatory — iOS installd rejects the bundle without it.
     cat > "$TMP_FW/Info.plist" <<PLIST
