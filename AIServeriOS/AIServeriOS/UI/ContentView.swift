@@ -98,6 +98,13 @@ private struct ModelRow: View {
                     .foregroundStyle(.secondary)
             }
 
+            // Download error — only show on the row whose download failed
+            if let err = state.downloadError, state.downloadErrorModelId == model.id {
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
             // Load error — only show on the row whose load actually failed
             if let err = state.loadError, state.loadErrorModelId == model.id {
                 Text(err)

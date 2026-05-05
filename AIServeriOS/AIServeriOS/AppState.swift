@@ -26,6 +26,8 @@ final class AppState: ObservableObject {
     @Published private(set) var downloadProgress: Double = 0   // 0–100
     @Published private(set) var downloadingModelId: String?
     @Published private(set) var downloadError: String?
+    /// Which model was being downloaded when `downloadError` was set.
+    @Published private(set) var downloadErrorModelId: String?
 
     // ── Catalog ───────────────────────────────────────────────────────────────
 
@@ -99,10 +101,11 @@ final class AppState: ObservableObject {
         guard let info = ModelCatalog.find(id: modelId) else { return }
         guard !downloadActive else { return }
 
-        downloadActive     = true
-        downloadProgress   = 0
-        downloadingModelId = modelId
-        downloadError      = nil
+        downloadActive        = true
+        downloadProgress      = 0
+        downloadingModelId    = modelId
+        downloadError         = nil
+        downloadErrorModelId  = nil
 
         // Capture service references and token on the MainActor before
         // entering the task, avoiding cross-actor property access.
@@ -123,9 +126,10 @@ final class AppState: ObservableObject {
                 downloadingModelId = nil
                 refreshCatalog()
             } catch {
-                downloadActive     = false
-                downloadError      = error.localizedDescription
-                downloadingModelId = nil
+                downloadActive       = false
+                downloadError        = error.localizedDescription
+                downloadErrorModelId = modelId
+                downloadingModelId   = nil
                 refreshCatalog()
             }
         }
