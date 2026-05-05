@@ -74,12 +74,14 @@ for DYLIB in "${DYLIBS[@]}"; do
     mkdir -p "$TMP_FW"
     cp "$SRC" "$TMP_FW/$BASENAME"
 
-    # Minimal Info.plist required by xcodebuild -create-xcframework
+    # Minimal Info.plist required by xcodebuild -create-xcframework.
+    # CFBundleExecutable is mandatory — iOS installd rejects the bundle without it.
     cat > "$TMP_FW/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleExecutable</key>        <string>${BASENAME}</string>
     <key>CFBundleIdentifier</key>        <string>com.google.ai.edge.${BASENAME}</string>
     <key>CFBundleName</key>              <string>${BASENAME}</string>
     <key>CFBundlePackageType</key>       <string>FMWK</string>
