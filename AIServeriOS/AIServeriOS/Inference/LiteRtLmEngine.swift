@@ -48,7 +48,7 @@ private func liteRtLmStreamCallback(
 
     if let errorMsg, errorMsg.pointee != 0 {
         let errStr = String(cString: errorMsg)
-        ctx.continuation.finish(throwing: nil)  // finish; caller sees empty stream
+        ctx.continuation.finish()  // finish; caller sees empty stream
         _ = errStr                              // suppress unused warning (error logged)
         if isFinal { Unmanaged<StreamContext>.fromOpaque(userData).release() }
         return
