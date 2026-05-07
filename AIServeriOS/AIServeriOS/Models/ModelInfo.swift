@@ -49,8 +49,8 @@ enum ModelCatalog {
             fileSizeMb:      2580,
             platform:        "ios",
             requiresHfToken: true,
-            licenseUrl:      "https://huggingface.co/litert-community/Gemma4-E2B-IT",
-            downloadUrl:     "https://huggingface.co/litert-community/Gemma4-E2B-IT/resolve/main/gemma-4-E2B-it.litertlm",
+            licenseUrl:      "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm",
+            downloadUrl:     "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
             downloaded:      false,
             loaded:          false
         ),
@@ -61,8 +61,8 @@ enum ModelCatalog {
             fileSizeMb:      3650,
             platform:        "ios",
             requiresHfToken: true,
-            licenseUrl:      "https://huggingface.co/litert-community/Gemma4-E4B-IT",
-            downloadUrl:     "https://huggingface.co/litert-community/Gemma4-E4B-IT/resolve/main/gemma-4-E4B-it.litertlm",
+            licenseUrl:      "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
+            downloadUrl:     "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false
         ),
