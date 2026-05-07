@@ -17,6 +17,8 @@ app/debug/
 
 # iOS
 Pods/
+# Local secrets — never commit
+AIServeriOS/Local.xcconfig
 *.xcworkspace
 xcuserdata/
 DerivedData/

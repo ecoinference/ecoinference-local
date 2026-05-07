@@ -37,6 +37,16 @@ echo ""
 
 # ── Download & wrap frameworks ────────────────────────────────────────────────
 
+echo "[0/2] Checking Local.xcconfig …"
+if [ ! -f "Local.xcconfig" ]; then
+    cp Local.xcconfig.sample Local.xcconfig
+    echo "    Created Local.xcconfig from sample."
+    echo "    ⚠️  Edit Local.xcconfig and set HF_TOKEN = hf_your_token"
+else
+    echo "    Local.xcconfig already exists."
+fi
+echo ""
+
 echo "[1/2] Downloading LiteRT-LM frameworks …"
 chmod +x download_frameworks.sh
 ./download_frameworks.sh

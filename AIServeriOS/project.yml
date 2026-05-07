@@ -5,6 +5,12 @@ options:
     iOS: "17.0"
   xcodeVersion: "15"
 
+# Local.xcconfig is gitignored — copy Local.xcconfig.sample → Local.xcconfig
+# and fill in HF_TOKEN before building. setup.sh creates an empty one automatically.
+configFiles:
+  Debug: Local.xcconfig
+  Release: Local.xcconfig
+
 settings:
   base:
     SWIFT_VERSION: "5.10"

@@ -27,7 +27,18 @@ final class SettingsService {
     }
 
     var hfToken: String {
-        get { defaults.string(forKey: Key.hfToken) ?? "" }
+        get {
+            // Return stored value if the user has explicitly set one.
+            if let stored = defaults.string(forKey: Key.hfToken), !stored.isEmpty {
+                return stored
+            }
+            // Fall back to the build-time default from Local.xcconfig → Info.plist.
+            // This seeds the token without committing it to source control.
+            let buildDefault = Bundle.main.object(forInfoDictionaryKey: "HFTokenDefault")
+                as? String ?? ""
+            // Ignore the unexpanded placeholder from builds without Local.xcconfig.
+            return buildDefault.hasPrefix("hf_") ? buildDefault : ""
+        }
         set { defaults.set(newValue, forKey: Key.hfToken) }
     }
 

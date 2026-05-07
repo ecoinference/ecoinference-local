@@ -1,0 +1,8 @@
+// Local.xcconfig.sample
+// Copy this file to Local.xcconfig and fill in your token.
+// Local.xcconfig is gitignored — never commit it.
+//
+// Get a token at: https://huggingface.co/settings/tokens  (Read access)
+// Accept the model licence at: https://huggingface.co/litert-community/Gemma4-E2B-IT
+
+HF_TOKEN = hf_your_token_here
