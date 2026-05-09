@@ -18,9 +18,16 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<!-- Default HF token injected at build time from Local.xcconfig (gitignored).
-	     Stored in UserDefaults on first launch; user can override in Settings. -->
-	<key>HFTokenDefault</key>
-	<string>$(HF_TOKEN)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>models.example.invalid</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

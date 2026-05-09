@@ -41,6 +41,9 @@ enum ModelCatalog {
 
     // ── iOS models (.litertlm via LiteRT-LM C API) ────────────────────────────
 
+    private static let piBase = "http://models.example.invalid"
+    private static let hfBase = "https://huggingface.co"
+
     static let all: [ModelInfo] = [
         ModelInfo(
             id:              "gemma4-e2b-it",
@@ -48,9 +51,9 @@ enum ModelCatalog {
             fileName:        "gemma-4-E2B-it.litertlm",
             fileSizeMb:      2580,
             platform:        "ios",
-            requiresHfToken: true,
-            licenseUrl:      "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm",
-            downloadUrl:     "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
+            requiresHfToken: false,
+            licenseUrl:      "\(hfBase)/litert-community/gemma-4-E2B-it-litert-lm",
+            downloadUrl:     "\(piBase)/gemma-4-E2B-it.litertlm",
             downloaded:      false,
             loaded:          false
         ),
@@ -60,9 +63,9 @@ enum ModelCatalog {
             fileName:        "gemma-4-E4B-it.litertlm",
             fileSizeMb:      3650,
             platform:        "ios",
-            requiresHfToken: true,
-            licenseUrl:      "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
-            downloadUrl:     "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
+            requiresHfToken: false,
+            licenseUrl:      "\(hfBase)/litert-community/gemma-4-E4B-it-litert-lm",
+            downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false
         ),

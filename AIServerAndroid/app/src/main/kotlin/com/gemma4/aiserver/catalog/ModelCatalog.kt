@@ -19,6 +19,9 @@ object ModelCatalog {
     private const val HF_BASE =
         "https://huggingface.co"
 
+    private const val PI_BASE =
+        "http://models.example.invalid"
+
     // ── Gemma 4 — Android (.litertlm, LiteRT) ────────────────────────────────
     // Requires MediaPipe Tasks GenAI 0.10.20+ on Android API 26+.
     //
@@ -34,10 +37,9 @@ object ModelCatalog {
                 "Good balance of speed and quality (~2.6 GB).",
         parameterCount = "E2B",
         fileSizeMb = 2580,
-        downloadUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm" +
-                "/resolve/main/gemma-4-E2B-it.litertlm",
+        downloadUrl = "$PI_BASE/gemma-4-E2B-it.litertlm",
         fileName = "gemma-4-E2B-it.litertlm",
-        requiresHfToken = true,
+        requiresHfToken = false,
         licenseUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,
@@ -50,10 +52,9 @@ object ModelCatalog {
                 "Best quality; needs ≥6 GB RAM and ~3.7 GB storage.",
         parameterCount = "E4B",
         fileSizeMb = 3650,
-        downloadUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm" +
-                "/resolve/main/gemma-4-E4B-it.litertlm",
+        downloadUrl = "$PI_BASE/gemma-4-E4B-it.litertlm",
         fileName = "gemma-4-E4B-it.litertlm",
-        requiresHfToken = true,
+        requiresHfToken = false,
         licenseUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,

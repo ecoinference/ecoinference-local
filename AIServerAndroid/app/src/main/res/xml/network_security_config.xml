@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Allow plain HTTP on loopback only.
-    AIServer binds exclusively to 127.0.0.1 so this does not expose
-    any network traffic outside the device.
+    Allow plain HTTP:
+    - Loopback: AIServer binds to 127.0.0.1 (no external exposure).
+    - models.example.invalid: local Pi model server (HTTP until TLS is added).
 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">127.0.0.1</domain>
         <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="true">models.example.invalid</domain>
     </domain-config>
 </network-security-config>
