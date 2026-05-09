@@ -20,7 +20,7 @@ object ModelCatalog {
         "https://huggingface.co"
 
     private const val PI_BASE =
-        "http://models.example.invalid"
+        "https://models.example.invalid"
 
     // ── Gemma 4 — Android (.litertlm, LiteRT) ────────────────────────────────
     // Requires MediaPipe Tasks GenAI 0.10.20+ on Android API 26+.

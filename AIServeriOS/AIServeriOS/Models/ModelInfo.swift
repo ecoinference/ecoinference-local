@@ -41,7 +41,7 @@ enum ModelCatalog {
 
     // ── iOS models (.litertlm via LiteRT-LM C API) ────────────────────────────
 
-    private static let piBase = "http://models.example.invalid"
+    private static let piBase = "https://models.example.invalid"
     private static let hfBase = "https://huggingface.co"
 
     static let all: [ModelInfo] = [
