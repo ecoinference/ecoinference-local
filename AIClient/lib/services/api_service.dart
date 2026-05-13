@@ -307,7 +307,9 @@ class ApiService {
           body is Map ? body['error'] ?? body.toString() : body;
       return 'Server error $status: $errMsg';
     }
-    return e.message ?? 'Unknown error';
+    // Verbose fallback — helps diagnose platform-specific network failures.
+    final inner = e.error;
+    return 'Error [${e.type.name}]: ${e.message ?? inner?.toString() ?? 'no details'}';
   }
 }
 
