@@ -250,7 +250,8 @@ final class LiteRtLmEngine {
                 }
 
                 for await token in innerStream {
-                    continuation.yield(token)
+                    let cleaned = token.removingGemmaStopTokens()
+                    if !cleaned.isEmpty { continuation.yield(cleaned) }
                 }
                 continuation.finish()
             }
@@ -308,7 +309,7 @@ final class LiteRtLmEngine {
 
         let text = litert_lm_responses_get_response_text_at(responses, 0)
             .map { String(cString: $0) } ?? ""
-        return text
+        return text.removingGemmaStopTokens()
     }
 
     // ── Gemma prompt formatting ───────────────────────────────────────────────
@@ -354,5 +355,20 @@ final class LiteRtLmEngine {
 
         sb += "<start_of_turn>model\n"
         return sb
+    }
+}
+
+// MARK: - Stop-token stripping
+
+private extension String {
+    /// Removes Gemma special stop tokens that the SDK may include in raw output.
+    /// These tokens should never be shown to the end user.
+    func removingGemmaStopTokens() -> String {
+        var s = self
+        // Control tokens emitted by Gemma's tokenizer
+        for token in ["<end_of_turn>", "<start_of_turn>", "<eos>", "</s>"] {
+            s = s.replacingOccurrences(of: token, with: "")
+        }
+        return s
     }
 }
