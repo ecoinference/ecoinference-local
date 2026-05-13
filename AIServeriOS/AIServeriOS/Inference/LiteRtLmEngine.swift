@@ -180,8 +180,10 @@ final class LiteRtLmEngine {
                 let cfg = litert_lm_session_config_create()!
                 litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
                 litert_lm_session_config_set_apply_prompt_template(cfg, false)
+                // Only kLiteRtLmSamplerTypeGreedy is implemented in this SDK version.
+                // TopK/TopP return "Sampler type: 1/2 not implemented yet".
                 var sampler = LiteRtLmSamplerParams(
-                    type:        kLiteRtLmSamplerTypeTopK,
+                    type:        kLiteRtLmSamplerTypeGreedy,
                     top_k:       40,
                     top_p:       0.95,
                     temperature: temperature,
@@ -252,7 +254,7 @@ final class LiteRtLmEngine {
         litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
         litert_lm_session_config_set_apply_prompt_template(cfg, false)
         var sampler = LiteRtLmSamplerParams(
-            type: kLiteRtLmSamplerTypeTopK,
+            type: kLiteRtLmSamplerTypeGreedy,
             top_k: 40, top_p: 0.95,
             temperature: temperature, seed: 0
         )
