@@ -31,6 +31,16 @@ targets:
 
     info:
       path: AIServeriOS/Info.plist
+      properties:
+        # URL scheme so AIClient can launch/stop this app via aiserver://start|stop
+        CFBundleURLTypes:
+          - CFBundleURLName: com.gemma4.aiserver
+            CFBundleURLSchemes:
+              - aiserver
+        # Keep NWListener alive when backgrounded via silent AVAudioSession.
+        # Without this iOS suspends the app and HTTP clients get no response.
+        UIBackgroundModes:
+          - audio
 
     entitlements:
       path: AIServeriOS/AIServeriOS.entitlements
