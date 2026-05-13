@@ -182,10 +182,17 @@ final class LiteRtLmEngine {
                 self.sessionActive = true
                 self.sessionLock.unlock()
 
-                // Let the SDK apply the Gemma chat template (apply_prompt_template: true)
-                // and pass the last user message as plain text. Our manual template
-                // caused the model to loop on <start_of_turn>model<end_of_turn>.
-                let prompt = messages.last(where: { $0["role"] == "user" })?["content"] ?? ""
+                // Build the full Gemma chat template manually so that:
+                //  1. The entire conversation history is included (multi-turn).
+                //  2. We have full control over the prompt — no dependency on the
+                //     SDK's template heuristics.
+                // apply_prompt_template is set to false below so the SDK treats
+                // the input as a pre-formatted prompt.
+                // Note: the previous looping issue (<start_of_turn>model loop) was
+                // caused by a bad sampler type (TopK/TopP/Greedy not implemented).
+                // Now that we rely on the SDK default sampler (Unspecified), the
+                // manual template works correctly.
+                let prompt = LiteRtLmEngine.buildGemmaPrompt(messages: messages)
 
                 // Null-terminated UTF-8 bytes kept alive via ctx
                 var promptBytes = ContiguousArray(
@@ -195,7 +202,7 @@ final class LiteRtLmEngine {
                 // Create session config
                 let cfg = litert_lm_session_config_create()!
                 litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
-                litert_lm_session_config_set_apply_prompt_template(cfg, true)
+                litert_lm_session_config_set_apply_prompt_template(cfg, false)
                 // Do not set sampler params — let the SDK use its built-in default.
                 // TopK(1), TopP(2), and Greedy(3) all return "not implemented yet"
                 // in the 0.10.2 iOS dylibs; Unspecified(0) uses the model default.
@@ -271,11 +278,11 @@ final class LiteRtLmEngine {
             sessionLock.unlock()
         }
 
-        let prompt = messages.last(where: { $0["role"] == "user" })?["content"] ?? ""
+        let prompt = LiteRtLmEngine.buildGemmaPrompt(messages: messages)
 
         let cfg = litert_lm_session_config_create()!
         litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
-        litert_lm_session_config_set_apply_prompt_template(cfg, true)
+        litert_lm_session_config_set_apply_prompt_template(cfg, false)
         // Do not set sampler params — SDK default used (see chatStream comment).
 
         guard let session = litert_lm_engine_create_session(eng, cfg) else {
