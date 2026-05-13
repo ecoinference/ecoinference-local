@@ -8,6 +8,7 @@ enum InferenceError: LocalizedError {
     case generationFailed(String)
     case noModelLoaded
     case cancelled
+    case busy
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,7 @@ enum InferenceError: LocalizedError {
         case .generationFailed(let msg):     return "Inference failed: \(msg)"
         case .noModelLoaded:                 return "No model loaded. Call load() first."
         case .cancelled:                     return "Inference cancelled."
+        case .busy:                          return "Inference already in progress. Please wait."
         }
     }
 }
@@ -78,6 +80,8 @@ final class LiteRtLmEngine {
     private(set) var loadedModelId: String?
     private var currentSession: OpaquePointer? // LiteRtLmSession*
     private let sessionLock = NSLock()
+    /// True while a session is active — the engine only supports one at a time.
+    private var sessionActive = false
 
     var isLoaded: Bool { engine != nil }
 
@@ -168,6 +172,16 @@ final class LiteRtLmEngine {
             Task.detached(priority: .userInitiated) { [weak self] in
                 guard let self else { continuation.finish(); return }
 
+                // Reject concurrent requests — engine supports one session at a time.
+                self.sessionLock.lock()
+                guard !self.sessionActive else {
+                    self.sessionLock.unlock()
+                    continuation.finish(throwing: InferenceError.busy)
+                    return
+                }
+                self.sessionActive = true
+                self.sessionLock.unlock()
+
                 // Let the SDK apply the Gemma chat template (apply_prompt_template: true)
                 // and pass the last user message as plain text. Our manual template
                 // caused the model to loop on <start_of_turn>model<end_of_turn>.
@@ -200,6 +214,7 @@ final class LiteRtLmEngine {
                 defer {
                     self.sessionLock.lock()
                     self.currentSession = nil
+                    self.sessionActive  = false
                     self.sessionLock.unlock()
                     litert_lm_session_delete(session)
                 }
@@ -242,6 +257,19 @@ final class LiteRtLmEngine {
         temperature: Float = 0.8
     ) throws -> String {
         guard let eng = engine else { throw InferenceError.noModelLoaded }
+
+        sessionLock.lock()
+        guard !sessionActive else {
+            sessionLock.unlock()
+            throw InferenceError.busy
+        }
+        sessionActive = true
+        sessionLock.unlock()
+        defer {
+            sessionLock.lock()
+            sessionActive = false
+            sessionLock.unlock()
+        }
 
         let prompt = messages.last(where: { $0["role"] == "user" })?["content"] ?? ""
 
