@@ -201,8 +201,11 @@ final class HttpServer {
 
         } else {
             // ── Regular response ──────────────────────────────────────────────
+            // Content-Length is already set in HttpResponse.headers by the
+            // json() factory — do not append it again or Dart's HTTP client
+            // will reject the response with "content-length occurred more than once".
             let body = response.body ?? Data()
-            headerStr += "Content-Length: \(body.count)\r\n\r\n"
+            headerStr += "\r\n"
             var out = Data(headerStr.utf8)
             out.append(body)
             try await conn.sendData(out)
