@@ -180,16 +180,9 @@ final class LiteRtLmEngine {
                 let cfg = litert_lm_session_config_create()!
                 litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
                 litert_lm_session_config_set_apply_prompt_template(cfg, false)
-                // Only kLiteRtLmSamplerTypeGreedy is implemented in this SDK version.
-                // TopK/TopP return "Sampler type: 1/2 not implemented yet".
-                var sampler = LiteRtLmSamplerParams(
-                    type:        kLiteRtLmSamplerTypeGreedy,
-                    top_k:       40,
-                    top_p:       0.95,
-                    temperature: temperature,
-                    seed:        0
-                )
-                litert_lm_session_config_set_sampler_params(cfg, &sampler)
+                // Do not set sampler params — let the SDK use its built-in default.
+                // TopK(1), TopP(2), and Greedy(3) all return "not implemented yet"
+                // in the 0.10.2 iOS dylibs; Unspecified(0) uses the model default.
 
                 guard let session = litert_lm_engine_create_session(eng, cfg) else {
                     litert_lm_session_config_delete(cfg)
@@ -253,12 +246,7 @@ final class LiteRtLmEngine {
         let cfg = litert_lm_session_config_create()!
         litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
         litert_lm_session_config_set_apply_prompt_template(cfg, false)
-        var sampler = LiteRtLmSamplerParams(
-            type: kLiteRtLmSamplerTypeGreedy,
-            top_k: 40, top_p: 0.95,
-            temperature: temperature, seed: 0
-        )
-        litert_lm_session_config_set_sampler_params(cfg, &sampler)
+        // Do not set sampler params — SDK default used (see chatStream comment).
 
         guard let session = litert_lm_engine_create_session(eng, cfg) else {
             litert_lm_session_config_delete(cfg)
