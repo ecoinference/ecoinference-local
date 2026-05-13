@@ -168,8 +168,10 @@ final class LiteRtLmEngine {
             Task.detached(priority: .userInitiated) { [weak self] in
                 guard let self else { continuation.finish(); return }
 
-                // Build Gemma chat prompt
-                let prompt = Self.buildGemmaPrompt(messages: messages)
+                // Let the SDK apply the Gemma chat template (apply_prompt_template: true)
+                // and pass the last user message as plain text. Our manual template
+                // caused the model to loop on <start_of_turn>model<end_of_turn>.
+                let prompt = messages.last(where: { $0["role"] == "user" })?["content"] ?? ""
 
                 // Null-terminated UTF-8 bytes kept alive via ctx
                 var promptBytes = ContiguousArray(
@@ -179,7 +181,7 @@ final class LiteRtLmEngine {
                 // Create session config
                 let cfg = litert_lm_session_config_create()!
                 litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
-                litert_lm_session_config_set_apply_prompt_template(cfg, false)
+                litert_lm_session_config_set_apply_prompt_template(cfg, true)
                 // Do not set sampler params — let the SDK use its built-in default.
                 // TopK(1), TopP(2), and Greedy(3) all return "not implemented yet"
                 // in the 0.10.2 iOS dylibs; Unspecified(0) uses the model default.
@@ -241,11 +243,11 @@ final class LiteRtLmEngine {
     ) throws -> String {
         guard let eng = engine else { throw InferenceError.noModelLoaded }
 
-        let prompt = Self.buildGemmaPrompt(messages: messages)
+        let prompt = messages.last(where: { $0["role"] == "user" })?["content"] ?? ""
 
         let cfg = litert_lm_session_config_create()!
         litert_lm_session_config_set_max_output_tokens(cfg, Int32(maxTokens))
-        litert_lm_session_config_set_apply_prompt_template(cfg, false)
+        litert_lm_session_config_set_apply_prompt_template(cfg, true)
         // Do not set sampler params — SDK default used (see chatStream comment).
 
         guard let session = litert_lm_engine_create_session(eng, cfg) else {
