@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AVFoundation
 
 @MainActor
 final class AppState: ObservableObject {
@@ -72,6 +73,7 @@ final class AppState: ObservableObject {
         serverPort  = settings.serverPort
         do {
             try server.start()
+            activateAudioSession()   // keep NWListener alive in background
             // serverRunning is set to true by onStateChange when .ready fires.
         } catch {
             serverRunning = false
@@ -80,7 +82,33 @@ final class AppState: ObservableObject {
 
     func stopServer() {
         server.stop()
+        deactivateAudioSession()
         // serverRunning is set to false by onStateChange(.stopped).
+    }
+
+    // ── Silent audio session (background keep-alive) ──────────────────────────
+    // iOS suspends NWListener when the app is backgrounded unless the app holds
+    // an active AVAudioSession with the UIBackgroundModes 'audio' entitlement.
+    // A silent mixable session satisfies iOS without audible output.
+
+    private func activateAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            // Non-fatal — server still works in foreground
+            print("[AppState] AVAudioSession activate failed: \(error)")
+        }
+    }
+
+    private func deactivateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(false,
+                options: .notifyOthersOnDeactivation)
+        } catch {
+            print("[AppState] AVAudioSession deactivate failed: \(error)")
+        }
     }
 
     // MARK: - Catalog

@@ -29,5 +29,13 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Keep the NWListener alive when the app is backgrounded.
+	     'audio' is the most permissive background mode available without
+	     special Apple entitlements. We play a silent audio session to
+	     maintain the background execution right. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>
