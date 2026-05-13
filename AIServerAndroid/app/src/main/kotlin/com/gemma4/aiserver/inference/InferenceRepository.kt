@@ -121,7 +121,7 @@ class InferenceRepository(private val context: Context) {
             conversation.sendMessageAsync(lastUserMessage).collect { message ->
                 sb.append(message.contents.toString())
             }
-            sb.toString()
+            sb.toString().removeGemmaStopTokens()
         }
     }
 
@@ -144,7 +144,8 @@ class InferenceRepository(private val context: Context) {
 
         eng.createConversation(config).use { conversation ->
             conversation.sendMessageAsync(lastUserMessage).collect { message ->
-                emit(message.contents.toString())
+                val token = message.contents.toString().removeGemmaStopTokens()
+                if (token.isNotEmpty()) emit(token)
             }
         }
     }.flowOn(Dispatchers.IO)
@@ -235,3 +236,18 @@ class InferenceRepository(private val context: Context) {
 }
 
 class InferenceException(message: String) : Exception(message)
+
+// ── Stop-token stripping ──────────────────────────────────────────────────────
+
+/**
+ * Removes Gemma special stop tokens that the SDK may include in raw output.
+ * These tokens should never be shown to the end user.
+ * Mirrors the iOS `removingGemmaStopTokens()` extension.
+ */
+private fun String.removeGemmaStopTokens(): String {
+    var s = this
+    for (token in listOf("<end_of_turn>", "<start_of_turn>", "<eos>", "</s>")) {
+        s = s.replace(token, "")
+    }
+    return s
+}
