@@ -1,8 +1,5 @@
-import 'dart:io';
-
-import 'package:flutter_sms/flutter_sms.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:torch_light/torch_light.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'tool_definition.dart';
 
@@ -34,17 +31,9 @@ void registerHardwareTools() {
 Future<String> _flashlight(Map<String, dynamic> args) async {
   final on = (args['on'] as bool?) ?? true;
   try {
-    // Android requires CAMERA permission to access the torch hardware.
-    if (Platform.isAndroid) {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        return 'Permission denied: camera permission is required to use the flashlight.';
-      }
-    }
-
-    final available = await TorchLight.isTorchAvailable();
-    if (!available) return 'Flashlight is not available on this device.';
-
+    // torch_light uses CameraManager.setTorchMode() on Android, which does NOT
+    // require CAMERA permission. Skipping isTorchAvailable() — it can return
+    // false on MIUI/custom ROMs even when a torch is present.
     if (on) {
       await TorchLight.enableTorch();
       return 'Flashlight turned on.';
@@ -53,6 +42,11 @@ Future<String> _flashlight(Map<String, dynamic> args) async {
       return 'Flashlight turned off.';
     }
   } on Exception catch (e) {
+    final msg = e.toString();
+    if (msg.contains('device_not_capable')) {
+      return 'Flashlight is not accessible on this device (device_not_capable). '
+          'Try toggling it manually first, or the ROM may be blocking torch access.';
+    }
     return 'Flashlight error: $e';
   }
 }
@@ -66,11 +60,18 @@ Future<String> _sendSms(Map<String, dynamic> args) async {
   if (to.isEmpty) return 'Error: recipient phone number is required.';
   if (message.isEmpty) return 'Error: message body is required.';
 
+  // Use the sms: URI scheme via url_launcher — works on all platforms without
+  // special permissions and opens the user's default SMS app.
+  final uri = Uri(
+    scheme: 'sms',
+    path: to,
+    queryParameters: {'body': message},
+  );
+
   try {
-    // flutter_sms 3.x always opens the system compose sheet on both platforms.
-    // The user reviews and taps Send — no silent background sending.
-    await sendSMS(message: message, recipients: [to]);
-    return 'SMS compose sheet opened for $to — tap Send to deliver.';
+    final launched = await launchUrl(uri);
+    if (!launched) return 'Could not open SMS app for $to.';
+    return 'SMS compose opened for $to — tap Send to deliver.';
   } on Exception catch (e) {
     return 'SMS error: $e';
   }

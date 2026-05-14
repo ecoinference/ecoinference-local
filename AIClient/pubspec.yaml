@@ -21,8 +21,6 @@ dependencies:
   # ── Agentic hardware tools ────────────────────────────────────────────────
   # Flashlight / torch control
   torch_light: ^1.0.0
-  # SMS sending (compose UI on iOS; direct send on Android with confirmation)
-  flutter_sms: ^3.0.1
   # Runtime permission requests (camera required for torch on Android)
   permission_handler: ^11.3.0
 

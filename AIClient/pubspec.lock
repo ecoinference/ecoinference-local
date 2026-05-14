@@ -102,14 +102,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  flutter_sms:
-    dependency: "direct main"
-    description:
-      name: flutter_sms
-      sha256: c0da4bc857f6386b97e1cd9a77f3f3c40b8f55d23326fb1fa3c627f52f623d0a
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -511,4 +503,4 @@ packages:
     version: "1.1.0"
 sdks:
   dart: ">=3.10.0 <4.0.0"
-  flutter: ">=3.38.5"
+  flutter: ">=3.38.0"
