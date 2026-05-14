@@ -29,6 +29,16 @@ void registerHardwareTools() {
   ));
 
   ToolRegistry.register(const ToolDefinition(
+    name: 'show_map',
+    description:
+        'Get the current GPS location and open it in Google Maps so the user can see it.',
+    parametersDoc: '(no parameters)',
+    argsExample: '{}',
+    execute: _showMap,
+    requiresConfirmation: false,
+  ));
+
+  ToolRegistry.register(const ToolDefinition(
     name: 'send_sms',
     description:
         'Send an SMS text message. Always requires user confirmation before sending.',
@@ -64,37 +74,44 @@ Future<String> _flashlight(Map<String, dynamic> args) async {
   }
 }
 
-// ── GPS location ──────────────────────────────────────────────────────────────
+// ── GPS helpers ───────────────────────────────────────────────────────────────
+
+/// Shared location fetch used by both [_getLocation] and [_showMap].
+/// Returns a [Position] on success, or a human-readable error string.
+Future<Object> _fetchPosition() async {
+  final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    return 'Location services are disabled. Please enable GPS in device settings.';
+  }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      return 'Location permission denied.';
+    }
+  }
+  if (permission == LocationPermission.deniedForever) {
+    return 'Location permission permanently denied. '
+        'Enable it in device Settings → App permissions.';
+  }
+
+  return Geolocator.getCurrentPosition(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      timeLimit: Duration(seconds: 15),
+    ),
+  );
+}
+
+// ── Get location ──────────────────────────────────────────────────────────────
 
 Future<String> _getLocation(Map<String, dynamic> args) async {
   try {
-    // Check if location services are enabled at the OS level.
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return 'Location services are disabled. Please enable GPS in device settings.';
-    }
+    final result = await _fetchPosition();
+    if (result is String) return result; // error message
 
-    // Check / request permission.
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return 'Location permission denied.';
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      return 'Location permission permanently denied. '
-          'Enable it in device Settings → App permissions.';
-    }
-
-    // Fetch position — high accuracy, 15 s timeout.
-    final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 15),
-      ),
-    );
-
+    final pos = result as Position;
     final lat = pos.latitude.toStringAsFixed(6);
     final lon = pos.longitude.toStringAsFixed(6);
     final acc = pos.accuracy.toStringAsFixed(1);
@@ -105,6 +122,39 @@ Future<String> _getLocation(Map<String, dynamic> args) async {
         'Maps link: https://maps.google.com/?q=$lat,$lon';
   } on Exception catch (e) {
     return 'Location error: $e';
+  }
+}
+
+// ── Show map ──────────────────────────────────────────────────────────────────
+
+Future<String> _showMap(Map<String, dynamic> args) async {
+  try {
+    final result = await _fetchPosition();
+    if (result is String) return result; // error message
+
+    final pos = result as Position;
+    final lat = pos.latitude.toStringAsFixed(6);
+    final lon = pos.longitude.toStringAsFixed(6);
+    final acc = pos.accuracy.toStringAsFixed(1);
+
+    // geo: URI opens the default maps app on Android.
+    // On iOS, url_launcher falls back to Google Maps in the browser.
+    // z=17 gives a street-level zoom.
+    final geoUri = Uri.parse('geo:$lat,$lon?q=$lat,$lon&z=17');
+    final webUri = Uri.parse('https://maps.google.com/?q=$lat,$lon&z=17');
+
+    final uri = (Platform.isAndroid) ? geoUri : webUri;
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    if (!launched) {
+      // Fallback to web URL if the geo: intent isn't handled.
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    }
+
+    return 'Map opened showing current location '
+        '($lat, $lon, accuracy ±${acc}m).';
+  } on Exception catch (e) {
+    return 'Show map error: $e';
   }
 }
 
