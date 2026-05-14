@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>body { margin: 0; background: transparent; }</style>
+</head>
+<body>
+<script>
+// ── Package registry ──────────────────────────────────────────────────────────
+const PACKAGE_MAP = {
+  'numpy':      { pkg: 'numpy',      via: 'pyodide' },
+  'np':         { pkg: 'numpy',      via: 'pyodide' },
+  'pandas':     { pkg: 'pandas',     via: 'pyodide' },
+  'pd':         { pkg: 'pandas',     via: 'pyodide' },
+  'scipy':      { pkg: 'scipy',      via: 'pyodide' },
+  'matplotlib': { pkg: 'matplotlib', via: 'pyodide' },
+  'plt':        { pkg: 'matplotlib', via: 'pyodide' },
+  'Bio':        { pkg: 'biopython',  via: 'micropip' },
+  'plotly':     { pkg: 'plotly',     via: 'micropip' },
+  'px':         { pkg: 'plotly',     via: 'micropip' },
+  'go':         { pkg: 'plotly',     via: 'micropip' },
+  'ff':         { pkg: 'plotly',     via: 'micropip' },
+};
+
+const loadedPkgs = new Set();
+let pyodide = null;
+
+// ── Initialise Pyodide ────────────────────────────────────────────────────────
+async function initPyodide() {
+  try {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load Pyodide CDN script'));
+      document.head.appendChild(s);
+    });
+
+    pyodide = await loadPyodide();
+    await pyodide.loadPackage('micropip');
+
+    // Pre-configure matplotlib non-interactive backend
+    await pyodide.runPythonAsync(`
+import os
+os.environ['MPLBACKEND'] = 'Agg'
+`);
+    PythonResult.postMessage(JSON.stringify({ type: 'ready' }));
+  } catch (err) {
+    PythonResult.postMessage(JSON.stringify({ type: 'error', value: 'Pyodide init failed: ' + err.toString() }));
+  }
+}
+
+// ── Smart package loader ──────────────────────────────────────────────────────
+async function loadRequiredPackages(code) {
+  const pyodideQueue = [];
+  const micropipQueue = [];
+
+  for (const [alias, info] of Object.entries(PACKAGE_MAP)) {
+    if (loadedPkgs.has(info.pkg)) continue;
+    if (code.includes('import ' + alias) || code.includes('from ' + alias + ' ') || code.includes('from ' + alias + '.')) {
+      info.via === 'pyodide' ? pyodideQueue.push(info.pkg) : micropipQueue.push(info.pkg);
+      loadedPkgs.add(info.pkg);
+    }
+  }
+
+  if (pyodideQueue.length > 0) {
+    PythonResult.postMessage(JSON.stringify({ type: 'status', value: 'Loading ' + [...new Set(pyodideQueue)].join(', ') + '…' }));
+    await pyodide.loadPackage([...new Set(pyodideQueue)]);
+  }
+  if (micropipQueue.length > 0) {
+    PythonResult.postMessage(JSON.stringify({ type: 'status', value: 'Installing ' + [...new Set(micropipQueue)].join(', ') + '…' }));
+    const micropip = pyodide.pyimport('micropip');
+    for (const pkg of [...new Set(micropipQueue)]) {
+      await micropip.install(pkg);
+    }
+  }
+}
+
+// ── Execute ───────────────────────────────────────────────────────────────────
+async function runPython(code) {
+  if (!pyodide) {
+    PythonResult.postMessage(JSON.stringify({ type: 'error', value: 'Pyodide not ready yet.' }));
+    return;
+  }
+  try {
+    await loadRequiredPackages(code);
+
+    // Clear previous result variable
+    await pyodide.runPythonAsync("globals().pop('result', None)");
+
+    await pyodide.runPythonAsync(code);
+
+    const resultProxy = pyodide.globals.get('result');
+    if (resultProxy === undefined || resultProxy === null) {
+      PythonResult.postMessage(JSON.stringify({ type: 'error', value: "Code ran but 'result' variable was not set." }));
+      return;
+    }
+
+    const resultStr = (typeof resultProxy.toString === 'function') ? resultProxy.toString() : String(resultProxy);
+    if (resultProxy.destroy) resultProxy.destroy();
+
+    const trimmed = resultStr.trim();
+    if (trimmed.startsWith('data:image/')) {
+      PythonResult.postMessage(JSON.stringify({ type: 'image', value: trimmed }));
+    } else if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+      PythonResult.postMessage(JSON.stringify({ type: 'html', value: trimmed }));
+    } else {
+      PythonResult.postMessage(JSON.stringify({ type: 'text', value: trimmed }));
+    }
+  } catch (err) {
+    PythonResult.postMessage(JSON.stringify({ type: 'error', value: err.toString() }));
+  }
+}
+
+initPyodide();
+</script>
+</body>
+</html>

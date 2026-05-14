@@ -6,6 +6,8 @@ class ChatMessage {
     required this.content,
     DateTime? timestamp,
     this.toolName,
+    this.imageDataUrl,
+    this.htmlContent,
   }) : timestamp = timestamp ?? DateTime.now();
 
   final MessageRole role;
@@ -13,6 +15,10 @@ class ChatMessage {
   final DateTime timestamp;
   /// Set for [MessageRole.tool] messages — the name of the tool that ran.
   final String? toolName;
+  /// Base64 PNG data URL for image tool results (not persisted).
+  final String? imageDataUrl;
+  /// Full HTML string for interactive chart results (not persisted).
+  final String? htmlContent;
 
   bool get isUser => role == MessageRole.user;
   bool get isAssistant => role == MessageRole.assistant;
@@ -35,6 +41,7 @@ class ChatMessage {
         'content': content,
         'timestamp': timestamp.millisecondsSinceEpoch,
         if (toolName != null) 'tool_name': toolName,
+        // imageDataUrl and htmlContent are intentionally not persisted
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {

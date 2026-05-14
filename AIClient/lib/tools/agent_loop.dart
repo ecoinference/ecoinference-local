@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/chat_message.dart';
+import 'tool_result.dart';
 
 /// Parsed tool call extracted from an LLM response.
 class ToolCallResult {
@@ -52,11 +53,35 @@ class AgentLoop {
     }
   }
 
+  /// Chat message shown in the UI for a completed tool call.
+  static ChatMessage displayMessage(String toolName, ToolResult result) =>
+      switch (result) {
+        TextToolResult r => ChatMessage(
+            role: MessageRole.tool, content: r.text, toolName: toolName),
+        ImageToolResult r => ChatMessage(
+            role: MessageRole.tool,
+            content: r.caption,
+            toolName: toolName,
+            imageDataUrl: r.base64DataUrl),
+        HtmlToolResult r => ChatMessage(
+            role: MessageRole.tool,
+            content: r.caption,
+            toolName: toolName,
+            htmlContent: r.html),
+      };
+
   /// Builds the user-role message that feeds a tool result back to the LLM.
   /// Gemma has no native tool role, so the result is injected as a user turn.
-  static ChatMessage toolResultMessage(String toolName, String result) =>
-      ChatMessage(
-        role: MessageRole.user,
-        content: '[Tool result: $toolName] $result',
-      );
+  /// Image/HTML results send only the caption — never raw base64 or HTML.
+  static ChatMessage toolResultMessage(String toolName, ToolResult result) {
+    final caption = switch (result) {
+      TextToolResult r => r.text,
+      ImageToolResult r => r.caption,
+      HtmlToolResult r => r.caption,
+    };
+    return ChatMessage(
+      role: MessageRole.user,
+      content: '[Tool result: $toolName] $caption',
+    );
+  }
 }

@@ -9,8 +9,11 @@ import '../../services/api_service.dart';
 import '../../services/server_launcher.dart';
 import '../../tools/agent_loop.dart';
 import '../../tools/hardware_tools.dart';
+import '../../tools/python_runner.dart';
 import '../../tools/tool_definition.dart';
+import '../../tools/tool_result.dart';
 import '../../widgets/message_bubble.dart';
+import '../chart/chart_screen.dart';
 import '../connection/connection_screen.dart';
 import '../models/model_catalog_screen.dart';
 
@@ -56,6 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadSystemPrompt();
     _loadMessages();
     registerHardwareTools();
+    PythonRunner.instance.initialize();
   }
 
   Future<void> _loadSystemPrompt() async {
@@ -222,7 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final tool = ToolRegistry.find(toolCall.toolName);
     if (tool == null) {
       // Unknown tool — inject error result and loop.
-      final errResult = 'Error: unknown tool "${toolCall.toolName}".';
+      final errResult = TextToolResult('Error: unknown tool "${toolCall.toolName}".');
       _injectToolResultAndLoop(
           toolCall.toolName, errResult, history, iteration);
       return;
@@ -258,10 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Update indicator → result.
     setState(() {
-      _messages.last = ChatMessage(
-          role: MessageRole.tool,
-          content: result,
-          toolName: toolCall.toolName);
+      _messages.last = AgentLoop.displayMessage(toolCall.toolName, result);
     });
     _scrollToBottom();
 
@@ -269,7 +270,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _injectToolResultAndLoop(
-      String toolName, String result, List<ChatMessage> history, int iteration) {
+      String toolName, ToolResult result, List<ChatMessage> history, int iteration) {
     history.add(AgentLoop.toolResultMessage(toolName, result));
     _runAgentTurn(history, iteration + 1);
   }
@@ -538,56 +539,73 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: _messages.isEmpty && _streamingContent == null
-                ? _buildEmptyState(theme)
-                : ListView.builder(
-                    controller: _scrollCtrl,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 16),
-                    // +1 slot for the live streaming bubble (or typing indicator).
-                    itemCount: _messages.length + (_loading ? 1 : 0),
-                    itemBuilder: (context, i) {
-                      if (i == _messages.length && _loading) {
-                        // Show tokens as they stream in; typing indicator before
-                        // the first token arrives.
-                        if (_streamingContent != null &&
-                            _streamingContent!.isNotEmpty) {
-                          return MessageBubble(
-                            message: ChatMessage(
-                              role: MessageRole.assistant,
-                              content: _streamingContent!,
-                            ),
+          Column(
+            children: [
+              Expanded(
+                child: _messages.isEmpty && _streamingContent == null
+                    ? _buildEmptyState(theme)
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 16),
+                        // +1 slot for the live streaming bubble (or typing indicator).
+                        itemCount: _messages.length + (_loading ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (i == _messages.length && _loading) {
+                            // Show tokens as they stream in; typing indicator before
+                            // the first token arrives.
+                            if (_streamingContent != null &&
+                                _streamingContent!.isNotEmpty) {
+                              return MessageBubble(
+                                message: ChatMessage(
+                                  role: MessageRole.assistant,
+                                  content: _streamingContent!,
+                                ),
+                              );
+                            }
+                            return const _TypingIndicator();
+                          }
+                          // Show a divider at the start of the context window so
+                          // the user knows which messages are actually sent.
+                          final windowStart = _messages.length > _kMaxHistoryMessages
+                              ? _messages.length - _kMaxHistoryMessages
+                              : 0;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (i == windowStart && windowStart > 0)
+                                _ContextWindowDivider(
+                                    excluded: windowStart),
+                              MessageBubble(
+                                message: _messages[i],
+                                onViewChart: _messages[i].htmlContent != null
+                                    ? () => Navigator.of(context).push(MaterialPageRoute(
+                                          builder: (_) => ChartScreen(html: _messages[i].htmlContent!),
+                                        ))
+                                    : null,
+                              ),
+                            ],
                           );
-                        }
-                        return const _TypingIndicator();
-                      }
-                      // Show a divider at the start of the context window so
-                      // the user knows which messages are actually sent.
-                      final windowStart = _messages.length > _kMaxHistoryMessages
-                          ? _messages.length - _kMaxHistoryMessages
-                          : 0;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (i == windowStart && windowStart > 0)
-                            _ContextWindowDivider(
-                                excluded: windowStart),
-                          MessageBubble(message: _messages[i]),
-                        ],
-                      );
-                    },
-                  ),
+                        },
+                      ),
+              ),
+              SafeArea(
+                top: false,
+                child: _InputBar(
+                  controller: _inputCtrl,
+                  loading: _loading,
+                  onSend: _send,
+                  onStop: _stopStream,
+                ),
+              ),
+            ],
           ),
-          SafeArea(
-            top: false,
-            child: _InputBar(
-              controller: _inputCtrl,
-              loading: _loading,
-              onSend: _send,
-              onStop: _stopStream,
+          Offstage(
+            child: SizedBox(
+              width: 1, height: 1,
+              child: PythonRunner.instance.widget,
             ),
           ),
         ],

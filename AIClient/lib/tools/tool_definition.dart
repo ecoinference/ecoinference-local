@@ -1,5 +1,7 @@
+import 'tool_result.dart';
+
 /// Signature for a tool's execution function.
-typedef ToolExecuteFn = Future<String> Function(Map<String, dynamic> args);
+typedef ToolExecuteFn = Future<ToolResult> Function(Map<String, dynamic> args);
 
 /// Describes a single agentic tool: its name, how the LLM should call it,
 /// and the Flutter-side function that executes it.
@@ -25,7 +27,7 @@ class ToolDefinition {
   /// Example args JSON for the system prompt (e.g. '{"on": true}').
   final String argsExample;
 
-  /// The Flutter function that performs the action and returns a result string.
+  /// The Flutter function that performs the action and returns a result.
   final ToolExecuteFn execute;
 
   /// When true, [ChatScreen] shows a confirmation dialog before calling [execute].
@@ -55,7 +57,7 @@ class ToolRegistry {
     if (_tools.isEmpty) return '';
 
     final buf = StringBuffer()
-      ..writeln('You have access to device hardware tools.')
+      ..writeln('You have access to device hardware tools and a Python execution environment.')
       ..writeln(
           'When you need to use a tool, output EXACTLY this on its own line '
           'and nothing else — wait for the result before continuing:')

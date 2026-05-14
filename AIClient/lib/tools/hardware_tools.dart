@@ -5,7 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'python_runner.dart';
 import 'tool_definition.dart';
+import 'tool_result.dart';
 
 /// Registers all hardware tools into [ToolRegistry].
 /// Call once from [main()] or the first screen's [initState].
@@ -16,7 +18,14 @@ void registerHardwareTools() {
     parametersDoc: 'on: bool',
     argsExample: '{"on": true}',
     execute: _flashlight,
-    requiresConfirmation: false,
+  ));
+
+  ToolRegistry.register(const ToolDefinition(
+    name: 'send_sos',
+    description: 'Flash the device torch in the international SOS Morse code pattern (· · · — — — · · ·).',
+    parametersDoc: '(no parameters)',
+    argsExample: '{}',
+    execute: _sendSos,
   ));
 
   ToolRegistry.register(const ToolDefinition(
@@ -25,63 +34,60 @@ void registerHardwareTools() {
     parametersDoc: '(no parameters)',
     argsExample: '{}',
     execute: _getLocation,
-    requiresConfirmation: false,
   ));
 
   ToolRegistry.register(const ToolDefinition(
     name: 'show_map',
-    description:
-        'Get the current GPS location and open it in Google Maps so the user can see it.',
+    description: 'Get the current GPS location and open it in Google Maps.',
     parametersDoc: '(no parameters)',
     argsExample: '{}',
     execute: _showMap,
-    requiresConfirmation: false,
-  ));
-
-  ToolRegistry.register(const ToolDefinition(
-    name: 'send_sos',
-    description:
-        'Flash the device torch in the international SOS Morse code pattern '
-        '(· · · — — — · · ·) to signal for help.',
-    parametersDoc: '(no parameters)',
-    argsExample: '{}',
-    execute: _sendSos,
-    requiresConfirmation: false,
   ));
 
   ToolRegistry.register(const ToolDefinition(
     name: 'send_sms',
-    description:
-        'Send an SMS text message. Always requires user confirmation before sending.',
+    description: 'Send an SMS text message. Always requires user confirmation before sending.',
     parametersDoc: 'to: string (phone number), message: string',
     argsExample: '{"to": "+15551234567", "message": "Hello!"}',
     execute: _sendSms,
     requiresConfirmation: true,
   ));
+
+  ToolRegistry.register(const ToolDefinition(
+    name: 'run_python',
+    description: 'Execute a Python snippet for computation, data analysis, or chart generation. '
+        'Supports: numpy (np), pandas (pd), scipy, matplotlib (plt), plotly (px/go), biopython (Bio). '
+        'For text/numbers: assign result = <value>. '
+        'For matplotlib charts: use Agg backend, save fig to BytesIO, set result = "data:image/png;base64," + base64.b64encode(buf.read()).decode(). '
+        'For Plotly charts: set result = fig.to_html(include_plotlyjs="cdn", full_html=True).',
+    parametersDoc: 'code: string (Python snippet, must assign output to `result`)',
+    argsExample: '{"code": "import math\\nresult = round(math.sqrt(2), 6)"}',
+    execute: _runPython,
+  ));
 }
 
 // ── Flashlight ────────────────────────────────────────────────────────────────
 
-Future<String> _flashlight(Map<String, dynamic> args) async {
+Future<ToolResult> _flashlight(Map<String, dynamic> args) async {
   final on = (args['on'] as bool?) ?? true;
   try {
     if (Platform.isAndroid) {
       final status = await Permission.camera.request();
       if (!status.isGranted) {
-        return 'Permission denied: camera permission is required to use the flashlight.';
+        return const TextToolResult('Permission denied: camera permission is required to use the flashlight.');
       }
     }
     final available = await TorchLight.isTorchAvailable();
-    if (!available) return 'Flashlight is not available on this device.';
+    if (!available) return const TextToolResult('Flashlight is not available on this device.');
     if (on) {
       await TorchLight.enableTorch();
-      return 'Flashlight turned on.';
+      return const TextToolResult('Flashlight turned on.');
     } else {
       await TorchLight.disableTorch();
-      return 'Flashlight turned off.';
+      return const TextToolResult('Flashlight turned off.');
     }
   } on Exception catch (e) {
-    return 'Flashlight error: $e';
+    return TextToolResult('Flashlight error: $e');
   }
 }
 
@@ -96,16 +102,16 @@ const _morseDash      = Duration(milliseconds: 600);  // 3 × unit
 const _morseSymbolGap = _morseUnit;
 const _morseLetterGap = Duration(milliseconds: 600);  // 3 × unit
 
-Future<String> _sendSos(Map<String, dynamic> args) async {
+Future<ToolResult> _sendSos(Map<String, dynamic> args) async {
   try {
     if (Platform.isAndroid) {
       final status = await Permission.camera.request();
       if (!status.isGranted) {
-        return 'Permission denied: camera permission is required for the torch.';
+        return const TextToolResult('Permission denied: camera permission is required for the torch.');
       }
     }
     final available = await TorchLight.isTorchAvailable();
-    if (!available) return 'Flashlight is not available on this device.';
+    if (!available) return const TextToolResult('Flashlight is not available on this device.');
 
     // SOS: · · ·  — — —  · · ·
     // Each entry is (onDuration, offDuration after)
@@ -131,11 +137,11 @@ Future<String> _sendSos(Map<String, dynamic> args) async {
       if (off > Duration.zero) await Future.delayed(off);
     }
 
-    return 'SOS signal complete (· · · — — — · · ·).';
+    return const TextToolResult('SOS signal complete (· · · — — — · · ·).');
   } on Exception catch (e) {
     // Make sure torch is off if something goes wrong mid-sequence.
     try { await TorchLight.disableTorch(); } catch (_) {}
-    return 'SOS error: $e';
+    return TextToolResult('SOS error: $e');
   }
 }
 
@@ -171,10 +177,10 @@ Future<Object> _fetchPosition() async {
 
 // ── Get location ──────────────────────────────────────────────────────────────
 
-Future<String> _getLocation(Map<String, dynamic> args) async {
+Future<ToolResult> _getLocation(Map<String, dynamic> args) async {
   try {
     final result = await _fetchPosition();
-    if (result is String) return result; // error message
+    if (result is String) return TextToolResult(result); // error message
 
     final pos = result as Position;
     final lat = pos.latitude.toStringAsFixed(6);
@@ -182,20 +188,20 @@ Future<String> _getLocation(Map<String, dynamic> args) async {
     final acc = pos.accuracy.toStringAsFixed(1);
     final alt = pos.altitude.toStringAsFixed(1);
 
-    return 'Latitude: $lat, Longitude: $lon, '
+    return TextToolResult('Latitude: $lat, Longitude: $lon, '
         'Accuracy: ±${acc}m, Altitude: ${alt}m. '
-        'Maps link: https://maps.google.com/?q=$lat,$lon';
+        'Maps link: https://maps.google.com/?q=$lat,$lon');
   } on Exception catch (e) {
-    return 'Location error: $e';
+    return TextToolResult('Location error: $e');
   }
 }
 
 // ── Show map ──────────────────────────────────────────────────────────────────
 
-Future<String> _showMap(Map<String, dynamic> args) async {
+Future<ToolResult> _showMap(Map<String, dynamic> args) async {
   try {
     final result = await _fetchPosition();
-    if (result is String) return result; // error message
+    if (result is String) return TextToolResult(result); // error message
 
     final pos = result as Position;
     final lat = pos.latitude.toStringAsFixed(6);
@@ -204,7 +210,6 @@ Future<String> _showMap(Map<String, dynamic> args) async {
 
     // geo: URI opens the default maps app on Android.
     // On iOS, url_launcher falls back to Google Maps in the browser.
-    // z=17 gives a street-level zoom.
     final geoUri = Uri.parse('geo:$lat,$lon?q=$lat,$lon&z=17');
     final webUri = Uri.parse('https://maps.google.com/?q=$lat,$lon&z=17');
 
@@ -216,24 +221,22 @@ Future<String> _showMap(Map<String, dynamic> args) async {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     }
 
-    return 'Map opened showing current location '
-        '($lat, $lon, accuracy ±${acc}m).';
+    return TextToolResult('Map opened showing current location '
+        '($lat, $lon, accuracy ±${acc}m).');
   } on Exception catch (e) {
-    return 'Show map error: $e';
+    return TextToolResult('Show map error: $e');
   }
 }
 
 // ── SMS ───────────────────────────────────────────────────────────────────────
 
-Future<String> _sendSms(Map<String, dynamic> args) async {
+Future<ToolResult> _sendSms(Map<String, dynamic> args) async {
   final to = (args['to'] as String? ?? '').trim();
   final message = (args['message'] as String? ?? '').trim();
 
-  if (to.isEmpty) return 'Error: recipient phone number is required.';
-  if (message.isEmpty) return 'Error: message body is required.';
+  if (to.isEmpty) return const TextToolResult('Error: recipient phone number is required.');
+  if (message.isEmpty) return const TextToolResult('Error: message body is required.');
 
-  // Use the sms: URI scheme via url_launcher — works on all platforms without
-  // special permissions and opens the user's default SMS app.
   final uri = Uri(
     scheme: 'sms',
     path: to,
@@ -242,9 +245,17 @@ Future<String> _sendSms(Map<String, dynamic> args) async {
 
   try {
     final launched = await launchUrl(uri);
-    if (!launched) return 'Could not open SMS app for $to.';
-    return 'SMS compose opened for $to — tap Send to deliver.';
+    if (!launched) return TextToolResult('Could not open SMS app for $to.');
+    return TextToolResult('SMS compose opened for $to — tap Send to deliver.');
   } on Exception catch (e) {
-    return 'SMS error: $e';
+    return TextToolResult('SMS error: $e');
   }
+}
+
+// ── Python ────────────────────────────────────────────────────────────────────
+
+Future<ToolResult> _runPython(Map<String, dynamic> args) async {
+  final code = (args['code'] as String? ?? '').trim();
+  if (code.isEmpty) return const TextToolResult('Error: no Python code provided.');
+  return PythonRunner.instance.execute(code);
 }
