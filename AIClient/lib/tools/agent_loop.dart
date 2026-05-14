@@ -21,8 +21,10 @@ class ToolCallResult {
 /// The UI state machine lives in [ChatScreen]; this class handles only
 /// parsing and message construction so it can be tested independently.
 class AgentLoop {
+  // Gemma natively closes tool calls with <tool_call|> instead of </tool_call>.
+  // Accept both so the parser works regardless of which the model emits.
   static final _toolCallRe = RegExp(
-    r'<tool_call>(.*?)</tool_call>',
+    r'<tool_call>(.*?)(?:</tool_call>|<tool_call\|>)',
     dotAll: true,
   );
 
