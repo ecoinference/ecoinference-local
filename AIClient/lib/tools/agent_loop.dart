@@ -21,10 +21,11 @@ class ToolCallResult {
 /// The UI state machine lives in [ChatScreen]; this class handles only
 /// parsing and message construction so it can be tested independently.
 class AgentLoop {
-  // Gemma natively closes tool calls with <tool_call|> instead of </tool_call>.
-  // Accept both so the parser works regardless of which the model emits.
+  // Gemma may close with </tool_call>, <tool_call|>, or nothing at all
+  // (the closing token gets stripped server-side as an <end_of_turn> variant).
+  // The closing group is therefore optional — we fall back to end-of-string.
   static final _toolCallRe = RegExp(
-    r'<tool_call>(.*?)(?:</tool_call>|<tool_call\|>)',
+    r'<tool_call\s*>([\s\S]*?)(?:</tool_call>|<tool_call\|>|$)',
     dotAll: true,
   );
 
@@ -64,7 +65,10 @@ class AgentLoop {
     }
 
     final name = data['name'] as String? ?? '';
-    final args = (data['args'] as Map<String, dynamic>?) ?? {};
+    // Gemma's native format uses "arguments"; our prompt uses "args" — accept both.
+    final args = (data['args'] as Map<String, dynamic>?)
+        ?? (data['arguments'] as Map<String, dynamic>?)
+        ?? {};
     if (name.isEmpty) return null;
 
     return ToolCallResult(
