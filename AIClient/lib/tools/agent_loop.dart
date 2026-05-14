@@ -35,22 +35,80 @@ class AgentLoop {
     final match = _toolCallRe.firstMatch(response);
     if (match == null) return null;
 
-    final jsonStr = match.group(1)?.trim() ?? '';
-    try {
-      final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final name = data['name'] as String? ?? '';
-      final args = (data['args'] as Map<String, dynamic>?) ?? {};
-      if (name.isEmpty) return null;
+    var jsonStr = match.group(1)?.trim() ?? '';
 
-      return ToolCallResult(
-        textBefore: response.substring(0, match.start).trim(),
-        toolName: name,
-        args: args,
-      );
+    // Strip markdown code fences the model sometimes wraps around the JSON.
+    jsonStr = jsonStr
+        .replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: false), '')
+        .replaceAll(RegExp(r'\s*```$', multiLine: false), '')
+        .trim();
+
+    Map<String, dynamic>? data;
+
+    // Attempt 1: parse as-is.
+    try {
+      data = jsonDecode(jsonStr) as Map<String, dynamic>;
     } catch (_) {
-      // Malformed JSON inside the tag — treat whole response as plain text.
-      return null;
+      // Attempt 2: escape literal control characters inside JSON string values.
+      // Gemma often emits Python code with real newlines/tabs inside the JSON,
+      // which is invalid — fix it by scanning character-by-character.
+      try {
+        data = jsonDecode(_escapeControlCharsInStrings(jsonStr))
+            as Map<String, dynamic>;
+      } catch (_) {
+        // Malformed JSON — treat whole response as plain text.
+        return null;
+      }
     }
+
+    final name = data['name'] as String? ?? '';
+    final args = (data['args'] as Map<String, dynamic>?) ?? {};
+    if (name.isEmpty) return null;
+
+    return ToolCallResult(
+      textBefore: response.substring(0, match.start).trim(),
+      toolName: name,
+      args: args,
+    );
+  }
+
+  /// Scans a JSON string and escapes any literal control characters
+  /// (newline, carriage return, tab) that appear inside quoted string values.
+  /// This fixes the common model error of writing multi-line code directly
+  /// inside a JSON string without proper `\n` escaping.
+  static String _escapeControlCharsInStrings(String s) {
+    final buf = StringBuffer();
+    var inString = false;
+    var escaped = false;
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      if (escaped) {
+        buf.write(ch);
+        escaped = false;
+        continue;
+      }
+      if (ch == r'\' && inString) {
+        buf.write(ch);
+        escaped = true;
+        continue;
+      }
+      if (ch == '"') {
+        inString = !inString;
+        buf.write(ch);
+        continue;
+      }
+      if (inString) {
+        switch (ch) {
+          case '\n': buf.write(r'\n');
+          case '\r': buf.write(r'\r');
+          case '\t': buf.write(r'\t');
+          default:   buf.write(ch);
+        }
+        continue;
+      }
+      buf.write(ch);
+    }
+    return buf.toString();
   }
 
   /// Chat message shown in the UI for a completed tool call.

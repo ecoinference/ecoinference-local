@@ -59,9 +59,12 @@ class ToolRegistry {
     final buf = StringBuffer()
       ..writeln('You have access to device hardware tools and a Python execution environment.')
       ..writeln(
-          'When you need to use a tool, output EXACTLY this on its own line '
-          'and nothing else — wait for the result before continuing:')
+          'When you need to use a tool, output EXACTLY one line in this format and nothing else — '
+          'then wait for the result before continuing:')
       ..writeln('<tool_call>{"name":"TOOL_NAME","args":{...}}</tool_call>')
+      ..writeln('IMPORTANT: The entire tool_call must be valid JSON on a single line. '
+          'For multi-line Python code use \\n (backslash-n) to separate lines inside the JSON string. '
+          'Do NOT use actual newlines or triple-backtick code blocks inside the tool_call tags.')
       ..writeln()
       ..writeln('Available tools:');
 
