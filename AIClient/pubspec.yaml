@@ -18,6 +18,13 @@ dependencies:
   android_intent_plus: '>=4.0.0 <5.0.0'
   # Open HuggingFace licence pages in the device browser
   url_launcher: ^6.2.0
+  # ── Agentic hardware tools ────────────────────────────────────────────────
+  # Flashlight / torch control
+  torch_light: ^1.0.0
+  # SMS sending (compose UI on iOS; direct send on Android with confirmation)
+  flutter_sms: ^2.3.3
+  # Runtime permission requests (camera required for torch on Android)
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:

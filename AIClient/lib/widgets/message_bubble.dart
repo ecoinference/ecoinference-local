@@ -8,6 +8,8 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.isTool) return _ToolBubble(message: message);
+
     final theme = Theme.of(context);
     final isUser = message.isUser;
 
@@ -41,6 +43,62 @@ class MessageBubble extends StatelessWidget {
             color: isUser
                 ? theme.colorScheme.onPrimary
                 : theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tool event bubble ─────────────────────────────────────────────────────────
+
+class _ToolBubble extends StatelessWidget {
+  const _ToolBubble({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isRunning = message.content.endsWith('…');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Center(
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isRunning)
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: theme.colorScheme.secondary,
+                  ),
+                )
+              else
+                Icon(Icons.build_outlined,
+                    size: 13, color: theme.colorScheme.secondary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${message.toolName != null ? "[${message.toolName}] " : ""}${message.content}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

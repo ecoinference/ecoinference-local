@@ -7,6 +7,9 @@ import '../../models/chat_message.dart';
 import '../../models/server_config.dart';
 import '../../services/api_service.dart';
 import '../../services/server_launcher.dart';
+import '../../tools/agent_loop.dart';
+import '../../tools/hardware_tools.dart';
+import '../../tools/tool_definition.dart';
 import '../../widgets/message_bubble.dart';
 import '../connection/connection_screen.dart';
 import '../models/model_catalog_screen.dart';
@@ -52,6 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _currentModelId = widget.config.modelId;
     _loadSystemPrompt();
     _loadMessages();
+    registerHardwareTools();
   }
 
   Future<void> _loadSystemPrompt() async {
@@ -109,7 +113,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  // ── Sending ─────────────────────────────────────────────────────────────────
+  // ── Sending & agent loop ──────────────────────────────────────────────────
 
   void _send() {
     final text = _inputCtrl.text.trim();
@@ -122,19 +126,40 @@ class _ChatScreenState extends State<ChatScreen> {
       _loading = true;
       _streamingContent = '';
     });
-    _saveMessages(); // persist user message immediately
+    _saveMessages();
     _scrollToBottom();
 
-    // Build history: system prompt + windowed messages.
+    _runAgentTurn(_buildHistory(), 0);
+  }
+
+  /// Builds the message list to send to the server:
+  /// tool system prompt + user system prompt + windowed conversation.
+  /// Tool UI messages (role: tool) are excluded — only user/assistant turns.
+  List<ChatMessage> _buildHistory() {
+    final toolBlock = ToolRegistry.buildSystemPromptBlock();
+    final userPrompt = (_systemPrompt ?? '').trim();
+    final combined =
+        [toolBlock, userPrompt].where((s) => s.isNotEmpty).join('\n\n');
+
     final history = <ChatMessage>[];
-    if (_systemPrompt != null && _systemPrompt!.isNotEmpty) {
-      history.add(ChatMessage(
-          role: MessageRole.system, content: _systemPrompt!));
+    if (combined.isNotEmpty) {
+      history.add(ChatMessage(role: MessageRole.system, content: combined));
     }
-    final window = _messages.length > _kMaxHistoryMessages
-        ? _messages.sublist(_messages.length - _kMaxHistoryMessages)
-        : _messages;
+
+    // Only pass user/assistant turns — tool UI messages stay in the visual list.
+    final conversational = _messages
+        .where((m) => m.role == MessageRole.user || m.role == MessageRole.assistant)
+        .toList();
+    final window = conversational.length > _kMaxHistoryMessages
+        ? conversational.sublist(conversational.length - _kMaxHistoryMessages)
+        : conversational;
     history.addAll(window);
+    return history;
+  }
+
+  /// Streams one LLM turn. On completion calls [_handleAgentResponse].
+  void _runAgentTurn(List<ChatMessage> history, int iteration) {
+    setState(() => _streamingContent = '');
 
     _streamSub = ApiService.instance
         .chatCompletionStream(messages: history)
@@ -147,13 +172,11 @@ class _ChatScreenState extends State<ChatScreen> {
           },
           onError: (Object e) {
             if (!mounted) return;
-            final errMsg =
-                e is ApiException ? e.message : e.toString();
+            final msg = e is ApiException ? e.message : e.toString();
             setState(() {
               _messages.add(ChatMessage(
-                role: MessageRole.assistant,
-                content: '⚠️ Error: $errMsg',
-              ));
+                  role: MessageRole.assistant,
+                  content: '⚠️ Error: $msg'));
               _streamingContent = null;
               _loading = false;
             });
@@ -162,25 +185,149 @@ class _ChatScreenState extends State<ChatScreen> {
           },
           onDone: () {
             if (!mounted) return;
-            final content = _streamingContent;
-            setState(() {
-              if (content != null && content.isNotEmpty) {
-                _messages.add(ChatMessage(
-                  role: MessageRole.assistant,
-                  content: content,
-                ));
-              }
-              _streamingContent = null;
-              _loading = false;
-            });
-            _saveMessages();
-            _scrollToBottom();
+            final response = _streamingContent ?? '';
+            setState(() => _streamingContent = null);
+            _handleAgentResponse(response, history, iteration);
           },
           cancelOnError: true,
         );
   }
 
+  /// Called after each LLM turn completes.
+  /// Checks for a tool call; if found executes it and loops; otherwise finalises.
+  Future<void> _handleAgentResponse(
+      String response, List<ChatMessage> history, int iteration) async {
+    final toolCall = AgentLoop.parseToolCall(response);
+
+    // ── No tool call — finalise ──────────────────────────────────────────────
+    if (toolCall == null || iteration >= AgentLoop.maxIterations) {
+      final text = response.trim();
+      if (text.isNotEmpty) {
+        setState(() => _messages.add(
+            ChatMessage(role: MessageRole.assistant, content: text)));
+      }
+      setState(() => _loading = false);
+      _saveMessages();
+      _scrollToBottom();
+      return;
+    }
+
+    // ── Tool call found ───────────────────────────────────────────────────────
+    // Show any text that came before the tool call marker.
+    if (toolCall.textBefore.isNotEmpty) {
+      setState(() => _messages.add(ChatMessage(
+          role: MessageRole.assistant, content: toolCall.textBefore)));
+    }
+
+    final tool = ToolRegistry.find(toolCall.toolName);
+    if (tool == null) {
+      // Unknown tool — inject error result and loop.
+      final errResult = 'Error: unknown tool "${toolCall.toolName}".';
+      _injectToolResultAndLoop(
+          toolCall.toolName, errResult, history, iteration);
+      return;
+    }
+
+    // Show "tool running" indicator in the chat.
+    setState(() => _messages.add(ChatMessage(
+        role: MessageRole.tool,
+        content: 'Running ${toolCall.toolName}…',
+        toolName: toolCall.toolName)));
+    _scrollToBottom();
+
+    // Confirmation dialog for sensitive tools (e.g. send_sms).
+    if (tool.requiresConfirmation && mounted) {
+      final confirmed =
+          await _showToolConfirmDialog(toolCall.toolName, toolCall.args);
+      if (!confirmed) {
+        setState(() {
+          // Replace the "running…" indicator with "cancelled".
+          _messages.last = ChatMessage(
+              role: MessageRole.tool,
+              content: 'Cancelled.',
+              toolName: toolCall.toolName);
+          _loading = false;
+        });
+        _saveMessages();
+        return;
+      }
+    }
+
+    // Execute.
+    final result = await tool.execute(toolCall.args);
+
+    // Update indicator → result.
+    setState(() {
+      _messages.last = ChatMessage(
+          role: MessageRole.tool,
+          content: result,
+          toolName: toolCall.toolName);
+    });
+    _scrollToBottom();
+
+    _injectToolResultAndLoop(toolCall.toolName, result, history, iteration);
+  }
+
+  void _injectToolResultAndLoop(
+      String toolName, String result, List<ChatMessage> history, int iteration) {
+    history.add(AgentLoop.toolResultMessage(toolName, result));
+    _runAgentTurn(history, iteration + 1);
+  }
+
+  /// Confirmation dialog shown before executing tools with [requiresConfirmation].
+  Future<bool> _showToolConfirmDialog(
+      String toolName, Map<String, dynamic> args) async {
+    if (!mounted) return false;
+
+    final lines = args.entries
+        .map((e) => '${e.key}: ${e.value}')
+        .join('\n');
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(children: [
+              const Icon(Icons.build_outlined, size: 20),
+              const SizedBox(width: 8),
+              Text('Run: $toolName'),
+            ]),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('The assistant wants to execute this tool:'),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText(
+                    lines,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Allow'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   /// Cancels an in-flight stream and commits whatever tokens arrived so far.
+  /// Also stops any pending agent loop iteration.
   void _stopStream() {
     _streamSub?.cancel();
     _streamSub = null;
