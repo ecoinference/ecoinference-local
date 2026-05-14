@@ -210,6 +210,25 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() => _messages.add(
             ChatMessage(role: MessageRole.assistant, content: text)));
       }
+
+      // DEBUG: if response contained a tool_call tag but we failed to parse it,
+      // show a debug bubble with the raw bytes so we can diagnose the format.
+      // TODO: remove before release.
+      if (toolCall == null && response.contains('<tool_call')) {
+        final escaped = response
+            .replaceAll('\n', '↵')
+            .replaceAll('\r', '↵')
+            .replaceAll('\t', '→');
+        final preview = escaped.length > 400
+            ? '${escaped.substring(0, 400)}…'
+            : escaped;
+        setState(() => _messages.add(ChatMessage(
+              role: MessageRole.tool,
+              content: '🐛 DEBUG — raw response (↵=newline):\n$preview',
+              toolName: 'parser_debug',
+            )));
+      }
+
       setState(() => _loading = false);
       _saveMessages();
       _scrollToBottom();

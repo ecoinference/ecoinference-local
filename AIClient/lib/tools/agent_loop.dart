@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../models/chat_message.dart';
 import 'tool_result.dart';
 
@@ -34,43 +35,72 @@ class AgentLoop {
 
   /// Parses [response] for a <tool_call> marker.
   /// Returns [ToolCallResult] on success, null if no valid tool call found.
+  /// DEBUG: logs every step to the console.
   static ToolCallResult? parseToolCall(String response) {
+    // DEBUG ─────────────────────────────────────────────────────────────────
+    debugPrint('=== parseToolCall ===');
+    debugPrint('response length: ${response.length}');
+    debugPrint('response (first 300): ${response.substring(0, response.length.clamp(0, 300))}');
+    debugPrint('contains "<tool_call>": ${response.contains("<tool_call>")}');
+    debugPrint('regex pattern: ${_toolCallRe.pattern}');
+    // ────────────────────────────────────────────────────────────────────────
+
     final match = _toolCallRe.firstMatch(response);
+
+    // DEBUG
+    debugPrint('regex match: ${match != null}');
+    if (match != null) {
+      debugPrint('match.start=${match.start} match.end=${match.end}');
+      debugPrint('match.group(0) (first 200): ${match.group(0)?.substring(0, match.group(0)!.length.clamp(0, 200))}');
+    }
+
     if (match == null) return null;
 
     var jsonStr = match.group(1)?.trim() ?? '';
+    debugPrint('raw jsonStr (first 300): $jsonStr'.substring(0, 'raw jsonStr (first 300): $jsonStr'.length.clamp(0, 320)));
 
     // Strip markdown code fences the model sometimes wraps around the JSON.
     jsonStr = jsonStr
         .replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: false), '')
         .replaceAll(RegExp(r'\s*```$', multiLine: false), '')
         .trim();
+    debugPrint('jsonStr after fence-strip: $jsonStr'.substring(0, 'jsonStr after fence-strip: $jsonStr'.length.clamp(0, 320)));
 
     Map<String, dynamic>? data;
 
     // Attempt 1: parse as-is.
     try {
       data = jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (_) {
+      debugPrint('JSON parse attempt 1: SUCCESS');
+    } catch (e1) {
+      debugPrint('JSON parse attempt 1 FAILED: $e1');
       // Attempt 2: escape literal control characters inside JSON string values.
-      // Gemma often emits Python code with real newlines/tabs inside the JSON,
-      // which is invalid — fix it by scanning character-by-character.
+      final fixed = _escapeControlCharsInStrings(jsonStr);
+      debugPrint('fixed jsonStr (first 300): $fixed'.substring(0, 'fixed jsonStr (first 300): $fixed'.length.clamp(0, 320)));
       try {
-        data = jsonDecode(_escapeControlCharsInStrings(jsonStr))
-            as Map<String, dynamic>;
-      } catch (_) {
+        data = jsonDecode(fixed) as Map<String, dynamic>;
+        debugPrint('JSON parse attempt 2: SUCCESS');
+      } catch (e2) {
+        debugPrint('JSON parse attempt 2 FAILED: $e2');
         // Malformed JSON — treat whole response as plain text.
         return null;
       }
     }
 
+    debugPrint('parsed keys: ${data.keys.toList()}');
     final name = data['name'] as String? ?? '';
     // Gemma's native format uses "arguments"; our prompt uses "args" — accept both.
     final args = (data['args'] as Map<String, dynamic>?)
         ?? (data['arguments'] as Map<String, dynamic>?)
         ?? {};
-    if (name.isEmpty) return null;
+    debugPrint('tool name: "$name"  args keys: ${args.keys.toList()}');
 
+    if (name.isEmpty) {
+      debugPrint('name is empty — returning null');
+      return null;
+    }
+
+    debugPrint('parseToolCall SUCCESS → $name');
     return ToolCallResult(
       textBefore: response.substring(0, match.start).trim(),
       toolName: name,
