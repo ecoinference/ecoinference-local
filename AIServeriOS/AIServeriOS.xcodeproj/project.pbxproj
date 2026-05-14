@@ -1,0 +1,507 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */; };
+		18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; };
+		1B055401A71F2D2C74CDF5F4 /* ModelRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28244344A89C5428164FBB8E /* ModelRoutes.swift */; };
+		1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5575423A70E4EFBDEF641903 /* ApiModels.swift */; };
+		24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		49D0AB481804FC3FC942B2CF /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6E5E00261378B45C281246 /* SettingsService.swift */; };
+		57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */; };
+		5BFC63DA3E2C6FDBDEF31757 /* CatalogRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002975E945A40384F1E2CA51 /* CatalogRoutes.swift */; };
+		67617D8834DD9FE217942EEA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */; };
+		689B14AAFBCA1FAE6577538E /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; };
+		6E287B4449D060A0B0C9478A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873C8C7D00B52C3E3E06355B /* ContentView.swift */; };
+		7F0AAF666177971BF9051310 /* InferenceRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */; };
+		7FE5BA49E0F231E989694333 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF6509717621980EF5701E /* AppState.swift */; };
+		832EEB6EDB9F60994C87E94D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */; };
+		89AA7B33B9FC9A0ABF8F3DFF /* HttpTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */; };
+		8C8C7617212C28F696F0646C /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		9C83A0F35AB653172F527094 /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5F9DF7645A7B955097709F /* HealthRoutes.swift */; };
+		9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C88C8C5E98E94753A85860 /* ModelInfo.swift */; };
+		A36098BC9C77C4BBF180223E /* HttpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */; };
+		A4CEC31E08311287D678DDC3 /* libLiteRtMetalAccelerator.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; };
+		AC6BA5A29D5D7BDA7524BB5D /* DownloadRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */; };
+		B9ECD4048284260BD8F440C3 /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C00270A1D2F8100A2630A8F0 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; };
+		DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */; };
+		F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E71EF145C50AA63582F547E /* DownloadService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E2CF8C286AF356231D824C51 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B9ECD4048284260BD8F440C3 /* libLiteRtLm.xcframework in Embed Frameworks */,
+				49D0AB481804FC3FC942B2CF /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */,
+				8C8C7617212C28F696F0646C /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */,
+				24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		002975E945A40384F1E2CA51 /* CatalogRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogRoutes.swift; sourceTree = "<group>"; };
+		098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRoutes.swift; sourceTree = "<group>"; };
+		0C5F9DF7645A7B955097709F /* HealthRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRoutes.swift; sourceTree = "<group>"; };
+		1C0361C19D1024C961B6CCFC /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
+		1F78B51514F26DFB18DE0304 /* AIServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIServeriOS.entitlements; sourceTree = "<group>"; };
+		28244344A89C5428164FBB8E /* ModelRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRoutes.swift; sourceTree = "<group>"; };
+		3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpTypes.swift; sourceTree = "<group>"; };
+		3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpServer.swift; sourceTree = "<group>"; };
+		47EF6509717621980EF5701E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		4C6E5E00261378B45C281246 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
+		4D264C438947D35E525C0B18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceService.swift; sourceTree = "<group>"; };
+		52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libGemmaModelConstraintProvider.xcframework; path = Frameworks/libGemmaModelConstraintProvider.xcframework; sourceTree = "<group>"; };
+		5575423A70E4EFBDEF641903 /* ApiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiModels.swift; sourceTree = "<group>"; };
+		56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtLm.xcframework; path = Frameworks/libLiteRtLm.xcframework; sourceTree = "<group>"; };
+		6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6E71EF145C50AA63582F547E /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
+		873C8C7D00B52C3E3E06355B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2C88C8C5E98E94753A85860 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
+		BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
+		C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
+		CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRtLmEngine.swift; sourceTree = "<group>"; };
+		D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServeriOSApp.swift; sourceTree = "<group>"; };
+		E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceRoutes.swift; sourceTree = "<group>"; };
+		F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4160AA751415BDB35C4AD061 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				689B14AAFBCA1FAE6577538E /* libLiteRtLm.xcframework in Frameworks */,
+				18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
+				A4CEC31E08311287D678DDC3 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
+				C00270A1D2F8100A2630A8F0 /* libStreamProxy.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		16AAA087276A069D74934E90 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				873C8C7D00B52C3E3E06355B /* ContentView.swift */,
+				6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		16CCFDDF75AB3610364FF196 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */,
+				56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */,
+				BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */,
+				C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4ED80617D4B9B691A488B360 /* Routes */ = {
+			isa = PBXGroup;
+			children = (
+				002975E945A40384F1E2CA51 /* CatalogRoutes.swift */,
+				098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */,
+				0C5F9DF7645A7B955097709F /* HealthRoutes.swift */,
+				E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */,
+				28244344A89C5428164FBB8E /* ModelRoutes.swift */,
+			);
+			path = Routes;
+			sourceTree = "<group>";
+		};
+		7E64FB5EBF6D9DDEF74E7B1E = {
+			isa = PBXGroup;
+			children = (
+				FCC4FFAB055A61766CC3A20B /* AIServeriOS */,
+				C0E7EDF9DA119301BD459A88 /* AIServeriOS */,
+				16CCFDDF75AB3610364FF196 /* Frameworks */,
+				D439ECB489426E66E161B95E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		97F2D4387832390B3EFDB9D4 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				6E71EF145C50AA63582F547E /* DownloadService.swift */,
+				4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */,
+				4C6E5E00261378B45C281246 /* SettingsService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A3A6C1DF1E9CF166E98169A2 /* Inference */ = {
+			isa = PBXGroup;
+			children = (
+				CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */,
+			);
+			path = Inference;
+			sourceTree = "<group>";
+		};
+		A7B0835BBF90A57DE59EE34F /* Server */ = {
+			isa = PBXGroup;
+			children = (
+				3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */,
+				3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */,
+				4ED80617D4B9B691A488B360 /* Routes */,
+			);
+			path = Server;
+			sourceTree = "<group>";
+		};
+		BD30DEF6CBE86F6615D3C2B0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5575423A70E4EFBDEF641903 /* ApiModels.swift */,
+				A2C88C8C5E98E94753A85860 /* ModelInfo.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C0E7EDF9DA119301BD459A88 /* AIServeriOS */ = {
+			isa = PBXGroup;
+			children = (
+				1C0361C19D1024C961B6CCFC /* Local.xcconfig */,
+			);
+			name = AIServeriOS;
+			path = .;
+			sourceTree = "<group>";
+		};
+		D439ECB489426E66E161B95E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1F78B51514F26DFB18DE0304 /* AIServer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FCC4FFAB055A61766CC3A20B /* AIServeriOS */ = {
+			isa = PBXGroup;
+			children = (
+				21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */,
+				D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */,
+				47EF6509717621980EF5701E /* AppState.swift */,
+				CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */,
+				4D264C438947D35E525C0B18 /* Info.plist */,
+				F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */,
+				A3A6C1DF1E9CF166E98169A2 /* Inference */,
+				BD30DEF6CBE86F6615D3C2B0 /* Models */,
+				A7B0835BBF90A57DE59EE34F /* Server */,
+				97F2D4387832390B3EFDB9D4 /* Services */,
+				16AAA087276A069D74934E90 /* UI */,
+			);
+			path = AIServeriOS;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B1035ACCB8D35645FBB6BF9F /* AIServeriOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIServeriOS" */;
+			buildPhases = (
+				F6470A462D797079CFD89BCE /* Sources */,
+				003D83752F0D717511CD285A /* Resources */,
+				4160AA751415BDB35C4AD061 /* Frameworks */,
+				E2CF8C286AF356231D824C51 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AIServeriOS;
+			packageProductDependencies = (
+			);
+			productName = AIServeriOS;
+			productReference = 1F78B51514F26DFB18DE0304 /* AIServer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E72E54191B4633241C691647 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIServeriOS" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7E64FB5EBF6D9DDEF74E7B1E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D439ECB489426E66E161B95E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B1035ACCB8D35645FBB6BF9F /* AIServeriOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		003D83752F0D717511CD285A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67617D8834DD9FE217942EEA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F6470A462D797079CFD89BCE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */,
+				1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */,
+				7FE5BA49E0F231E989694333 /* AppState.swift in Sources */,
+				5BFC63DA3E2C6FDBDEF31757 /* CatalogRoutes.swift in Sources */,
+				6E287B4449D060A0B0C9478A /* ContentView.swift in Sources */,
+				AC6BA5A29D5D7BDA7524BB5D /* DownloadRoutes.swift in Sources */,
+				F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */,
+				9C83A0F35AB653172F527094 /* HealthRoutes.swift in Sources */,
+				A36098BC9C77C4BBF180223E /* HttpServer.swift in Sources */,
+				89AA7B33B9FC9A0ABF8F3DFF /* HttpTypes.swift in Sources */,
+				7F0AAF666177971BF9051310 /* InferenceRoutes.swift in Sources */,
+				DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */,
+				57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */,
+				9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */,
+				1B055401A71F2D2C74CDF5F4 /* ModelRoutes.swift in Sources */,
+				4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */,
+				832EEB6EDB9F60994C87E94D /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		14285BA8A95C0B6C635AF231 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AIServeriOS/AIServeriOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 65P94N4JDC;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				INFOPLIST_FILE = AIServeriOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
+				PRODUCT_NAME = AIServer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		44AD4A5641C1B283B2123E51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AIServeriOS/AIServeriOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 65P94N4JDC;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				INFOPLIST_FILE = AIServeriOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
+				PRODUCT_NAME = AIServer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CC91CFD83F5E4C72060AA57D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1C0361C19D1024C961B6CCFC /* Local.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = (
+					"-rpath",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OBJC_BRIDGING_HEADER = "AIServeriOS/LiteRtLm-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		DD5595804073BFF2953CF814 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1C0361C19D1024C961B6CCFC /* Local.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-rpath",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "AIServeriOS/LiteRtLm-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIServeriOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD5595804073BFF2953CF814 /* Debug */,
+				CC91CFD83F5E4C72060AA57D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIServeriOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14285BA8A95C0B6C635AF231 /* Debug */,
+				44AD4A5641C1B283B2123E51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E72E54191B4633241C691647 /* Project object */;
+}
