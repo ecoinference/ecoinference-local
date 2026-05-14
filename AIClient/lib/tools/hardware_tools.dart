@@ -67,16 +67,10 @@ Future<String> _sendSms(Map<String, dynamic> args) async {
   if (message.isEmpty) return 'Error: message body is required.';
 
   try {
-    // sendDirect: true  → uses SmsManager on Android (silent send after confirm).
-    // sendDirect: false → opens the system compose sheet on iOS (user taps Send).
-    await sendSMS(
-      message: message,
-      recipients: [to],
-      sendDirect: Platform.isAndroid,
-    );
-    return Platform.isAndroid
-        ? 'SMS sent to $to.'
-        : 'SMS compose sheet opened — tap Send to deliver.';
+    // flutter_sms 3.x always opens the system compose sheet on both platforms.
+    // The user reviews and taps Send — no silent background sending.
+    await sendSMS(message: message, recipients: [to]);
+    return 'SMS compose sheet opened for $to — tap Send to deliver.';
   } on Exception catch (e) {
     return 'SMS error: $e';
   }
