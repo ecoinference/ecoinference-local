@@ -65,6 +65,9 @@
 	<!-- Agentic tools: torch_light uses AVCaptureDevice to control the flashlight -->
 	<key>NSCameraUsageDescription</key>
 	<string>Used to access the device flashlight through the torch API.</string>
+	<!-- Agentic tools: GPS location -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used by the AI assistant to answer questions about your current location.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

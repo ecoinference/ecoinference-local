@@ -23,6 +23,8 @@ dependencies:
   torch_light: ^1.0.0
   # Runtime permission requests (camera required for torch on Android)
   permission_handler: ^11.3.0
+  # GPS location
+  geolocator: ^13.0.0
 
 dev_dependencies:
   flutter_test:

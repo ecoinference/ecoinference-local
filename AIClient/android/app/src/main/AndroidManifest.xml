@@ -3,6 +3,9 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Agentic tools: flashlight requires CAMERA on Android -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Agentic tools: GPS location -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:label="AI Client"
