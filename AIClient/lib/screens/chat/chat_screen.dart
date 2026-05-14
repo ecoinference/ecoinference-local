@@ -219,8 +219,8 @@ class _ChatScreenState extends State<ChatScreen> {
             .replaceAll('\n', '↵')
             .replaceAll('\r', '↵')
             .replaceAll('\t', '→');
-        final preview = escaped.length > 400
-            ? '${escaped.substring(0, 400)}…'
+        final preview = escaped.length > 800
+            ? '${escaped.substring(0, 800)}[truncated]'
             : escaped;
         setState(() => _messages.add(ChatMessage(
               role: MessageRole.tool,

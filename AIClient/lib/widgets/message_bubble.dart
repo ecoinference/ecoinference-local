@@ -67,7 +67,38 @@ class _ToolBubble extends StatelessWidget {
     if (message.htmlContent != null) {
       return _HtmlToolBubble(message: message, onViewChart: onViewChart);
     }
+    // DEBUG bubble — full-width selectable text. TODO: remove before release.
+    if (message.toolName == 'parser_debug') {
+      return _DebugToolBubble(message: message);
+    }
     return _ChipToolBubble(message: message);
+  }
+}
+
+/// Full-width debug bubble for parser diagnostics. TODO: remove before release.
+class _DebugToolBubble extends StatelessWidget {
+  const _DebugToolBubble({required this.message});
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.4)),
+      ),
+      child: SelectableText(
+        message.content,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontFamily: 'monospace',
+          color: theme.colorScheme.onErrorContainer,
+        ),
+      ),
+    );
   }
 }
 
