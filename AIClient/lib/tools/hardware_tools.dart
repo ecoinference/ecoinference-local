@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:permission_handler/permission_handler.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,9 +34,14 @@ void registerHardwareTools() {
 Future<String> _flashlight(Map<String, dynamic> args) async {
   final on = (args['on'] as bool?) ?? true;
   try {
-    // torch_light uses CameraManager.setTorchMode() on Android, which does NOT
-    // require CAMERA permission. Skipping isTorchAvailable() — it can return
-    // false on MIUI/custom ROMs even when a torch is present.
+    if (Platform.isAndroid) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        return 'Permission denied: camera permission is required to use the flashlight.';
+      }
+    }
+    final available = await TorchLight.isTorchAvailable();
+    if (!available) return 'Flashlight is not available on this device.';
     if (on) {
       await TorchLight.enableTorch();
       return 'Flashlight turned on.';
@@ -42,11 +50,6 @@ Future<String> _flashlight(Map<String, dynamic> args) async {
       return 'Flashlight turned off.';
     }
   } on Exception catch (e) {
-    final msg = e.toString();
-    if (msg.contains('device_not_capable')) {
-      return 'Flashlight is not accessible on this device (device_not_capable). '
-          'Try toggling it manually first, or the ROM may be blocking torch access.';
-    }
     return 'Flashlight error: $e';
   }
 }

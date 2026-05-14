@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Agentic tools: flashlight requires CAMERA on Android -->
+    <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
         android:label="AI Client"
