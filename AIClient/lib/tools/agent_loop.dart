@@ -25,6 +25,10 @@ class AgentLoop {
   // Kept only to detect presence of a tool call before attempting indexOf parse.
   static final _toolCallOpenRe = RegExp(r'<tool_call\s*>');
 
+  /// Accumulates debug lines from the last [parseToolCall] call.
+  /// Shown in the 🐛 DEBUG bubble in chat. TODO: remove before release.
+  static final List<String> parseLog = [];
+
   /// Maximum agentic iterations before giving up and returning the raw output.
   static const maxIterations = 3;
 
@@ -32,29 +36,33 @@ class AgentLoop {
   /// no regex on the outer structure so Dart engine quirks can't interfere.
   /// DEBUG: logs every step; TODO remove debugPrint before release.
   static ToolCallResult? parseToolCall(String response) {
-    debugPrint('=== parseToolCall ===');
-    debugPrint('response length: ${response.length}');
-    debugPrint('raw (first 400): ${response.substring(0, response.length.clamp(0, 400))}');
+    parseLog.clear();
+    void log(String s) { parseLog.add(s); debugPrint('[TC] $s'); }
+
+    log('response.length=${response.length}');
 
     // ── Find opening tag ────────────────────────────────────────────────────
     final openMatch = _toolCallOpenRe.firstMatch(response);
-    debugPrint('open tag match: ${openMatch != null}');
+    log('openMatch=${openMatch != null}  (indexOf raw: ${response.indexOf('<tool_call')})');
     if (openMatch == null) return null;
 
-    final contentStart = openMatch.end;           // index just after '>'
+    final contentStart = openMatch.end;
     final textBefore   = response.substring(0, openMatch.start).trim();
+    log('contentStart=$contentStart');
 
-    // ── Find closing tag (any known variant) ───────────────────────────────
+    // ── Find closing tag ────────────────────────────────────────────────────
     const closeTags = ['</tool_call>', '<tool_call|>'];
-    int contentEnd = response.length;             // default: rest of string
+    int contentEnd = response.length;
+    String foundClose = '(none — using end-of-string)';
     for (final tag in closeTags) {
       final idx = response.indexOf(tag, contentStart);
-      if (idx != -1 && idx < contentEnd) contentEnd = idx;
+      if (idx != -1 && idx < contentEnd) { contentEnd = idx; foundClose = tag; }
     }
-    debugPrint('contentStart=$contentStart contentEnd=$contentEnd');
+    log('closeTag=$foundClose  contentEnd=$contentEnd');
 
     var jsonStr = response.substring(contentStart, contentEnd).trim();
-    debugPrint('raw jsonStr (first 400): ${jsonStr.substring(0, jsonStr.length.clamp(0, 400))}');
+    log('jsonStr.length=${jsonStr.length}');
+    log('jsonStr tail (last 80): ${jsonStr.substring((jsonStr.length - 80).clamp(0, jsonStr.length))}');
 
     // ── Strip markdown code fences ─────────────────────────────────────────
     jsonStr = jsonStr
@@ -62,34 +70,66 @@ class AgentLoop {
         .replaceAll(RegExp(r'\s*```$'), '')
         .trim();
 
-    // ── Parse JSON — two attempts ──────────────────────────────────────────
+    // ── Parse JSON (3 attempts) ────────────────────────────────────────────
     Map<String, dynamic>? data;
+
+    // Attempt 1: as-is
     try {
       data = jsonDecode(jsonStr) as Map<String, dynamic>;
-      debugPrint('JSON parse attempt 1: SUCCESS');
+      log('parse1=OK');
     } catch (e1) {
-      debugPrint('JSON parse attempt 1 FAILED: $e1');
+      log('parse1 FAIL: $e1');
+
+      // Attempt 2: escape control chars in strings
       final fixed = _escapeControlCharsInStrings(jsonStr);
       try {
         data = jsonDecode(fixed) as Map<String, dynamic>;
-        debugPrint('JSON parse attempt 2 (escaped): SUCCESS');
+        log('parse2=OK (after escape)');
       } catch (e2) {
-        debugPrint('JSON parse attempt 2 FAILED: $e2');
-        return null;
+        log('parse2 FAIL: $e2');
+
+        // Attempt 3: auto-close truncated JSON (append missing '}' chars)
+        final autoclosed = _autoCloseJson(fixed);
+        log('autoclosed tail: ${autoclosed.substring((autoclosed.length - 40).clamp(0, autoclosed.length))}');
+        try {
+          data = jsonDecode(autoclosed) as Map<String, dynamic>;
+          log('parse3=OK (after autoclose)');
+        } catch (e3) {
+          log('parse3 FAIL: $e3');
+          return null;
+        }
       }
     }
 
-    debugPrint('parsed keys: ${data.keys.toList()}');
+    log('keys=${data.keys.toList()}');
     final name = data['name'] as String? ?? '';
     final args = (data['args']       as Map<String, dynamic>?)
               ?? (data['arguments']  as Map<String, dynamic>?)
               ?? {};
-    debugPrint('name="$name"  args keys: ${args.keys.toList()}');
+    log('name="$name"  argKeys=${args.keys.toList()}');
+    if (name.isEmpty) { log('name empty'); return null; }
 
-    if (name.isEmpty) { debugPrint('name empty — null'); return null; }
-
-    debugPrint('parseToolCall SUCCESS → $name');
+    log('SUCCESS → $name');
     return ToolCallResult(textBefore: textBefore, toolName: name, args: args);
+  }
+
+  /// Appends missing closing braces/brackets to truncated JSON.
+  static String _autoCloseJson(String s) {
+    final stack = <String>[];
+    var inString = false;
+    var escaped = false;
+    for (final ch in s.runes.map(String.fromCharCode)) {
+      if (escaped)       { escaped = false; continue; }
+      if (ch == r'\' && inString) { escaped = true; continue; }
+      if (ch == '"')     { inString = !inString; continue; }
+      if (inString)      continue;
+      if (ch == '{')      { stack.add('}'); }
+      else if (ch == '[') { stack.add(']'); }
+      else if (ch == '}' || ch == ']') {
+        if (stack.isNotEmpty) stack.removeLast();
+      }
+    }
+    return s + stack.reversed.join();
   }
 
   /// Scans a JSON string and escapes any literal control characters

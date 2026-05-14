@@ -219,12 +219,13 @@ class _ChatScreenState extends State<ChatScreen> {
             .replaceAll('\n', '↵')
             .replaceAll('\r', '↵')
             .replaceAll('\t', '→');
-        final preview = escaped.length > 800
-            ? '${escaped.substring(0, 800)}[truncated]'
+        final preview = escaped.length > 600
+            ? '${escaped.substring(0, 600)}[truncated]'
             : escaped;
+        final logLines = AgentLoop.parseLog.join('\n');
         setState(() => _messages.add(ChatMessage(
               role: MessageRole.tool,
-              content: '🐛 DEBUG — raw response (↵=newline):\n$preview',
+              content: '🐛 DEBUG\n\n── PARSE LOG ──\n$logLines\n\n── RAW RESPONSE (↵=newline) ──\n$preview',
               toolName: 'parser_debug',
             )));
       }
