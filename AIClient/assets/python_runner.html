@@ -59,6 +59,17 @@ def _capture_mpl_figure():
         return 'data:image/png;base64,' + _b64.b64encode(_buf.read()).decode()
     except Exception:
         return None
+
+def _capture_plotly_figure():
+    """Scan globals for any Plotly Figure and return self-contained HTML, or return None."""
+    try:
+        import plotly.basedatatypes as _pbt
+        for _v in reversed(list(globals().values())):
+            if isinstance(_v, _pbt.BaseFigure):
+                return _v.to_html(include_plotlyjs='cdn', full_html=True)
+    except Exception:
+        return None
+    return None
 `);
 
     PythonResult.postMessage(JSON.stringify({ type: 'ready' }));
@@ -178,7 +189,18 @@ sys.stdout = _stdout_buf
       }
     }
 
-    // 3. Auto-capture: last expression return value from runPythonAsync
+    // 3. Auto-capture: Plotly figure in globals (handles fig.show() calls)
+    const plotlyProxy = await pyodide.runPythonAsync('_capture_plotly_figure()');
+    if (plotlyProxy !== null && plotlyProxy !== undefined) {
+      const s = typeof plotlyProxy.toString === 'function' ? plotlyProxy.toString() : String(plotlyProxy);
+      if (plotlyProxy.destroy) plotlyProxy.destroy();
+      if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) {
+        postResult(s);
+        return;
+      }
+    }
+
+    // 4. Auto-capture: last expression return value from runPythonAsync
     if (lastExprValue !== null && lastExprValue !== undefined) {
       const s = typeof lastExprValue.toString === 'function'
         ? lastExprValue.toString()
@@ -190,13 +212,13 @@ sys.stdout = _stdout_buf
       }
     }
 
-    // 4. Auto-capture: stdout (from print() calls)
+    // 5. Auto-capture: stdout (from print() calls)
     if (stdout && stdout.trim().length > 0) {
       postResult(stdout.trim());
       return;
     }
 
-    // 5. Nothing to return
+    // 6. Nothing to return
     PythonResult.postMessage(JSON.stringify({
       type: 'error',
       value: "Code ran but produced no output. Assign the answer to 'result', e.g. result = 42"
