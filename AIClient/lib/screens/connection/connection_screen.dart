@@ -21,7 +21,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   bool _checking = false;
   bool _launching = false;
   bool _stopping = false;
+  bool _statusChecking = false;
   String? _error;
+  HealthStatus? _serverStatus;
 
   @override
   void initState() {
@@ -42,6 +44,31 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       _hostCtrl.text = prefs.getString('server_host') ?? '127.0.0.1';
       _portCtrl.text = (prefs.getInt('server_port') ?? 8080).toString();
     });
+    // Auto-check status once address is loaded.
+    _checkStatus();
+  }
+
+  // ── Status check ───────────────────────────────────────────────────────────
+
+  Future<void> _checkStatus() async {
+    final port = int.tryParse(_portCtrl.text.trim());
+    if (port == null) return;
+    final host = _hostCtrl.text.trim();
+    if (host.isEmpty) return;
+
+    setState(() => _statusChecking = true);
+    try {
+      final config = ServerConfig(host: host, port: port);
+      ApiService.configure(config);
+      final status = await ApiService.instance.checkHealth();
+      if (mounted) setState(() => _serverStatus = status);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _serverStatus = const HealthStatus(ok: false, modelLoaded: false));
+      }
+    } finally {
+      if (mounted) setState(() => _statusChecking = false);
+    }
   }
 
   // ── Launch server ──────────────────────────────────────────────────────────
@@ -59,6 +86,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             content: Text('AIServer starting — tap Connect once ready.'),
           ),
         );
+        // Give the server a moment to start, then refresh status.
+        await Future.delayed(const Duration(seconds: 3));
+        _checkStatus();
       }
     } catch (e) {
       if (mounted) {
@@ -108,6 +138,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             content: Text('Server stopped — model memory freed.'),
           ),
         );
+        setState(() => _serverStatus = null);
       }
     } catch (e) {
       if (mounted) setState(() => _error = 'Could not stop server: $e');
@@ -282,7 +313,13 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                _StatusCard(
+                  status: _serverStatus,
+                  checking: _statusChecking,
+                  onRefresh: _checkStatus,
+                ),
+                const SizedBox(height: 16),
               ],
 
               // ── Address fields ─────────────────────────────────────────────
@@ -409,6 +446,96 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Server status card ────────────────────────────────────────────────────────
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.status,
+    required this.checking,
+    required this.onRefresh,
+  });
+
+  final HealthStatus? status;
+  final bool checking;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final (color, icon, label) = switch (status) {
+      null when checking => (
+        theme.colorScheme.outline,
+        Icons.circle_outlined,
+        'Checking…',
+      ),
+      null => (
+        theme.colorScheme.outline,
+        Icons.circle_outlined,
+        'Unknown — tap ↻ to check',
+      ),
+      HealthStatus(ok: false) => (
+        theme.colorScheme.error,
+        Icons.cancel_outlined,
+        'Server unreachable',
+      ),
+      HealthStatus(ok: true, downloadActive: true) => (
+        Colors.blue,
+        Icons.download_outlined,
+        'Downloading model…',
+      ),
+      HealthStatus(ok: true, modelLoaded: true, :final modelId) => (
+        Colors.green,
+        Icons.check_circle_outline,
+        'Running · ${modelId ?? 'model loaded'}',
+      ),
+      HealthStatus(ok: true) => (
+        Colors.orange,
+        Icons.radio_button_unchecked,
+        'Server running — no model loaded',
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.surfaceContainerLow,
+      ),
+      child: Row(
+        children: [
+          checking
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.outline,
+                  ),
+                )
+              : Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 18),
+            onPressed: checking ? null : onRefresh,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Refresh status',
+          ),
+        ],
       ),
     );
   }
