@@ -57,10 +57,14 @@ void registerHardwareTools() {
     name: 'run_python',
     description: 'Execute a Python snippet for computation, data analysis, or chart generation. '
         'Supports: numpy (np), pandas (pd), scipy, matplotlib (plt), plotly (px/go), biopython (Bio). '
-        'For text/numbers: assign result = <value>. '
-        'For matplotlib charts: use Agg backend, save fig to BytesIO, set result = "data:image/png;base64," + base64.b64encode(buf.read()).decode(). '
-        'For Plotly charts: set result = fig.to_html(include_plotlyjs="cdn", full_html=True).',
-    parametersDoc: 'code: string (Python snippet, must assign output to `result`)',
+        'Output is captured automatically in priority order: '
+        '(1) assign result = <value> explicitly, '
+        '(2) matplotlib figures are exported automatically — just call plt.show() or leave the figure open, '
+        '(3) the value of the last expression is returned, '
+        '(4) print() output is captured. '
+        'For Plotly charts: set result = fig.to_html(include_plotlyjs="cdn", full_html=True). '
+        'Simple example: result = 2 + 2. Matplotlib example: import matplotlib.pyplot as plt; plt.plot([1,2,3]); plt.title("My chart"); plt.show().',
+    parametersDoc: 'code: string (Python snippet)',
     argsExample: '{"code": "import math\\nresult = round(math.sqrt(2), 6)"}',
     execute: _runPython,
   ));

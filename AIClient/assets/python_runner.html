@@ -40,14 +40,33 @@ async function initPyodide() {
     pyodide = await loadPyodide();
     await pyodide.loadPackage('micropip');
 
-    // Pre-configure matplotlib non-interactive backend
+    // Pre-configure matplotlib non-interactive backend + stdout capture helper
     await pyodide.runPythonAsync(`
-import os
+import os, sys, io as _sysio
 os.environ['MPLBACKEND'] = 'Agg'
+
+def _capture_mpl_figure():
+    """Auto-export the current matplotlib figure as a PNG data URL, or return None."""
+    try:
+        import matplotlib.pyplot as _plt
+        if not _plt.get_fignums():
+            return None
+        import io as _io, base64 as _b64
+        _buf = _io.BytesIO()
+        _plt.gcf().savefig(_buf, format='png', bbox_inches='tight', dpi=150)
+        _plt.close('all')
+        _buf.seek(0)
+        return 'data:image/png;base64,' + _b64.b64encode(_buf.read()).decode()
+    except Exception:
+        return None
 `);
+
     PythonResult.postMessage(JSON.stringify({ type: 'ready' }));
   } catch (err) {
-    PythonResult.postMessage(JSON.stringify({ type: 'error', value: 'Pyodide init failed: ' + err.toString() }));
+    PythonResult.postMessage(JSON.stringify({
+      type: 'error',
+      value: 'Pyodide init failed: ' + err.toString()
+    }));
   }
 }
 
@@ -58,22 +77,46 @@ async function loadRequiredPackages(code) {
 
   for (const [alias, info] of Object.entries(PACKAGE_MAP)) {
     if (loadedPkgs.has(info.pkg)) continue;
-    if (code.includes('import ' + alias) || code.includes('from ' + alias + ' ') || code.includes('from ' + alias + '.')) {
-      info.via === 'pyodide' ? pyodideQueue.push(info.pkg) : micropipQueue.push(info.pkg);
+    if (
+      code.includes('import ' + alias) ||
+      code.includes('from ' + alias + ' ') ||
+      code.includes('from ' + alias + '.')
+    ) {
+      info.via === 'pyodide'
+        ? pyodideQueue.push(info.pkg)
+        : micropipQueue.push(info.pkg);
       loadedPkgs.add(info.pkg);
     }
   }
 
   if (pyodideQueue.length > 0) {
-    PythonResult.postMessage(JSON.stringify({ type: 'status', value: 'Loading ' + [...new Set(pyodideQueue)].join(', ') + '…' }));
+    PythonResult.postMessage(JSON.stringify({
+      type: 'status',
+      value: 'Loading ' + [...new Set(pyodideQueue)].join(', ') + '…'
+    }));
     await pyodide.loadPackage([...new Set(pyodideQueue)]);
   }
   if (micropipQueue.length > 0) {
-    PythonResult.postMessage(JSON.stringify({ type: 'status', value: 'Installing ' + [...new Set(micropipQueue)].join(', ') + '…' }));
+    PythonResult.postMessage(JSON.stringify({
+      type: 'status',
+      value: 'Installing ' + [...new Set(micropipQueue)].join(', ') + '…'
+    }));
     const micropip = pyodide.pyimport('micropip');
     for (const pkg of [...new Set(micropipQueue)]) {
       await micropip.install(pkg);
     }
+  }
+}
+
+// ── Classify and post a result string ────────────────────────────────────────
+function postResult(value) {
+  const s = value.trim();
+  if (s.startsWith('data:image/')) {
+    PythonResult.postMessage(JSON.stringify({ type: 'image', value: s }));
+  } else if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) {
+    PythonResult.postMessage(JSON.stringify({ type: 'html', value: s }));
+  } else {
+    PythonResult.postMessage(JSON.stringify({ type: 'text', value: s }));
   }
 }
 
@@ -86,29 +129,81 @@ async function runPython(code) {
   try {
     await loadRequiredPackages(code);
 
-    // Clear previous result variable
+    // Redirect stdout so print() calls are captured
+    await pyodide.runPythonAsync(`
+import sys, io as _sysio
+_stdout_buf = _sysio.StringIO()
+sys.stdout = _stdout_buf
+`);
+
+    // Clear previous result
     await pyodide.runPythonAsync("globals().pop('result', None)");
 
-    await pyodide.runPythonAsync(code);
+    // Run user code; pyodide.runPythonAsync returns the value of the last
+    // expression (like a REPL), which we use as an auto-capture fallback.
+    let lastExprValue;
+    try {
+      lastExprValue = await pyodide.runPythonAsync(code);
+    } finally {
+      // Always restore stdout
+      await pyodide.runPythonAsync("sys.stdout = sys.__stdout__");
+    }
 
+    // Collect captured stdout
+    const stdoutProxy = pyodide.globals.get('_stdout_buf');
+    const stdout = stdoutProxy ? stdoutProxy.getvalue() : '';
+    if (stdoutProxy && stdoutProxy.destroy) stdoutProxy.destroy();
+
+    // ── Resolve result ──────────────────────────────────────────────────────
     const resultProxy = pyodide.globals.get('result');
-    if (resultProxy === undefined || resultProxy === null) {
-      PythonResult.postMessage(JSON.stringify({ type: 'error', value: "Code ran but 'result' variable was not set." }));
+
+    if (resultProxy !== undefined && resultProxy !== null) {
+      // 1. Explicit `result = ...` in user code (preferred)
+      const s = typeof resultProxy.toString === 'function'
+        ? resultProxy.toString()
+        : String(resultProxy);
+      if (resultProxy.destroy) resultProxy.destroy();
+      postResult(s);
       return;
     }
 
-    const resultStr = (typeof resultProxy.toString === 'function') ? resultProxy.toString() : String(resultProxy);
-    if (resultProxy.destroy) resultProxy.destroy();
-
-    const trimmed = resultStr.trim();
-    if (trimmed.startsWith('data:image/')) {
-      PythonResult.postMessage(JSON.stringify({ type: 'image', value: trimmed }));
-    } else if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
-      PythonResult.postMessage(JSON.stringify({ type: 'html', value: trimmed }));
-    } else {
-      PythonResult.postMessage(JSON.stringify({ type: 'text', value: trimmed }));
+    // 2. Auto-capture: open matplotlib figure
+    const mplProxy = await pyodide.runPythonAsync('_capture_mpl_figure()');
+    if (mplProxy !== null && mplProxy !== undefined) {
+      const s = typeof mplProxy.toString === 'function' ? mplProxy.toString() : String(mplProxy);
+      if (mplProxy.destroy) mplProxy.destroy();
+      if (s.startsWith('data:image/')) {
+        postResult(s);
+        return;
+      }
     }
+
+    // 3. Auto-capture: last expression return value from runPythonAsync
+    if (lastExprValue !== null && lastExprValue !== undefined) {
+      const s = typeof lastExprValue.toString === 'function'
+        ? lastExprValue.toString()
+        : String(lastExprValue);
+      if (lastExprValue.destroy) lastExprValue.destroy();
+      if (s.trim().length > 0 && s !== 'None') {
+        postResult(s);
+        return;
+      }
+    }
+
+    // 4. Auto-capture: stdout (from print() calls)
+    if (stdout && stdout.trim().length > 0) {
+      postResult(stdout.trim());
+      return;
+    }
+
+    // 5. Nothing to return
+    PythonResult.postMessage(JSON.stringify({
+      type: 'error',
+      value: "Code ran but produced no output. Assign the answer to 'result', e.g. result = 42"
+    }));
   } catch (err) {
+    // Always restore stdout on error too
+    try { await pyodide.runPythonAsync("import sys; sys.stdout = sys.__stdout__"); } catch (_) {}
     PythonResult.postMessage(JSON.stringify({ type: 'error', value: err.toString() }));
   }
 }
