@@ -30,7 +30,9 @@ class AgentLoop {
   static final List<String> parseLog = [];
 
   /// Maximum agentic iterations before giving up and returning the raw output.
-  static const maxIterations = 3;
+  /// Most tasks need exactly 1 tool call; 2 allows a rare follow-up but
+  /// prevents the model from looping indefinitely.
+  static const maxIterations = 2;
 
   /// Parses [response] for a <tool_call> marker using plain indexOf —
   /// no regex on the outer structure so Dart engine quirks can't interfere.
@@ -191,6 +193,7 @@ class AgentLoop {
   /// Builds the user-role message that feeds a tool result back to the LLM.
   /// Gemma has no native tool role, so the result is injected as a user turn.
   /// Image/HTML results send only the caption — never raw base64 or HTML.
+  /// A completion hint is appended so the model knows to summarise, not loop.
   static ChatMessage toolResultMessage(String toolName, ToolResult result) {
     final caption = switch (result) {
       TextToolResult r => r.text,
@@ -199,7 +202,9 @@ class AgentLoop {
     };
     return ChatMessage(
       role: MessageRole.user,
-      content: '[Tool result: $toolName] $caption',
+      content: '[Tool result: $toolName] $caption\n'
+          'The tool has completed. Respond with a brief natural-language summary '
+          'of the result. Do NOT call any more tools.',
     );
   }
 }
