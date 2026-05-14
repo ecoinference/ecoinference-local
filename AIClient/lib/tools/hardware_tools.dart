@@ -39,6 +39,17 @@ void registerHardwareTools() {
   ));
 
   ToolRegistry.register(const ToolDefinition(
+    name: 'send_sos',
+    description:
+        'Flash the device torch in the international SOS Morse code pattern '
+        '(· · · — — — · · ·) to signal for help.',
+    parametersDoc: '(no parameters)',
+    argsExample: '{}',
+    execute: _sendSos,
+    requiresConfirmation: false,
+  ));
+
+  ToolRegistry.register(const ToolDefinition(
     name: 'send_sms',
     description:
         'Send an SMS text message. Always requires user confirmation before sending.',
@@ -71,6 +82,60 @@ Future<String> _flashlight(Map<String, dynamic> args) async {
     }
   } on Exception catch (e) {
     return 'Flashlight error: $e';
+  }
+}
+
+// ── SOS Morse signal ──────────────────────────────────────────────────────────
+
+// Standard Morse timing (ITU-R M.1677):
+//   1 unit  = dot duration / inter-element gap
+//   3 units = dash duration / inter-letter gap
+const _morseUnit      = Duration(milliseconds: 200);
+const _morseDot       = _morseUnit;
+const _morseDash      = Duration(milliseconds: 600);  // 3 × unit
+const _morseSymbolGap = _morseUnit;
+const _morseLetterGap = Duration(milliseconds: 600);  // 3 × unit
+
+Future<String> _sendSos(Map<String, dynamic> args) async {
+  try {
+    if (Platform.isAndroid) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        return 'Permission denied: camera permission is required for the torch.';
+      }
+    }
+    final available = await TorchLight.isTorchAvailable();
+    if (!available) return 'Flashlight is not available on this device.';
+
+    // SOS: · · ·  — — —  · · ·
+    // Each entry is (onDuration, offDuration after)
+    final sequence = <(Duration, Duration)>[
+      // S: three dots
+      (_morseDot,  _morseSymbolGap),
+      (_morseDot,  _morseSymbolGap),
+      (_morseDot,  _morseLetterGap),   // end of S — longer gap before O
+      // O: three dashes
+      (_morseDash, _morseSymbolGap),
+      (_morseDash, _morseSymbolGap),
+      (_morseDash, _morseLetterGap),   // end of O — longer gap before S
+      // S: three dots
+      (_morseDot,  _morseSymbolGap),
+      (_morseDot,  _morseSymbolGap),
+      (_morseDot,  Duration.zero),     // final dot — no trailing gap needed
+    ];
+
+    for (final (on, off) in sequence) {
+      await TorchLight.enableTorch();
+      await Future.delayed(on);
+      await TorchLight.disableTorch();
+      if (off > Duration.zero) await Future.delayed(off);
+    }
+
+    return 'SOS signal complete (· · · — — — · · ·).';
+  } on Exception catch (e) {
+    // Make sure torch is off if something goes wrong mid-sequence.
+    try { await TorchLight.disableTorch(); } catch (_) {}
+    return 'SOS error: $e';
   }
 }
 
