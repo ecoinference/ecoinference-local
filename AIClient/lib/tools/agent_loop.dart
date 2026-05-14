@@ -22,90 +22,74 @@ class ToolCallResult {
 /// The UI state machine lives in [ChatScreen]; this class handles only
 /// parsing and message construction so it can be tested independently.
 class AgentLoop {
-  // Gemma may close with </tool_call>, <tool_call|>, or nothing at all
-  // (the closing token gets stripped server-side as an <end_of_turn> variant).
-  // The closing group is therefore optional — we fall back to end-of-string.
-  static final _toolCallRe = RegExp(
-    r'<tool_call\s*>([\s\S]*?)(?:</tool_call>|<tool_call\|>|$)',
-    dotAll: true,
-  );
+  // Kept only to detect presence of a tool call before attempting indexOf parse.
+  static final _toolCallOpenRe = RegExp(r'<tool_call\s*>');
 
   /// Maximum agentic iterations before giving up and returning the raw output.
   static const maxIterations = 3;
 
-  /// Parses [response] for a <tool_call> marker.
-  /// Returns [ToolCallResult] on success, null if no valid tool call found.
-  /// DEBUG: logs every step to the console.
+  /// Parses [response] for a <tool_call> marker using plain indexOf —
+  /// no regex on the outer structure so Dart engine quirks can't interfere.
+  /// DEBUG: logs every step; TODO remove debugPrint before release.
   static ToolCallResult? parseToolCall(String response) {
-    // DEBUG ─────────────────────────────────────────────────────────────────
     debugPrint('=== parseToolCall ===');
     debugPrint('response length: ${response.length}');
-    debugPrint('response (first 300): ${response.substring(0, response.length.clamp(0, 300))}');
-    debugPrint('contains "<tool_call>": ${response.contains("<tool_call>")}');
-    debugPrint('regex pattern: ${_toolCallRe.pattern}');
-    // ────────────────────────────────────────────────────────────────────────
+    debugPrint('raw (first 400): ${response.substring(0, response.length.clamp(0, 400))}');
 
-    final match = _toolCallRe.firstMatch(response);
+    // ── Find opening tag ────────────────────────────────────────────────────
+    final openMatch = _toolCallOpenRe.firstMatch(response);
+    debugPrint('open tag match: ${openMatch != null}');
+    if (openMatch == null) return null;
 
-    // DEBUG
-    debugPrint('regex match: ${match != null}');
-    if (match != null) {
-      debugPrint('match.start=${match.start} match.end=${match.end}');
-      debugPrint('match.group(0) (first 200): ${match.group(0)?.substring(0, match.group(0)!.length.clamp(0, 200))}');
+    final contentStart = openMatch.end;           // index just after '>'
+    final textBefore   = response.substring(0, openMatch.start).trim();
+
+    // ── Find closing tag (any known variant) ───────────────────────────────
+    const closeTags = ['</tool_call>', '<tool_call|>'];
+    int contentEnd = response.length;             // default: rest of string
+    for (final tag in closeTags) {
+      final idx = response.indexOf(tag, contentStart);
+      if (idx != -1 && idx < contentEnd) contentEnd = idx;
     }
+    debugPrint('contentStart=$contentStart contentEnd=$contentEnd');
 
-    if (match == null) return null;
+    var jsonStr = response.substring(contentStart, contentEnd).trim();
+    debugPrint('raw jsonStr (first 400): ${jsonStr.substring(0, jsonStr.length.clamp(0, 400))}');
 
-    var jsonStr = match.group(1)?.trim() ?? '';
-    debugPrint('raw jsonStr (first 300): $jsonStr'.substring(0, 'raw jsonStr (first 300): $jsonStr'.length.clamp(0, 320)));
-
-    // Strip markdown code fences the model sometimes wraps around the JSON.
+    // ── Strip markdown code fences ─────────────────────────────────────────
     jsonStr = jsonStr
-        .replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: false), '')
-        .replaceAll(RegExp(r'\s*```$', multiLine: false), '')
+        .replaceAll(RegExp(r'^```(?:json)?\s*'), '')
+        .replaceAll(RegExp(r'\s*```$'), '')
         .trim();
-    debugPrint('jsonStr after fence-strip: $jsonStr'.substring(0, 'jsonStr after fence-strip: $jsonStr'.length.clamp(0, 320)));
 
+    // ── Parse JSON — two attempts ──────────────────────────────────────────
     Map<String, dynamic>? data;
-
-    // Attempt 1: parse as-is.
     try {
       data = jsonDecode(jsonStr) as Map<String, dynamic>;
       debugPrint('JSON parse attempt 1: SUCCESS');
     } catch (e1) {
       debugPrint('JSON parse attempt 1 FAILED: $e1');
-      // Attempt 2: escape literal control characters inside JSON string values.
       final fixed = _escapeControlCharsInStrings(jsonStr);
-      debugPrint('fixed jsonStr (first 300): $fixed'.substring(0, 'fixed jsonStr (first 300): $fixed'.length.clamp(0, 320)));
       try {
         data = jsonDecode(fixed) as Map<String, dynamic>;
-        debugPrint('JSON parse attempt 2: SUCCESS');
+        debugPrint('JSON parse attempt 2 (escaped): SUCCESS');
       } catch (e2) {
         debugPrint('JSON parse attempt 2 FAILED: $e2');
-        // Malformed JSON — treat whole response as plain text.
         return null;
       }
     }
 
     debugPrint('parsed keys: ${data.keys.toList()}');
     final name = data['name'] as String? ?? '';
-    // Gemma's native format uses "arguments"; our prompt uses "args" — accept both.
-    final args = (data['args'] as Map<String, dynamic>?)
-        ?? (data['arguments'] as Map<String, dynamic>?)
-        ?? {};
-    debugPrint('tool name: "$name"  args keys: ${args.keys.toList()}');
+    final args = (data['args']       as Map<String, dynamic>?)
+              ?? (data['arguments']  as Map<String, dynamic>?)
+              ?? {};
+    debugPrint('name="$name"  args keys: ${args.keys.toList()}');
 
-    if (name.isEmpty) {
-      debugPrint('name is empty — returning null');
-      return null;
-    }
+    if (name.isEmpty) { debugPrint('name empty — null'); return null; }
 
     debugPrint('parseToolCall SUCCESS → $name');
-    return ToolCallResult(
-      textBefore: response.substring(0, match.start).trim(),
-      toolName: name,
-      args: args,
-    );
+    return ToolCallResult(textBefore: textBefore, toolName: name, args: args);
   }
 
   /// Scans a JSON string and escapes any literal control characters
