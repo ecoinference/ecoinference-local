@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'python_runner.dart';
 import 'tool_definition.dart';
 import 'tool_result.dart';
 
@@ -53,21 +52,6 @@ void registerHardwareTools() {
     requiresConfirmation: true,
   ));
 
-  ToolRegistry.register(const ToolDefinition(
-    name: 'run_python',
-    description: 'Execute a Python snippet for computation, data analysis, or chart generation. '
-        'Supports: numpy (np), pandas (pd), scipy, matplotlib (plt), plotly (px/go), biopython (Bio). '
-        'Output is captured automatically in priority order: '
-        '(1) assign result = <value> explicitly, '
-        '(2) matplotlib figures are exported automatically — just call plt.show() or leave the figure open, '
-        '(3) the value of the last expression is returned, '
-        '(4) print() output is captured. '
-        'For Plotly charts: set result = fig.to_html(include_plotlyjs="cdn", full_html=True). '
-        'Simple example: result = 2 + 2. Matplotlib example: import matplotlib.pyplot as plt; plt.plot([1,2,3]); plt.title("My chart"); plt.show().',
-    parametersDoc: 'code: string (Python snippet)',
-    argsExample: '{"code": "import math\\nresult = round(math.sqrt(2), 6)"}',
-    execute: _runPython,
-  ));
 }
 
 // ── Flashlight ────────────────────────────────────────────────────────────────
@@ -256,10 +240,3 @@ Future<ToolResult> _sendSms(Map<String, dynamic> args) async {
   }
 }
 
-// ── Python ────────────────────────────────────────────────────────────────────
-
-Future<ToolResult> _runPython(Map<String, dynamic> args) async {
-  final code = (args['code'] as String? ?? '').trim();
-  if (code.isEmpty) return const TextToolResult('Error: no Python code provided.');
-  return PythonRunner.instance.execute(code);
-}

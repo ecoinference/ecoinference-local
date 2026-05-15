@@ -9,6 +9,7 @@ import '../../services/api_service.dart';
 import '../../services/server_launcher.dart';
 import '../../tools/agent_loop.dart';
 import '../../tools/hardware_tools.dart';
+import '../../tools/python_command.dart';
 import '../../tools/python_runner.dart';
 import '../../tools/tool_definition.dart';
 import '../../tools/tool_result.dart';
@@ -122,8 +123,28 @@ class _ChatScreenState extends State<ChatScreen> {
   void _send() {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty || _loading) return;
-
     _inputCtrl.clear();
+
+    // Command interception
+    if (text.toLowerCase() == 'list python') {
+      _handlePythonList();
+      return;
+    }
+    final pythonMatch = RegExp(
+      r'^use python\s+(\S+)\s+(.+)$',
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(text);
+    if (pythonMatch != null) {
+      _handlePythonCommand(
+        text,
+        pythonMatch.group(1)!,
+        pythonMatch.group(2)!.trim(),
+      );
+      return;
+    }
+
+    // Normal flow
     final userMsg = ChatMessage(role: MessageRole.user, content: text);
     setState(() {
       _messages.add(userMsg);
@@ -134,6 +155,121 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     _runAgentTurn(_buildHistory(), 0);
+  }
+
+  void _handlePythonList() {
+    setState(() {
+      _messages.add(ChatMessage(role: MessageRole.user, content: 'list python'));
+      _messages.add(ChatMessage(
+        role: MessageRole.tool,
+        content: PythonCommand.listMessage(),
+        toolName: 'python_libs',
+      ));
+    });
+    _saveMessages();
+    _scrollToBottom();
+  }
+
+  Future<void> _handlePythonCommand(
+      String rawInput, String libAlias, String request) async {
+    final library = PythonCommand.resolveLibrary(libAlias);
+
+    // Show user message
+    setState(() {
+      _messages.add(ChatMessage(role: MessageRole.user, content: rawInput));
+    });
+
+    if (library == null) {
+      setState(() {
+        _messages.add(ChatMessage(
+          role: MessageRole.tool,
+          content:
+              'Unknown library "$libAlias". Type "list python" to see available libraries.',
+          toolName: 'python_error',
+        ));
+      });
+      _saveMessages();
+      _scrollToBottom();
+      return;
+    }
+
+    // Show generating status
+    setState(() {
+      _loading = true;
+      _streamingContent = '';
+      _messages.add(ChatMessage(
+        role: MessageRole.tool,
+        content: 'Generating $library code…',
+        toolName: 'python_libs',
+      ));
+    });
+    _scrollToBottom();
+
+    // Stream code from LLM using a focused prompt (no tool system)
+    final codePrompt = PythonCommand.buildCodePrompt(library, request);
+    final codeHistory = [
+      ChatMessage(role: MessageRole.user, content: codePrompt),
+    ];
+
+    String llmResponse = '';
+    try {
+      await for (final token
+          in ApiService.instance.chatCompletionStream(messages: codeHistory)) {
+        llmResponse += token;
+        if (mounted) setState(() => _streamingContent = llmResponse);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.last = ChatMessage(
+          role: MessageRole.tool,
+          content: 'Code generation error: $e',
+          toolName: 'python_error',
+        );
+        _streamingContent = null;
+        _loading = false;
+      });
+      _saveMessages();
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _streamingContent = null);
+
+    final code = PythonCommand.extractCode(llmResponse);
+    if (code == null || code.trim().isEmpty) {
+      setState(() {
+        _messages.last = ChatMessage(
+          role: MessageRole.tool,
+          content: 'Could not extract Python code from response.',
+          toolName: 'python_error',
+        );
+        _loading = false;
+      });
+      _saveMessages();
+      return;
+    }
+
+    // Update status to "running"
+    setState(() {
+      _messages.last = ChatMessage(
+        role: MessageRole.tool,
+        content: 'Running $library…',
+        toolName: 'python_libs',
+      );
+    });
+
+    // Execute
+    final result = await PythonRunner.instance.execute(code);
+
+    // Show result
+    if (!mounted) return;
+    setState(() {
+      _messages.last = AgentLoop.displayMessage(library, result);
+      _loading = false;
+    });
+    _saveMessages();
+    _scrollToBottom();
   }
 
   /// Builds the message list to send to the server:
