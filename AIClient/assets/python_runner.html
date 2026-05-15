@@ -151,8 +151,18 @@ _stdout_buf = _sysio.StringIO()
 sys.stdout = _stdout_buf
 `);
 
-    // Clear previous result
+    // Clear previous result and any stale Plotly figures from prior runs.
     await pyodide.runPythonAsync("globals().pop('result', None)");
+    if (loadedPkgs.has('plotly')) {
+      await pyodide.runPythonAsync(`
+try:
+    import plotly.basedatatypes as _pbt
+    for _k in [k for k, v in globals().items() if isinstance(v, _pbt.BaseFigure)]:
+        del globals()[_k]
+except Exception:
+    pass
+`);
+    }
 
     // Run user code; pyodide.runPythonAsync returns the value of the last
     // expression (like a REPL), which we use as an auto-capture fallback.
@@ -193,14 +203,17 @@ sys.stdout = _stdout_buf
       }
     }
 
-    // 3. Auto-capture: Plotly figure in globals (handles fig.show() calls)
-    const plotlyProxy = await pyodide.runPythonAsync('_capture_plotly_figure()');
-    if (plotlyProxy !== null && plotlyProxy !== undefined) {
-      const s = typeof plotlyProxy.toString === 'function' ? plotlyProxy.toString() : String(plotlyProxy);
-      if (plotlyProxy.destroy) plotlyProxy.destroy();
-      if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) {
-        postResult(s);
-        return;
+    // 3. Auto-capture: Plotly figure in globals (handles fig.show() calls).
+    //    Only attempted when plotly was actually loaded this session.
+    if (loadedPkgs.has('plotly')) {
+      const plotlyProxy = await pyodide.runPythonAsync('_capture_plotly_figure()');
+      if (plotlyProxy !== null && plotlyProxy !== undefined) {
+        const s = typeof plotlyProxy.toString === 'function' ? plotlyProxy.toString() : String(plotlyProxy);
+        if (plotlyProxy.destroy) plotlyProxy.destroy();
+        if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) {
+          postResult(s);
+          return;
+        }
       }
     }
 

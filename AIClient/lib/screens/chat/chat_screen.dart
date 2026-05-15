@@ -120,6 +120,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // ── Sending & agent loop ──────────────────────────────────────────────────
 
+  static final _pythonCmdRe = RegExp(
+    r'^use python\s+(\S+)\s+(.+)$',
+    caseSensitive: false,
+    dotAll: true,
+  );
+
   void _send() {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty || _loading) return;
@@ -130,11 +136,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _handlePythonList();
       return;
     }
-    final pythonMatch = RegExp(
-      r'^use python\s+(\S+)\s+(.+)$',
-      caseSensitive: false,
-      dotAll: true,
-    ).firstMatch(text);
+    final pythonMatch = _pythonCmdRe.firstMatch(text);
     if (pythonMatch != null) {
       _handlePythonCommand(
         text,
@@ -158,12 +160,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _handlePythonList() {
+    // Guard against double-submit (rapid tap while list is rendering).
+    if (_loading) return;
     setState(() {
       _messages.add(ChatMessage(role: MessageRole.user, content: 'list python'));
       _messages.add(ChatMessage(
         role: MessageRole.tool,
         content: PythonCommand.listMessage(),
-        toolName: 'python_libs',
+        toolName: ToolNames.pythonLibs,
       ));
     });
     _saveMessages();
@@ -183,9 +187,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(ChatMessage(
           role: MessageRole.tool,
-          content:
-              'Unknown library "$libAlias". Type "list python" to see available libraries.',
-          toolName: 'python_error',
+          content: 'Unknown library "$libAlias". Type "list python" to see available libraries.',
+          toolName: ToolNames.pythonError,
         ));
       });
       _saveMessages();
@@ -193,30 +196,29 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    // Show generating status
+    // Show generating status and lock input.
     setState(() {
       _loading = true;
       _streamingContent = '';
       _messages.add(ChatMessage(
         role: MessageRole.tool,
         content: 'Generating $library code…',
-        toolName: 'python_libs',
+        toolName: ToolNames.pythonLibs,
       ));
     });
     _scrollToBottom();
 
-    // Stream code from LLM using a focused prompt (no tool system)
-    final codePrompt = PythonCommand.buildCodePrompt(library, request);
+    // Stream code from LLM — no tool system, focused code-gen prompt only.
     final codeHistory = [
-      ChatMessage(role: MessageRole.user, content: codePrompt),
+      ChatMessage(role: MessageRole.user, content: PythonCommand.buildCodePrompt(library, request)),
     ];
 
-    String llmResponse = '';
+    final llmResponseBuf = StringBuffer();
     try {
       await for (final token
           in ApiService.instance.chatCompletionStream(messages: codeHistory)) {
-        llmResponse += token;
-        if (mounted) setState(() => _streamingContent = llmResponse);
+        llmResponseBuf.write(token);
+        if (mounted) setState(() => _streamingContent = llmResponseBuf.toString());
       }
     } catch (e) {
       if (!mounted) return;
@@ -224,50 +226,50 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.last = ChatMessage(
           role: MessageRole.tool,
           content: 'Code generation error: $e',
-          toolName: 'python_error',
+          toolName: ToolNames.pythonError,
         );
         _streamingContent = null;
         _loading = false;
       });
       _saveMessages();
+      _scrollToBottom();
       return;
     }
 
     if (!mounted) return;
-    setState(() => _streamingContent = null);
 
-    final code = PythonCommand.extractCode(llmResponse);
+    final code = PythonCommand.extractCode(llmResponseBuf.toString());
     if (code == null || code.trim().isEmpty) {
       setState(() {
         _messages.last = ChatMessage(
           role: MessageRole.tool,
           content: 'Could not extract Python code from response.',
-          toolName: 'python_error',
+          toolName: ToolNames.pythonError,
         );
+        _streamingContent = null;
         _loading = false;
       });
       _saveMessages();
+      _scrollToBottom();
       return;
     }
 
-    // Update status to "running"
+    // LLM done — clear streaming indicator, show running chip.
+    // _loading stays false so no spurious typing indicator during execution.
     setState(() {
+      _streamingContent = null;
+      _loading = false;
       _messages.last = ChatMessage(
         role: MessageRole.tool,
         content: 'Running $library…',
-        toolName: 'python_libs',
+        toolName: ToolNames.pythonLibs,
       );
     });
 
-    // Execute
     final result = await PythonRunner.instance.execute(code);
 
-    // Show result
     if (!mounted) return;
-    setState(() {
-      _messages.last = AgentLoop.displayMessage(library, result);
-      _loading = false;
-    });
+    setState(() => _messages.last = AgentLoop.displayMessage(library, result));
     _saveMessages();
     _scrollToBottom();
   }
@@ -350,7 +352,9 @@ class _ChatScreenState extends State<ChatScreen> {
       // DEBUG: if response contained a tool_call tag but we failed to parse it,
       // show a debug bubble with the raw bytes so we can diagnose the format.
       // TODO: remove before release.
-      if (toolCall == null && response.contains('<tool_call')) {
+      // DEBUG: show parse internals when a tool_call was present but unparseable.
+      // TODO: remove before release.
+      if (toolCall == null && AgentLoop.hasToolCall(response)) {
         final escaped = response
             .replaceAll('\n', '↵')
             .replaceAll('\r', '↵')
@@ -362,7 +366,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() => _messages.add(ChatMessage(
               role: MessageRole.tool,
               content: '🐛 DEBUG\n\n── PARSE LOG ──\n$logLines\n\n── RAW RESPONSE (↵=newline) ──\n$preview',
-              toolName: 'parser_debug',
+              toolName: ToolNames.parserDebug,
             )));
       }
 

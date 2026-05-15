@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
+import '../tools/tool_definition.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({super.key, required this.message, this.onViewChart});
@@ -68,7 +69,7 @@ class _ToolBubble extends StatelessWidget {
       return _HtmlToolBubble(message: message, onViewChart: onViewChart);
     }
     // DEBUG bubble — full-width selectable text. TODO: remove before release.
-    if (message.toolName == 'parser_debug') {
+    if (message.toolName == ToolNames.parserDebug) {
       return _DebugToolBubble(message: message);
     }
     return _ChipToolBubble(message: message);

@@ -22,8 +22,12 @@ class ToolCallResult {
 /// The UI state machine lives in [ChatScreen]; this class handles only
 /// parsing and message construction so it can be tested independently.
 class AgentLoop {
-  // Kept only to detect presence of a tool call before attempting indexOf parse.
   static final _toolCallOpenRe = RegExp(r'<tool_call\s*>');
+
+  /// Returns true if [response] appears to contain a tool call opening tag.
+  /// Centralises detection so callers don't duplicate the pattern.
+  static bool hasToolCall(String response) =>
+      _toolCallOpenRe.hasMatch(response);
 
   /// Accumulates debug lines from the last [parseToolCall] call.
   /// Shown in the 🐛 DEBUG bubble in chat. TODO: remove before release.
@@ -120,13 +124,14 @@ class AgentLoop {
     final stack = <String>[];
     var inString = false;
     var escaped = false;
-    for (final ch in s.runes.map(String.fromCharCode)) {
-      if (escaped)       { escaped = false; continue; }
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      if (escaped)            { escaped = false; continue; }
       if (ch == r'\' && inString) { escaped = true; continue; }
-      if (ch == '"')     { inString = !inString; continue; }
-      if (inString)      continue;
-      if (ch == '{')      { stack.add('}'); }
-      else if (ch == '[') { stack.add(']'); }
+      if (ch == '"')          { inString = !inString; continue; }
+      if (inString)           continue;
+      if (ch == '{')          { stack.add('}'); }
+      else if (ch == '[')     { stack.add(']'); }
       else if (ch == '}' || ch == ']') {
         if (stack.isNotEmpty) stack.removeLast();
       }

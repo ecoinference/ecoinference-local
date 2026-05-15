@@ -1,5 +1,13 @@
 import 'tool_result.dart';
 
+/// Shared toolName constants used by [ChatScreen] and [MessageBubble].
+/// Eliminates stringly-typed literals scattered across files.
+abstract final class ToolNames {
+  static const parserDebug = 'parser_debug';
+  static const pythonLibs  = 'python_libs';
+  static const pythonError = 'python_error';
+}
+
 /// Signature for a tool's execution function.
 typedef ToolExecuteFn = Future<ToolResult> Function(Map<String, dynamic> args);
 

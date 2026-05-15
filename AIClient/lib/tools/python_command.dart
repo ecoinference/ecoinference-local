@@ -44,7 +44,6 @@ class PythonCommand {
       final canonical = entry.key;
       final aliases = entry.value.aliases
           .where((a) => a != canonical)
-          .map((a) => a)
           .join(', ');
       final aliasStr = aliases.isNotEmpty ? ' (aliases: $aliases)' : '';
       buf.writeln('• $canonical$aliasStr — ${entry.value.description}');
@@ -94,18 +93,20 @@ class PythonCommand {
   /// 3. The raw response, trimmed (fallback).
   ///
   /// Returns `null` only when the response is empty.
+  static final _pyFenceRe =
+      RegExp(r'```python\s*\n([\s\S]*?)```', caseSensitive: false);
+  static final _genericFenceRe = RegExp(r'```[^\n]*\n([\s\S]*?)```');
+
   static String? extractCode(String llmResponse) {
     final trimmed = llmResponse.trim();
     if (trimmed.isEmpty) return null;
 
     // 1. ```python … ```
-    final pyFence = RegExp(r'```python\s*\n([\s\S]*?)```', caseSensitive: false);
-    final pyMatch = pyFence.firstMatch(trimmed);
+    final pyMatch = _pyFenceRe.firstMatch(trimmed);
     if (pyMatch != null) return pyMatch.group(1)!.trim();
 
     // 2. ``` … ```
-    final genericFence = RegExp(r'```[^\n]*\n([\s\S]*?)```');
-    final gMatch = genericFence.firstMatch(trimmed);
+    final gMatch = _genericFenceRe.firstMatch(trimmed);
     if (gMatch != null) return gMatch.group(1)!.trim();
 
     // 3. Raw fallback
