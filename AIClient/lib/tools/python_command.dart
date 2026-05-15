@@ -18,6 +18,11 @@ class PythonCommand {
     'pandas': (aliases: ['pandas', 'pd'], description: 'Data analysis & DataFrames'),
     'matplotlib': (aliases: ['matplotlib', 'plt'], description: '2D static charts & plots'),
     'plotly': (aliases: ['plotly', 'px', 'go'], description: 'Interactive charts'),
+    'astral': (aliases: ['astral'], description: 'Sunrise, sunset, moon phase & solar calculations'),
+    'skyfield': (aliases: ['skyfield'], description: 'Astronomy — precise moon phase, planet positions & rise/set times'),
+    'folium': (aliases: ['folium'], description: 'Interactive Leaflet.js maps with markers, polygons & heatmaps'),
+    'shapely': (aliases: ['shapely'], description: 'Geometric operations — areas, distances & spatial intersections'),
+    'geopy': (aliases: ['geopy'], description: 'Distance calculations between coordinates & geocoding'),
   };
 
   // ── Public API ──────────────────────────────────────────────────────────────
@@ -60,6 +65,16 @@ class PythonCommand {
       'matplotlib' =>
         'For matplotlib: create the plot (it will be auto-captured). '
         'Do NOT call plt.show().',
+      'folium' =>
+        'For folium: create a map variable (e.g. m = folium.Map(...)). '
+        'At the end assign: result = m._repr_html_() '
+        'This returns the map as an HTML string for display.',
+      'astral' =>
+        'Use the astral and astral.sun modules. '
+        'Assign a formatted text summary to result (e.g. result = f"Sunrise: {sunrise}").',
+      'skyfield' =>
+        'Use the skyfield.api module. '
+        'Assign a formatted text summary to result.',
       _ =>
         'For text or numeric results: assign the final value to a variable '
         'named result (e.g. result = 42).',
