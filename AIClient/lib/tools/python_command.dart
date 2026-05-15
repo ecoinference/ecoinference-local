@@ -18,10 +18,6 @@ class PythonCommand {
     'pandas': (aliases: ['pandas', 'pd'], description: 'Data analysis & DataFrames'),
     'matplotlib': (aliases: ['matplotlib', 'plt'], description: '2D static charts & plots'),
     'plotly': (aliases: ['plotly', 'px', 'go'], description: 'Interactive charts'),
-    'biopython': (
-      aliases: ['biopython', 'bio'],
-      description: 'Bioinformatics & sequence analysis'
-    ),
   };
 
   // ── Public API ──────────────────────────────────────────────────────────────
