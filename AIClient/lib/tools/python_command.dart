@@ -50,7 +50,8 @@ class PythonCommand {
     }
     buf.write(
       '\nUsage: use python <lib> <request>\n'
-      'Example: use python plt plot a sine wave',
+      'Example: use python plt plot a sine wave\n'
+      '\nType "list tools" to show this list again.',
     );
     return buf.toString().trimRight();
   }

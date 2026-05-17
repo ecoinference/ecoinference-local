@@ -132,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _inputCtrl.clear();
 
     // Command interception
-    if (text.toLowerCase() == 'list python') {
+    if (text.toLowerCase() == 'list tools') {
       _handlePythonList();
       return;
     }
@@ -163,7 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Guard against double-submit (rapid tap while list is rendering).
     if (_loading) return;
     setState(() {
-      _messages.add(ChatMessage(role: MessageRole.user, content: 'list python'));
+      _messages.add(ChatMessage(role: MessageRole.user, content: 'list tools'));
       _messages.add(ChatMessage(
         role: MessageRole.tool,
         content: PythonCommand.listMessage(),
