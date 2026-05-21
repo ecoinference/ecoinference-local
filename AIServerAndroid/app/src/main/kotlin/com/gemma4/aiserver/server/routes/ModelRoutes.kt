@@ -186,6 +186,7 @@ fun Route.modelRoutes(
                 modelPath    = modelPath,
                 useGpu       = req.useGpu,
                 maxNumTokens = req.maxNumTokens,
+                multimodal   = model.supportsVision,
             )
             settings.setLoadedModelId(req.modelId)
         }.fold(

@@ -29,7 +29,8 @@ func registerModelRoutes(router: Router) {
                 modelId:      req.modelId,
                 modelPath:    modelPath,
                 useGpu:       req.useGpu,
-                maxNumTokens: req.maxNumTokens
+                maxNumTokens: req.maxNumTokens,
+                multimodal:   modelInfo.supportsVision
             )}
         }.value
         switch result {

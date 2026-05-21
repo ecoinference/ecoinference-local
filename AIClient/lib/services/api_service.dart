@@ -262,7 +262,10 @@ class ApiService {
         options: Options(responseType: ResponseType.stream),
       );
     } on DioException catch (e) {
-      throw ApiException(_msg(e));
+      // For stream-type requests, Dio stores the error body as a ResponseBody
+      // rather than a parsed Map, so _msg() would return "Instance of ResponseBody".
+      // Read the body asynchronously to surface the real server error message.
+      throw ApiException(await _readStreamError(e));
     }
 
     var buffer = '';
@@ -291,6 +294,43 @@ class ApiService {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  /// Reads the error response body from a stream-type [DioException] and
+  /// returns a human-readable message. Falls back to [_msg] if the body
+  /// cannot be read (e.g. it is null or not a [ResponseBody]).
+  Future<String> _readStreamError(DioException e) async {
+    final status = e.response?.statusCode;
+    final body = e.response?.data;
+
+    if (status != null && body is ResponseBody) {
+      try {
+        final chunks = <int>[];
+        await for (final chunk in body.stream) {
+          chunks.addAll(chunk);
+          if (chunks.length > 4096) break; // cap to avoid huge payloads
+        }
+        final text = utf8.decode(chunks, allowMalformed: true).trim();
+        if (text.isNotEmpty) {
+          try {
+            final json = jsonDecode(text) as Map<String, dynamic>;
+            // OpenAI format: {"error": {"message": "…"}} or {"error": "…"}
+            final err = json['error'];
+            final msg = err is Map
+                ? (err['message'] ?? err.toString())
+                : err?.toString() ?? text;
+            return 'Server error $status: $msg';
+          } catch (_) {
+            return 'Server error $status: $text';
+          }
+        }
+      } catch (_) {
+        // Stream read failed — fall through to generic message.
+      }
+      return 'Server error $status: (no details from server)';
+    }
+
+    return _msg(e);
+  }
 
   String _msg(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||

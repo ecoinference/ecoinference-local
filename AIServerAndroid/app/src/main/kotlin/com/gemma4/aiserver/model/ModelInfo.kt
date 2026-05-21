@@ -21,6 +21,10 @@ data class ModelInfo(
     /** "android" | "ios" | "all" */
     val platform: String,
     @SerialName("gemma_version") val gemmaVersion: Int,
+    /** True when the model's .litertlm bundle includes a vision encoder (SigLIP).
+     *  Drives visionBackend / maxNumImages in EngineConfig so the engine is
+     *  correctly initialised before image input is passed to it. */
+    @SerialName("supports_vision") val supportsVision: Boolean = false,
     // Live state — populated by the server before sending to AIClient.
     val downloaded: Boolean = false,
     val loaded: Boolean = false,

@@ -62,9 +62,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<!-- Agentic tools: torch_light uses AVCaptureDevice to control the flashlight -->
+	<!-- torch_light uses AVCaptureDevice; image_picker uses camera for photo capture -->
 	<key>NSCameraUsageDescription</key>
-	<string>Used to access the device flashlight through the torch API.</string>
+	<string>Used to access the device flashlight and to take photos to send to the AI assistant.</string>
+	<!-- image_picker: read photos from the gallery -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Used to attach photos from your library to messages for the AI assistant.</string>
 	<!-- Agentic tools: GPS location -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used by the AI assistant to answer questions about your current location.</string>

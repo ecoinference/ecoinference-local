@@ -2,6 +2,12 @@ package com.gemma4.aiserver.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 // ── Health ────────────────────────────────────────────────────────────────────
 
@@ -67,11 +73,53 @@ data class LoadResponse(
 
 // ── OpenAI-compatible chat completions ────────────────────────────────────────
 
+/**
+ * A single turn in a chat conversation.
+ *
+ * [content] is polymorphic per the OpenAI vision spec:
+ *   - text-only: `"content": "Hello"`   → [JsonPrimitive]
+ *   - multimodal: `"content": [{"type":"text","text":"…"},
+ *                               {"type":"image_url","image_url":{"url":"data:…"}}]`
+ *                                        → [JsonArray]
+ *
+ * Use [extractText] and [extractImageBytes] to get the respective parts.
+ * When building a response message, pass [JsonPrimitive] for a plain string.
+ */
 @Serializable
 data class ChatMessage(
     val role: String,
-    val content: String,
+    val content: JsonElement,
 )
+
+/** Returns the text portion of [content] regardless of its format. */
+fun ChatMessage.extractText(): String = when (val c = content) {
+    is JsonPrimitive -> c.contentOrNull ?: ""
+    is JsonArray     -> c.firstOrNull {
+                            it.jsonObject["type"]?.jsonPrimitive?.contentOrNull == "text"
+                        }?.jsonObject?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+    else             -> ""
+}
+
+/**
+ * Returns raw image bytes decoded from the `image_url` part of a multimodal
+ * [content] array, or `null` if the message contains no image.
+ *
+ * Supports `data:image/<type>;base64,<data>` URLs as sent by AIClient.
+ */
+fun ChatMessage.extractImageBytes(): ByteArray? {
+    val arr = content as? JsonArray ?: return null
+    val url = arr.firstOrNull {
+        it.jsonObject["type"]?.jsonPrimitive?.contentOrNull == "image_url"
+    }?.jsonObject?.get("image_url")?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
+        ?: return null
+    val base64 = url.substringAfter("base64,", "")
+    if (base64.isEmpty()) return null
+    return try {
+        java.util.Base64.getDecoder().decode(base64)
+    } catch (_: IllegalArgumentException) {
+        null
+    }
+}
 
 @Serializable
 data class ChatCompletionRequest(

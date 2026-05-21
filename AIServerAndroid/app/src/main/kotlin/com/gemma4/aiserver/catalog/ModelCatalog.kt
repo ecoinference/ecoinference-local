@@ -43,6 +43,7 @@ object ModelCatalog {
         licenseUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,
+        supportsVision = true,   // .litertlm bundle includes the SigLIP encoder
     )
 
     private val gemma4E4b = ModelInfo(
@@ -58,6 +59,7 @@ object ModelCatalog {
         licenseUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm",
         platform = "android",
         gemmaVersion = 4,
+        supportsVision = true,   // .litertlm bundle includes the SigLIP encoder
     )
 
     // ── Gemma 3n — iOS (.task, MediaPipe) ────────────────────────────────────

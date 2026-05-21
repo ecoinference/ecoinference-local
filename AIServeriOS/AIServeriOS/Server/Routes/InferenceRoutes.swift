@@ -20,7 +20,9 @@ private func registerChatCompletions(router: Router) {
             return HttpResponse.error("No model loaded. Call /v1/models/load first.", status: 503)
         }
 
-        let messages = req.messages.map { ["role": $0.role, "content": $0.content] }
+        let messages = req.messages.map {
+            InferenceMessage(role: $0.role, text: $0.extractText(), imageData: $0.extractImageData())
+        }
         let modelId  = inference.loadedModelId ?? req.model
 
         if req.stream {
@@ -106,7 +108,7 @@ private func registerChatCompletions(router: Router) {
             }.value
             switch result {
             case .success(let text):
-                let promptText = req.messages.map { $0.content }.joined(separator: "\n")
+                let promptText = req.messages.map { $0.extractText() }.joined(separator: "\n")
                 return HttpResponse.json(ChatCompletionResponse(
                     id:      "chatcmpl-\(UUID().uuidString)",
                     object:  "chat.completion",
@@ -139,7 +141,7 @@ private func registerCompletions(router: Router) {
         }
 
         // Wrap plain prompt as a user message
-        let messages   = [["role": "user", "content": req.prompt]]
+        let messages   = [InferenceMessage(role: "user", text: req.prompt)]
         let modelId    = inference.loadedModelId ?? req.model
 
         if req.stream {

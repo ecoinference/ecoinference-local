@@ -21,21 +21,32 @@ final class InferenceService {
         return engine.loadedModelId
     }
 
+    var isMultimodal: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return engine.isMultimodal
+    }
+
     // ── Load ──────────────────────────────────────────────────────────────────
 
     /// Loads a .litertlm model. Blocking — may take 5–30 s for large models.
     ///
     /// - Parameter maxNumTokens: KV-cache budget (input + history + output).
     ///   Default 8192 uses the full context window of the Gemma 4 E2B export.
+    /// - Parameter multimodal: When true the vision backend is enabled so image
+    ///   inputs can be passed. Must match the model's capabilities; enabling it
+    ///   for a text-only model adds overhead; omitting it for a vision model
+    ///   causes a native crash when an image is provided.
     func load(
         modelId:      String,
         modelPath:    String,
         useGpu:       Bool,
-        maxNumTokens: Int = 8192
+        maxNumTokens: Int  = 8192,
+        multimodal:   Bool = false
     ) throws {
         lock.lock(); defer { lock.unlock() }
         try engine.load(modelId: modelId, modelPath: modelPath,
-                        useGpu: useGpu, maxNumTokens: maxNumTokens)
+                        useGpu: useGpu, maxNumTokens: maxNumTokens,
+                        multimodal: multimodal)
     }
 
     func unload() {
@@ -50,7 +61,7 @@ final class InferenceService {
     // ── Inference ─────────────────────────────────────────────────────────────
 
     func chatStream(
-        messages:    [[String: String]],
+        messages:    [InferenceMessage],
         maxTokens:   Int   = 2048,
         temperature: Float = 0.8
     ) -> AsyncThrowingStream<String, Error> {
@@ -59,7 +70,7 @@ final class InferenceService {
     }
 
     func chat(
-        messages:    [[String: String]],
+        messages:    [InferenceMessage],
         maxTokens:   Int   = 2048,
         temperature: Float = 0.8
     ) throws -> String {

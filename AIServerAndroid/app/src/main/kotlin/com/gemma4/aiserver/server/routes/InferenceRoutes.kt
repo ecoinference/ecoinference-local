@@ -1,5 +1,6 @@
 package com.gemma4.aiserver.server.routes
 
+import com.gemma4.aiserver.inference.InferenceMessage
 import com.gemma4.aiserver.inference.InferenceRepository
 import com.gemma4.aiserver.model.ChatChoice
 import com.gemma4.aiserver.model.ChatChunk
@@ -13,6 +14,9 @@ import com.gemma4.aiserver.model.CompletionRequest
 import com.gemma4.aiserver.model.CompletionResponse
 import com.gemma4.aiserver.model.ErrorResponse
 import com.gemma4.aiserver.model.TokenUsage
+import com.gemma4.aiserver.model.extractImageBytes
+import com.gemma4.aiserver.model.extractText
+import kotlinx.serialization.json.JsonPrimitive
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -54,65 +58,96 @@ fun Route.inferenceRoutes(
             )
         }
 
-        val messages = req.messages.map { mapOf("role" to it.role, "content" to it.content) }
+        // Map HTTP messages → InferenceMessage, extracting text and any image attachment.
+        val messages = req.messages.map { msg ->
+            InferenceMessage(
+                role       = msg.role,
+                text       = msg.extractText(),
+                imageBytes = msg.extractImageBytes(),
+            )
+        }
         val id = "chatcmpl-${UUID.randomUUID()}"
 
         if (req.stream) {
             // ── Streaming path ────────────────────────────────────────────────
             call.respondBytesWriter(contentType = ContentType.Text.EventStream) {
-                // Role delta — sent once at the start
-                val roleChunk = ChatChunk(
-                    id = id,
-                    model = req.model,
-                    choices = listOf(
-                        ChunkChoice(delta = ChunkDelta(role = "assistant")),
-                    ),
-                )
-                writeStringUtf8("data: ${Json.encodeToString(roleChunk)}\n\n")
-                flush()
-
-                // Content deltas — one per token/partial token
-                inference.chatStream(
-                    messages = messages,
-                    maxTokens = req.maxTokens,
-                    temperature = req.temperature,
-                ).catch { e ->
-                    // Emit an error chunk so the client knows something went wrong.
-                    val errChunk = ChatChunk(
+                // Outer try-catch ensures any exception that escapes the flow's
+                // own .catch block still produces a structured error event rather
+                // than silently closing the socket (which the client sees as
+                // "Connection closed while receiving data").
+                try {
+                    // Role delta — sent once at the start
+                    val roleChunk = ChatChunk(
                         id = id,
                         model = req.model,
                         choices = listOf(
-                            ChunkChoice(
-                                delta = ChunkDelta(content = "[ERROR: ${e.message}]"),
-                                finishReason = "error",
+                            ChunkChoice(delta = ChunkDelta(role = "assistant")),
+                        ),
+                    )
+                    writeStringUtf8("data: ${Json.encodeToString(roleChunk)}\n\n")
+                    flush()
+
+                    // Content deltas — one per token/partial token
+                    inference.chatStream(
+                        messages = messages,
+                        maxTokens = req.maxTokens,
+                        temperature = req.temperature,
+                    ).catch { e ->
+                        // Emit an error chunk so the client knows what went wrong.
+                        android.util.Log.e("InferenceRoutes", "chatStream error", e)
+                        val errChunk = ChatChunk(
+                            id = id,
+                            model = req.model,
+                            choices = listOf(
+                                ChunkChoice(
+                                    delta = ChunkDelta(content = "[ERROR: ${e.message}]"),
+                                    finishReason = "error",
+                                ),
                             ),
-                        ),
-                    )
-                    writeStringUtf8("data: ${Json.encodeToString(errChunk)}\n\n")
-                    flush()
-                }.collect { token ->
-                    val chunk = ChatChunk(
+                        )
+                        writeStringUtf8("data: ${Json.encodeToString(errChunk)}\n\n")
+                        flush()
+                    }.collect { token ->
+                        val chunk = ChatChunk(
+                            id = id,
+                            model = req.model,
+                            choices = listOf(
+                                ChunkChoice(delta = ChunkDelta(content = token)),
+                            ),
+                        )
+                        writeStringUtf8("data: ${Json.encodeToString(chunk)}\n\n")
+                        flush()
+                    }
+
+                    // Stop delta — signals end of generation
+                    val stopChunk = ChatChunk(
                         id = id,
                         model = req.model,
                         choices = listOf(
-                            ChunkChoice(delta = ChunkDelta(content = token)),
+                            ChunkChoice(delta = ChunkDelta(), finishReason = "stop"),
                         ),
                     )
-                    writeStringUtf8("data: ${Json.encodeToString(chunk)}\n\n")
+                    writeStringUtf8("data: ${Json.encodeToString(stopChunk)}\n\n")
+                    writeStringUtf8("data: [DONE]\n\n")
                     flush()
+                } catch (e: Exception) {
+                    android.util.Log.e("InferenceRoutes", "Unhandled SSE exception", e)
+                    runCatching {
+                        val errChunk = ChatChunk(
+                            id = id,
+                            model = req.model,
+                            choices = listOf(
+                                ChunkChoice(
+                                    delta = ChunkDelta(content = "[ERROR: ${e.message}]"),
+                                    finishReason = "error",
+                                ),
+                            ),
+                        )
+                        writeStringUtf8("data: ${Json.encodeToString(errChunk)}\n\n")
+                        writeStringUtf8("data: [DONE]\n\n")
+                        flush()
+                    }
                 }
-
-                // Stop delta — signals end of generation
-                val stopChunk = ChatChunk(
-                    id = id,
-                    model = req.model,
-                    choices = listOf(
-                        ChunkChoice(delta = ChunkDelta(), finishReason = "stop"),
-                    ),
-                )
-                writeStringUtf8("data: ${Json.encodeToString(stopChunk)}\n\n")
-                writeStringUtf8("data: [DONE]\n\n")
-                flush()
             }
         } else {
             // ── Non-streaming path ────────────────────────────────────────────
@@ -125,7 +160,7 @@ fun Route.inferenceRoutes(
             }.fold(
                 onSuccess = { output ->
                     val promptTokens = estimateTokens(
-                        req.messages.joinToString(" ") { it.content }
+                        req.messages.joinToString(" ") { it.extractText() }
                     )
                     val completionTokens = estimateTokens(output)
                     call.respond(
@@ -134,7 +169,10 @@ fun Route.inferenceRoutes(
                             model = req.model,
                             choices = listOf(
                                 ChatChoice(
-                                    message = ChatMessage(role = "assistant", content = output),
+                                    message = ChatMessage(
+                                        role    = "assistant",
+                                        content = JsonPrimitive(output),
+                                    ),
                                 ),
                             ),
                             usage = TokenUsage(

@@ -14,6 +14,7 @@ struct ModelInfo: Codable, Identifiable {
     let downloadUrl: String
     var downloaded: Bool
     var loaded: Bool
+    let supportsVision: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -26,6 +27,39 @@ struct ModelInfo: Codable, Identifiable {
         case downloadUrl    = "download_url"
         case downloaded
         case loaded
+        case supportsVision = "supports_vision"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id              = try c.decode(String.self, forKey: .id)
+        displayName     = try c.decode(String.self, forKey: .displayName)
+        fileName        = try c.decode(String.self, forKey: .fileName)
+        fileSizeMb      = try c.decode(Int.self,    forKey: .fileSizeMb)
+        platform        = try c.decode(String.self, forKey: .platform)
+        requiresHfToken = try c.decode(Bool.self,   forKey: .requiresHfToken)
+        licenseUrl      = try c.decodeIfPresent(String.self, forKey: .licenseUrl)
+        downloadUrl     = try c.decode(String.self, forKey: .downloadUrl)
+        downloaded      = try c.decodeIfPresent(Bool.self, forKey: .downloaded) ?? false
+        loaded          = try c.decodeIfPresent(Bool.self, forKey: .loaded)     ?? false
+        supportsVision  = try c.decodeIfPresent(Bool.self, forKey: .supportsVision) ?? false
+    }
+
+    /// Memberwise init used by ModelCatalog.
+    init(id: String, displayName: String, fileName: String, fileSizeMb: Int,
+         platform: String, requiresHfToken: Bool, licenseUrl: String?,
+         downloadUrl: String, downloaded: Bool, loaded: Bool, supportsVision: Bool = false) {
+        self.id              = id
+        self.displayName     = displayName
+        self.fileName        = fileName
+        self.fileSizeMb      = fileSizeMb
+        self.platform        = platform
+        self.requiresHfToken = requiresHfToken
+        self.licenseUrl      = licenseUrl
+        self.downloadUrl     = downloadUrl
+        self.downloaded      = downloaded
+        self.loaded          = loaded
+        self.supportsVision  = supportsVision
     }
 
     /// Size formatted for display, e.g. "2.5 GB".
@@ -55,7 +89,8 @@ enum ModelCatalog {
             licenseUrl:      "\(hfBase)/litert-community/gemma-4-E2B-it-litert-lm",
             downloadUrl:     "\(piBase)/gemma-4-E2B-it.litertlm",
             downloaded:      false,
-            loaded:          false
+            loaded:          false,
+            supportsVision:  true
         ),
         ModelInfo(
             id:              "gemma4-e4b-it",
@@ -67,7 +102,8 @@ enum ModelCatalog {
             licenseUrl:      "\(hfBase)/litert-community/gemma-4-E4B-it-litert-lm",
             downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
-            loaded:          false
+            loaded:          false,
+            supportsVision:  true
         ),
     ]
 

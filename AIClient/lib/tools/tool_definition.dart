@@ -4,7 +4,7 @@ import 'tool_result.dart';
 /// Eliminates stringly-typed literals scattered across files.
 abstract final class ToolNames {
   static const parserDebug = 'parser_debug';
-  static const pythonLibs  = 'python_libs';
+  static const pythonLibs  = 'local_tools';
   static const pythonError = 'python_error';
 }
 

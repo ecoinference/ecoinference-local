@@ -22,18 +22,41 @@ enum InferenceError: LocalizedError {
     }
 }
 
+// MARK: - InferenceMessage
+
+/// A single turn in a conversation passed to the inference engine.
+struct InferenceMessage {
+    let role:      String
+    let text:      String
+    let imageData: Data?
+
+    init(role: String, text: String, imageData: Data? = nil) {
+        self.role      = role
+        self.text      = text
+        self.imageData = imageData
+    }
+}
+
 // ── Callback context ──────────────────────────────────────────────────────────
 
 /// Heap-allocated context object passed through the C userData pointer.
+///
+/// Both `inputBuffer` (prompt text) and `imageBuffer` (optional image bytes)
+/// are kept alive here so the raw pointers passed to the C streaming API remain
+/// valid for the lifetime of the async operation.
 private final class StreamContext {
     let continuation: AsyncStream<String>.Continuation
-    /// Keeps the raw prompt bytes alive for the duration of the C callback.
+    /// Null-terminated UTF-8 bytes of the formatted prompt.
     var inputBuffer: ContiguousArray<UInt8>
+    /// Raw image bytes for the most-recent user image (nil = text-only).
+    var imageBuffer: ContiguousArray<UInt8>?
 
     init(continuation: AsyncStream<String>.Continuation,
-         inputBuffer: ContiguousArray<UInt8>) {
-        self.continuation  = continuation
-        self.inputBuffer   = inputBuffer
+         inputBuffer:  ContiguousArray<UInt8>,
+         imageBuffer:  ContiguousArray<UInt8>? = nil) {
+        self.continuation = continuation
+        self.inputBuffer  = inputBuffer
+        self.imageBuffer  = imageBuffer
     }
 }
 
@@ -78,6 +101,7 @@ final class LiteRtLmEngine {
 
     private var engine: OpaquePointer? // LiteRtLmEngine*
     private(set) var loadedModelId: String?
+    private(set) var isMultimodal = false
     private var currentSession: OpaquePointer? // LiteRtLmSession*
     private let sessionLock = NSLock()
     /// True while a session is active — the engine only supports one at a time.
@@ -97,7 +121,8 @@ final class LiteRtLmEngine {
         modelId:      String,
         modelPath:    String,
         useGpu:       Bool,
-        maxNumTokens: Int = 8192
+        maxNumTokens: Int  = 8192,
+        multimodal:   Bool = false
     ) throws {
         unload()
 
@@ -111,12 +136,16 @@ final class LiteRtLmEngine {
         }
 
         let backendStr = useGpu ? "gpu" : "cpu"
+        // Vision backend must be explicitly set for multimodal models.
+        // Passing nil leaves the engine without a vision backend; any image
+        // input will cause a native crash — same issue as Android visionBackend.
+        let visionBackendStr: String? = multimodal ? "cpu" : nil
         let cacheDir = FileManager.default.urls(
             for: .cachesDirectory, in: .userDomainMask
         ).first!.path
 
         let engineSettings = litert_lm_engine_settings_create(
-            modelPath, backendStr, nil, nil
+            modelPath, backendStr, visionBackendStr, nil
         )!
         defer { litert_lm_engine_settings_delete(engineSettings) }
 
@@ -128,8 +157,9 @@ final class LiteRtLmEngine {
             throw InferenceError.engineCreationFailed("litert_lm_engine_create returned nil")
         }
 
-        engine = newEngine
+        engine        = newEngine
         loadedModelId = modelId
+        isMultimodal  = multimodal
     }
 
     // ── Unload ────────────────────────────────────────────────────────────────
@@ -139,8 +169,9 @@ final class LiteRtLmEngine {
         if let e = engine {
             litert_lm_engine_delete(e)
         }
-        engine = nil
+        engine        = nil
         loadedModelId = nil
+        isMultimodal  = false
     }
 
     deinit { unload() }
@@ -158,8 +189,12 @@ final class LiteRtLmEngine {
 
     /// Streams token chunks for a list of chat messages.
     /// Runs litert_lm_session_generate_content_stream on a detached task.
+    ///
+    /// If the engine is multimodal and the most-recent user message contains
+    /// image data, the image is passed as a separate kLiteRtLmInputDataTypeImage
+    /// input preceding the text prompt (matching the Android input ordering).
     func chatStream(
-        messages:    [[String: String]],
+        messages:    [InferenceMessage],
         maxTokens:   Int   = 512,
         temperature: Float = 0.8
     ) -> AsyncThrowingStream<String, Error> {
@@ -188,16 +223,20 @@ final class LiteRtLmEngine {
                 //     SDK's template heuristics.
                 // apply_prompt_template is set to false below so the SDK treats
                 // the input as a pre-formatted prompt.
-                // Note: the previous looping issue (<start_of_turn>model loop) was
-                // caused by a bad sampler type (TopK/TopP/Greedy not implemented).
-                // Now that we rely on the SDK default sampler (Unspecified), the
-                // manual template works correctly.
                 let prompt = LiteRtLmEngine.buildGemmaPrompt(messages: messages)
 
-                // Null-terminated UTF-8 bytes kept alive via ctx
-                var promptBytes = ContiguousArray(
+                // Null-terminated UTF-8 bytes kept alive via ctx.inputBuffer.
+                let promptBytes = ContiguousArray(
                     (prompt.utf8CString).map { UInt8(bitPattern: $0) }
                 )
+
+                // Image bytes from the most-recent user message, if any.
+                // Only extracted when the engine was loaded with multimodal=true;
+                // passing an image to a text-only engine would cause a crash.
+                let imageBytes: ContiguousArray<UInt8>? = self.isMultimodal
+                    ? messages.last(where: { $0.role == "user" && $0.imageData != nil })
+                              .flatMap { ContiguousArray($0.imageData!) }
+                    : nil
 
                 // Create session config
                 let cfg = litert_lm_session_config_create()!
@@ -226,26 +265,44 @@ final class LiteRtLmEngine {
                     litert_lm_session_delete(session)
                 }
 
-                // Bridge AsyncThrowingStream → C callback via an AsyncStream intermediary
+                // Bridge AsyncThrowingStream → C callback via an AsyncStream intermediary.
+                // ctx retains both inputBuffer and imageBuffer so their backing memory
+                // stays alive for the duration of the asynchronous C callback.
                 let innerStream = AsyncStream<String> { innerCont in
-                    // Create context — retained until final callback fires.
-                    // The C library calls the callback on its own thread after
-                    // generate_content_stream returns, so the input buffer must
-                    // stay alive for the entire operation.  ctx owns the buffer
-                    // via ctx.inputBuffer; we call withUnsafeBufferPointer on
-                    // that copy so the pointer lifetime is tied to the retained ctx.
-                    let ctx = StreamContext(continuation: innerCont, inputBuffer: promptBytes)
+                    let ctx = StreamContext(
+                        continuation: innerCont,
+                        inputBuffer:  promptBytes,
+                        imageBuffer:  imageBytes
+                    )
                     let ctxPtr = Unmanaged.passRetained(ctx).toOpaque()
 
-                    ctx.inputBuffer.withUnsafeBufferPointer { buf in
-                        var input = LiteRtLmInputData(
+                    ctx.inputBuffer.withUnsafeBufferPointer { textBuf in
+                        let textInput = LiteRtLmInputData(
                             type: kLiteRtLmInputDataTypeText,
-                            data: UnsafeRawPointer(buf.baseAddress),
-                            size: buf.count > 0 ? buf.count - 1 : 0  // exclude null terminator
+                            data: UnsafeRawPointer(textBuf.baseAddress),
+                            size: textBuf.count > 0 ? textBuf.count - 1 : 0  // exclude null terminator
                         )
-                        _ = litert_lm_session_generate_content_stream(
-                            session, &input, 1, liteRtLmStreamCallback, ctxPtr
-                        )
+                        if let imgBuf = ctx.imageBuffer {
+                            // Multimodal: pass image first, then text (mirrors Android ordering).
+                            imgBuf.withUnsafeBufferPointer { iBuf in
+                                var inputs = [
+                                    LiteRtLmInputData(
+                                        type: kLiteRtLmInputDataTypeImage,
+                                        data: UnsafeRawPointer(iBuf.baseAddress),
+                                        size: iBuf.count
+                                    ),
+                                    textInput
+                                ]
+                                _ = litert_lm_session_generate_content_stream(
+                                    session, &inputs, 2, liteRtLmStreamCallback, ctxPtr
+                                )
+                            }
+                        } else {
+                            var input = textInput
+                            _ = litert_lm_session_generate_content_stream(
+                                session, &input, 1, liteRtLmStreamCallback, ctxPtr
+                            )
+                        }
                     }
                 }
 
@@ -260,7 +317,7 @@ final class LiteRtLmEngine {
 
     /// Blocking (non-streaming) inference. Returns complete response string.
     func chat(
-        messages:    [[String: String]],
+        messages:    [InferenceMessage],
         maxTokens:   Int   = 512,
         temperature: Float = 0.8
     ) throws -> String {
@@ -293,13 +350,40 @@ final class LiteRtLmEngine {
         litert_lm_session_config_delete(cfg)
         defer { litert_lm_session_delete(session) }
 
-        let responses: OpaquePointer? = prompt.withCString { cStr in
-            var input = LiteRtLmInputData(
-                type: kLiteRtLmInputDataTypeText,
-                data: UnsafeRawPointer(cStr),
-                size: strlen(cStr)
-            )
-            return litert_lm_session_generate_content(session, &input, 1)
+        // Image from the most-recent user message (nil for text-only or text-engine).
+        let lastImageData: Data? = isMultimodal
+            ? messages.last(where: { $0.role == "user" && $0.imageData != nil })?.imageData
+            : nil
+
+        let responses: OpaquePointer?
+        if let imgData = lastImageData {
+            // Multimodal: pass image first, then formatted text prompt.
+            responses = prompt.withCString { cStr in
+                imgData.withUnsafeBytes { imgBuf in
+                    var inputs = [
+                        LiteRtLmInputData(
+                            type: kLiteRtLmInputDataTypeImage,
+                            data: imgBuf.baseAddress,
+                            size: imgBuf.count
+                        ),
+                        LiteRtLmInputData(
+                            type: kLiteRtLmInputDataTypeText,
+                            data: UnsafeRawPointer(cStr),
+                            size: strlen(cStr)
+                        )
+                    ]
+                    return litert_lm_session_generate_content(session, &inputs, 2)
+                }
+            }
+        } else {
+            responses = prompt.withCString { cStr in
+                var input = LiteRtLmInputData(
+                    type: kLiteRtLmInputDataTypeText,
+                    data: UnsafeRawPointer(cStr),
+                    size: strlen(cStr)
+                )
+                return litert_lm_session_generate_content(session, &input, 1)
+            }
         }
 
         guard let responses else {
@@ -314,7 +398,7 @@ final class LiteRtLmEngine {
 
     // ── Gemma prompt formatting ───────────────────────────────────────────────
 
-    /// Formats OpenAI-style messages into the Gemma chat template.
+    /// Formats a list of `InferenceMessage`s into the Gemma chat template.
     ///
     ///   <start_of_turn>user
     ///   {system (if any)}\n\n{message}<end_of_turn>
@@ -322,32 +406,32 @@ final class LiteRtLmEngine {
     ///   {reply}<end_of_turn>
     ///   ...
     ///   <start_of_turn>model\n          ← triggers generation
-    static func buildGemmaPrompt(messages: [[String: String]]) -> String {
+    ///
+    /// Image data is passed separately via `LiteRtLmInputData`; the text here
+    /// contains only the textual portions of each turn.
+    static func buildGemmaPrompt(messages: [InferenceMessage]) -> String {
         var sb = ""
 
         let systemText = messages
-            .filter { $0["role"] == "system" }
-            .compactMap { $0["content"] }
+            .filter { $0.role == "system" }
+            .map    { $0.text }
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         var systemInjected = false
 
-        for msg in messages where msg["role"] != "system" {
-            let role    = msg["role"] ?? "user"
-            let content = msg["content"] ?? ""
-
-            switch role {
+        for msg in messages where msg.role != "system" {
+            switch msg.role {
             case "user":
                 sb += "<start_of_turn>user\n"
                 if !systemText.isEmpty && !systemInjected {
                     sb += systemText + "\n\n"
                     systemInjected = true
                 }
-                sb += content + "<end_of_turn>\n"
+                sb += msg.text + "<end_of_turn>\n"
             case "assistant":
                 sb += "<start_of_turn>model\n"
-                sb += content + "<end_of_turn>\n"
+                sb += msg.text + "<end_of_turn>\n"
             default:
                 break
             }

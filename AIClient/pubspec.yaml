@@ -25,8 +25,14 @@ dependencies:
   permission_handler: ^11.3.0
   # GPS location
   geolocator: ^13.0.0
+  # Battery level for device context injection
+  battery_plus: ^6.0.0
+  # Network connectivity type for device context injection
+  connectivity_plus: ^6.0.0
   # WebView for Pyodide Python runner
   webview_flutter: ^4.7.0
+  # Image picker for camera / gallery attachment to chat messages
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

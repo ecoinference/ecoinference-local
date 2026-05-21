@@ -21,30 +21,43 @@ const PACKAGE_MAP = {
   'go':         { pkg: 'plotly',     via: 'micropip' },
   'ff':         { pkg: 'plotly',     via: 'micropip' },
   'astral':     { pkg: 'astral',     via: 'micropip' },
-  'skyfield':   { pkg: 'skyfield',   via: 'micropip' },
   'folium':     { pkg: 'folium',     via: 'micropip' },
   'shapely':    { pkg: 'shapely',    via: 'pyodide'  },
-  'geopy':      { pkg: 'geopy',      via: 'micropip' },
 };
 
 const loadedPkgs = new Set();
 let pyodide = null;
 
+// ── Timeout helper ────────────────────────────────────────────────────────────
+// Races a promise against a rejection timer so every network call has a ceiling.
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(label + ' timed out after ' + (ms / 1000) + 's')), ms)
+    )
+  ]);
+}
+
 // ── Initialise Pyodide ────────────────────────────────────────────────────────
 async function initPyodide() {
   try {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('Failed to load Pyodide CDN script'));
-      document.head.appendChild(s);
-    });
+    await withTimeout(
+      new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Failed to load Pyodide CDN script'));
+        document.head.appendChild(s);
+      }),
+      30000, 'Pyodide CDN script load'
+    );
 
-    pyodide = await loadPyodide();
-    await pyodide.loadPackage('micropip');
+    pyodide = await withTimeout(loadPyodide(), 45000, 'loadPyodide()');
+    // micropip: package installer; tzdata: required by zoneinfo on Pyodide
+    await withTimeout(pyodide.loadPackage(['micropip', 'tzdata']), 30000, 'micropip + tzdata load');
 
-    // Pre-configure matplotlib non-interactive backend + stdout capture helper
+    // Pre-configure matplotlib non-interactive backend + capture helpers
     await pyodide.runPythonAsync(`
 import os, sys, io as _sysio
 os.environ['MPLBACKEND'] = 'Agg'
@@ -105,20 +118,25 @@ async function loadRequiredPackages(code) {
   }
 
   if (pyodideQueue.length > 0) {
+    const names = [...new Set(pyodideQueue)];
     PythonResult.postMessage(JSON.stringify({
       type: 'status',
-      value: 'Loading ' + [...new Set(pyodideQueue)].join(', ') + '…'
+      value: 'Loading ' + names.join(', ') + '…'
     }));
-    await pyodide.loadPackage([...new Set(pyodideQueue)]);
+    await withTimeout(
+      pyodide.loadPackage(names),
+      30000, 'loadPackage(' + names.join(',') + ')'
+    );
   }
+
   if (micropipQueue.length > 0) {
-    PythonResult.postMessage(JSON.stringify({
-      type: 'status',
-      value: 'Installing ' + [...new Set(micropipQueue)].join(', ') + '…'
-    }));
     const micropip = pyodide.pyimport('micropip');
     for (const pkg of [...new Set(micropipQueue)]) {
-      await micropip.install(pkg);
+      PythonResult.postMessage(JSON.stringify({
+        type: 'status',
+        value: 'Installing ' + pkg + '…'
+      }));
+      await withTimeout(micropip.install(pkg), 30000, 'micropip.install(' + pkg + ')');
     }
   }
 }
@@ -141,7 +159,10 @@ async function runPython(code) {
     PythonResult.postMessage(JSON.stringify({ type: 'error', value: 'Pyodide not ready yet.' }));
     return;
   }
-  try {
+
+  // Race the whole execution against a 55 s wall-clock timeout so network
+  // hangs (package installs, slow CDN) always resolve before Dart's 60 s limit.
+  const execPromise = (async () => {
     await loadRequiredPackages(code);
 
     // Redirect stdout so print() calls are captured
@@ -164,8 +185,7 @@ except Exception:
 `);
     }
 
-    // Run user code; pyodide.runPythonAsync returns the value of the last
-    // expression (like a REPL), which we use as an auto-capture fallback.
+    // Run user code; runPythonAsync returns the last expression value (REPL-style).
     let lastExprValue;
     try {
       lastExprValue = await pyodide.runPythonAsync(code);
@@ -179,17 +199,35 @@ except Exception:
     const stdout = stdoutProxy ? stdoutProxy.getvalue() : '';
     if (stdoutProxy && stdoutProxy.destroy) stdoutProxy.destroy();
 
-    // ── Resolve result ──────────────────────────────────────────────────────
+    // ── Resolve result ────────────────────────────────────────────────────────
+    // Priority order:
+    //   1. result = <image data URL or full HTML>  — explicit rich output (folium, plotly to_html)
+    //   2. matplotlib auto-capture                 — open figure → PNG
+    //   3. plotly auto-capture                     — BaseFigure in globals → HTML
+    //   4. last expression value                   — REPL-style
+    //   5. stdout                                  — print() output
+    //   6. result = <plain text>                   — fallback so "done" strings don't
+    //                                                 block image/HTML capture above
+    //   7. error — no output produced
     const resultProxy = pyodide.globals.get('result');
+    let explicitText = null;
 
     if (resultProxy !== undefined && resultProxy !== null) {
-      // 1. Explicit `result = ...` in user code (preferred)
       const s = typeof resultProxy.toString === 'function'
         ? resultProxy.toString()
         : String(resultProxy);
       if (resultProxy.destroy) resultProxy.destroy();
-      postResult(s);
-      return;
+
+      const trimmed = s.trim();
+      if (trimmed.startsWith('data:image/') ||
+          trimmed.startsWith('<!DOCTYPE') ||
+          trimmed.startsWith('<html')) {
+        // 1. Rich explicit result — use immediately
+        postResult(s);
+        return;
+      }
+      // Plain text — save for step 6 so auto-capture can fire first
+      explicitText = s;
     }
 
     // 2. Auto-capture: open matplotlib figure
@@ -197,36 +235,26 @@ except Exception:
     if (mplProxy !== null && mplProxy !== undefined) {
       const s = typeof mplProxy.toString === 'function' ? mplProxy.toString() : String(mplProxy);
       if (mplProxy.destroy) mplProxy.destroy();
-      if (s.startsWith('data:image/')) {
-        postResult(s);
-        return;
-      }
+      if (s.startsWith('data:image/')) { postResult(s); return; }
     }
 
-    // 3. Auto-capture: Plotly figure in globals (handles fig.show() calls).
-    //    Only attempted when plotly was actually loaded this session.
+    // 3. Auto-capture: Plotly figure in globals
     if (loadedPkgs.has('plotly')) {
       const plotlyProxy = await pyodide.runPythonAsync('_capture_plotly_figure()');
       if (plotlyProxy !== null && plotlyProxy !== undefined) {
         const s = typeof plotlyProxy.toString === 'function' ? plotlyProxy.toString() : String(plotlyProxy);
         if (plotlyProxy.destroy) plotlyProxy.destroy();
-        if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) {
-          postResult(s);
-          return;
-        }
+        if (s.startsWith('<!DOCTYPE') || s.startsWith('<html')) { postResult(s); return; }
       }
     }
 
-    // 4. Auto-capture: last expression return value from runPythonAsync
+    // 4. Auto-capture: last expression value from runPythonAsync
     if (lastExprValue !== null && lastExprValue !== undefined) {
       const s = typeof lastExprValue.toString === 'function'
         ? lastExprValue.toString()
         : String(lastExprValue);
       if (lastExprValue.destroy) lastExprValue.destroy();
-      if (s.trim().length > 0 && s !== 'None') {
-        postResult(s);
-        return;
-      }
+      if (s.trim().length > 0 && s !== 'None') { postResult(s); return; }
     }
 
     // 5. Auto-capture: stdout (from print() calls)
@@ -235,13 +263,24 @@ except Exception:
       return;
     }
 
-    // 6. Nothing to return
+    // 6. Explicit plain-text result (fallback — after auto-capture so a
+    //    "Plot generated successfully" string doesn't block image/HTML output)
+    if (explicitText !== null && explicitText.trim().length > 0) {
+      postResult(explicitText);
+      return;
+    }
+
+    // 7. Nothing to return
     PythonResult.postMessage(JSON.stringify({
       type: 'error',
       value: "Code ran but produced no output. Assign the answer to 'result', e.g. result = 42"
     }));
+  })();
+
+  try {
+    await withTimeout(execPromise, 55000, 'Python execution');
   } catch (err) {
-    // Always restore stdout on error too
+    // Always attempt stdout restore on any error / timeout
     try { await pyodide.runPythonAsync("import sys; sys.stdout = sys.__stdout__"); } catch (_) {}
     PythonResult.postMessage(JSON.stringify({ type: 'error', value: err.toString() }));
   }

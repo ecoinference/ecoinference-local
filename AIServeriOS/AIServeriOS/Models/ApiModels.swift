@@ -107,9 +107,87 @@ struct DownloadProgressEvent: Codable {
 
 // MARK: - Chat completions
 
+// ── Polymorphic message content ──────────────────────────────────────────────
+//
+// OpenAI vision API sends content as either a plain String or an array of
+// typed parts: [{"type":"text","text":"..."}, {"type":"image_url","image_url":{"url":"data:..."}}]
+// We accept both forms.
+
+struct ContentPart: Codable {
+    let type: String
+    let text: String?
+    let imageUrl: ImageUrlContent?
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case text
+        case imageUrl = "image_url"
+    }
+}
+
+struct ImageUrlContent: Codable {
+    let url: String
+}
+
+enum MessageContent {
+    case text(String)
+    case parts([ContentPart])
+}
+
+extension MessageContent: Codable {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let s = try? c.decode(String.self) {
+            self = .text(s)
+        } else {
+            self = .parts(try c.decode([ContentPart].self))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .text(let s):   try c.encode(s)
+        case .parts(let p):  try c.encode(p)
+        }
+    }
+}
+
 struct ChatMessage: Codable {
-    let role: String
-    let content: String
+    let role:    String
+    let content: MessageContent
+
+    /// Convenience init for constructing response messages with plain text.
+    init(role: String, content: String) {
+        self.role    = role
+        self.content = .text(content)
+    }
+
+    // MARK: - Helpers
+
+    /// Returns the plain-text portion of the message content.
+    func extractText() -> String {
+        switch content {
+        case .text(let s):
+            return s
+        case .parts(let parts):
+            return parts
+                .filter { $0.type == "text" }
+                .compactMap { $0.text }
+                .joined(separator: "\n")
+        }
+    }
+
+    /// Decodes the first image_url part's base64 data URL, if present.
+    func extractImageData() -> Data? {
+        guard case .parts(let parts) = content else { return nil }
+        guard let urlStr = parts.first(where: { $0.type == "image_url" })?.imageUrl?.url
+        else { return nil }
+        // Strip "data:image/<type>;base64," prefix
+        guard let commaIdx = urlStr.firstIndex(of: ",") else { return nil }
+        let b64 = String(urlStr[urlStr.index(after: commaIdx)...])
+        return Data(base64Encoded: b64, options: .ignoreUnknownCharacters)
+    }
 }
 
 struct ChatCompletionRequest: Codable {
