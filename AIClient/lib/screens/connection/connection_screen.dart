@@ -16,14 +16,18 @@ class ConnectionScreen extends StatefulWidget {
 }
 
 class _ConnectionScreenState extends State<ConnectionScreen> {
-  final _hostCtrl = TextEditingController(text: '127.0.0.1');
-  final _portCtrl = TextEditingController(text: '8080');
-  bool _checking = false;
-  bool _launching = false;
-  bool _stopping = false;
+  final _hostCtrl    = TextEditingController(text: '127.0.0.1');
+  final _portCtrl    = TextEditingController(text: '8080');
+  final _braveKeyCtrl = TextEditingController();
+  bool _checking     = false;
+  bool _launching    = false;
+  bool _stopping     = false;
   bool _statusChecking = false;
+  bool _braveKeyObscured = true;
   String? _error;
   HealthStatus? _serverStatus;
+
+  static const _kBraveApiKey = 'brave_search_api_key';
 
   @override
   void initState() {
@@ -35,17 +39,29 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   void dispose() {
     _hostCtrl.dispose();
     _portCtrl.dispose();
+    _braveKeyCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadSaved() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _hostCtrl.text = prefs.getString('server_host') ?? '127.0.0.1';
-      _portCtrl.text = (prefs.getInt('server_port') ?? 8080).toString();
+      _hostCtrl.text    = prefs.getString('server_host') ?? '127.0.0.1';
+      _portCtrl.text    = (prefs.getInt('server_port') ?? 8080).toString();
+      _braveKeyCtrl.text = prefs.getString(_kBraveApiKey) ?? '';
     });
     // Auto-check status once address is loaded.
     _checkStatus();
+  }
+
+  Future<void> _saveBraveKey() async {
+    final key = _braveKeyCtrl.text.trim();
+    final prefs = await SharedPreferences.getInstance();
+    if (key.isEmpty) {
+      await prefs.remove(_kBraveApiKey);
+    } else {
+      await prefs.setString(_kBraveApiKey, key);
+    }
   }
 
   // ── Status check ───────────────────────────────────────────────────────────
@@ -399,6 +415,39 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                         )
                       : const Icon(Icons.link),
                   label: const Text('Connect'),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // ── API keys ───────────────────────────────────────────────────
+              Text(
+                'API Keys',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Optional. Enables internet search via the web_search tool.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _braveKeyCtrl,
+                obscureText: _braveKeyObscured,
+                onEditingComplete: _saveBraveKey,
+                onTapOutside: (_) => _saveBraveKey(),
+                decoration: InputDecoration(
+                  labelText: 'Brave Search API Key',
+                  border: const OutlineInputBorder(),
+                  hintText: 'BSA…',
+                  suffixIcon: IconButton(
+                    icon: Icon(_braveKeyObscured
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () => setState(
+                        () => _braveKeyObscured = !_braveKeyObscured),
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

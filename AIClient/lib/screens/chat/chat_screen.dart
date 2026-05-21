@@ -13,12 +13,14 @@ import '../../services/location_service.dart';
 import '../../services/memory_service.dart';
 import '../../services/server_launcher.dart';
 import '../../services/weather_service.dart';
+import '../../services/search_confirmation_service.dart';
 import '../../tools/agent_loop.dart';
 import '../../tools/hardware_tools.dart';
 import '../../tools/python_command.dart';
 import '../../tools/python_runner.dart';
 import '../../tools/tool_definition.dart';
 import '../../tools/tool_result.dart';
+import '../../tools/web_search_tool.dart';
 import '../../widgets/message_bubble.dart';
 import '../chart/chart_screen.dart';
 import '../connection/connection_screen.dart';
@@ -71,8 +73,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _streamingRaw;
   StreamSubscription<String>? _streamSub;
 
-  static const _kSystemPromptKey = 'system_prompt';
-  static const _kMessagesKey = 'chat_messages';
+  static const _kSystemPromptKey   = 'system_prompt';
+  static const _kMessagesKey        = 'chat_messages';
+  static const _kBraveApiKey        = 'brave_search_api_key';
 
   /// Maximum number of messages (user + assistant) sent to the server.
   /// Older messages beyond this limit are shown in the UI but excluded from
@@ -87,6 +90,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadMessages();
     registerHardwareTools();
     PythonRunner.instance.initialize();
+    _initWebSearch(); // async — loads API key then registers tool
     _refreshContext(); // async — runs in background, no await
   }
 
@@ -113,6 +117,90 @@ class _ChatScreenState extends State<ChatScreen> {
     final memCtx = await MemoryService.buildContextBlock();
     if (!mounted) return;
     setState(() => _memoryContext = memCtx);
+  }
+
+  // ── Web search setup ─────────────────────────────────────────────────────────
+
+  /// Loads the Brave Search API key from SharedPreferences, registers the
+  /// web_search tool, and wires up the confirmation-dialog callback.
+  Future<void> _initWebSearch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final apiKey = prefs.getString(_kBraveApiKey) ?? '';
+    // Register (or replace) the tool with the current API key.
+    registerWebSearchTool(apiKey: apiKey);
+    // Wire the dialog so SearchConfirmationService can show it.
+    SearchConfirmationService.setDialogCallback(_showWebSearchDialog);
+  }
+
+  /// Confirmation dialog shown before an internet search.
+  ///
+  /// Displays the query the assistant wants to search for and a "Don't ask
+  /// again" checkbox. On approval with the checkbox ticked, the opt-out flag
+  /// is persisted so future searches skip this dialog.
+  Future<bool> _showWebSearchDialog(String query) async {
+    if (!mounted) return false;
+    bool optOut = false;
+
+    final allowed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.public, size: 20),
+            SizedBox(width: 8),
+            Text('Internet Search'),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('The assistant wants to search the internet for:'),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  '"$query"',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: optOut,
+                    onChanged: (v) =>
+                        setDialogState(() => optOut = v ?? false),
+                  ),
+                  const Expanded(
+                    child: Text("Don't ask again for internet searches"),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Allow'),
+            ),
+          ],
+        ),
+      ),
+    ) ?? false;
+
+    if (allowed && optOut) {
+      await SearchConfirmationService.setOptOut(true);
+    }
+    return allowed;
   }
 
   Future<String?> _fetchWeather() async {

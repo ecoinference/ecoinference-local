@@ -50,7 +50,17 @@ class ToolRegistry {
 
   static final List<ToolDefinition> _tools = [];
 
-  static void register(ToolDefinition tool) => _tools.add(tool);
+  /// Registers a tool. If a tool with the same [name] is already registered
+  /// (e.g. because [initState] is called more than once), the existing entry
+  /// is replaced so duplicates never appear in the system prompt.
+  static void register(ToolDefinition tool) {
+    final idx = _tools.indexWhere((t) => t.name == tool.name);
+    if (idx >= 0) {
+      _tools[idx] = tool; // replace — keeps list order stable
+    } else {
+      _tools.add(tool);
+    }
+  }
 
   static List<ToolDefinition> get all => List.unmodifiable(_tools);
 
