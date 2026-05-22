@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/server_config.dart';
 import '../../services/api_service.dart';
 import '../../services/server_launcher.dart';
+import '../../theme/eco_theme.dart';
 import '../chat/chat_screen.dart';
 import '../models/model_catalog_screen.dart';
 
@@ -247,17 +248,16 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Icon(Icons.chat_bubble_outline_rounded,
-                  size: 64, color: theme.colorScheme.primary),
-              const SizedBox(height: 24),
-              Text(
-                'Gemma 4 Chat',
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+              Image.asset(
+                'assets/images/eco_icon.png',
+                width: 96,
+                height: 96,
               ),
+              const SizedBox(height: 20),
+              const EcoWordmark(fontSize: 28),
               const SizedBox(height: 8),
               Text(
-                'Connect to the Gemma 4 inference server running on this device.',
+                'Your data. Your planet. On your device.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant),
               ),
@@ -471,18 +471,18 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     Text(
                       (!kIsWeb &&
                               defaultTargetPlatform == TargetPlatform.android)
-                          ? '1. Tap Start above to launch AIServerAndroid.\n'
-                              '2. Tap Connect → choose a Gemma 4 model.\n'
+                          ? '1. Tap Start above to launch the inference server.\n'
+                              '2. Tap Connect → choose a model.\n'
                               '3. Download, load, and start chatting.\n'
                               '4. Tap Stop when finished to free memory.\n'
                               '   (No Hugging Face token required.)'
                           : (!kIsWeb &&
                                   defaultTargetPlatform == TargetPlatform.iOS)
-                              ? '1. Tap Start above to launch AIServeriOS.\n'
-                                  '2. Tap Connect → choose a Gemma 4 model.\n'
+                              ? '1. Tap Start above to launch the inference server.\n'
+                                  '2. Tap Connect → choose a model.\n'
                                   '3. Download, load, and start chatting.\n'
                                   '4. Tap Stop when finished to free memory.'
-                              : '1. Launch AIServer on the same device.\n'
+                              : '1. Launch the inference server on this device.\n'
                                   '2. Complete model setup and wait for '
                                   '"Server running".\n'
                                   '3. Enter the same port here and tap Connect.',

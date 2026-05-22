@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/connection/connection_screen.dart';
 import 'services/deep_link_service.dart';
+import 'theme/eco_theme.dart';
 
 /// Global navigator key used by [DeepLinkService] to route incoming
 /// `aiclient://` links to the currently active screen.
@@ -18,19 +19,12 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gemma 4 Chat',
+      title: 'EcoInference',
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF4285F4),
-        useMaterial3: true,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF4285F4),
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
+      theme: EcoTheme.light(),
+      darkTheme: EcoTheme.dark(),
+      themeMode: ThemeMode.system,
       home: const ConnectionScreen(),
     );
   }

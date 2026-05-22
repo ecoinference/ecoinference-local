@@ -32,6 +32,7 @@ import '../connection/connection_screen.dart';
 import '../models/model_catalog_screen.dart';
 import '../test/test_screen.dart';
 import '../test/features_test_screen.dart';
+import '../../theme/eco_theme.dart';
 
 /// Main chat interface. Streams tokens from the server as they arrive.
 class ChatScreen extends StatefulWidget {
@@ -1185,7 +1186,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Gemma 4 Chat'),
+            const EcoWordmark(fontSize: 18),
             Text(
               widget.config.baseUrl,
               style: theme.textTheme.labelSmall?.copyWith(
@@ -1383,7 +1384,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Text(
-            'Messages are sent to the on-device Gemma 4 model.',
+            'Messages are processed on-device. Your data stays yours.',
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outlineVariant),
           ),
