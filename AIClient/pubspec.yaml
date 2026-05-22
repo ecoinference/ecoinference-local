@@ -46,9 +46,23 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  # Generates launcher icons for Android and iOS from a source image
+  flutter_launcher_icons: ^0.14.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/eco_icon.png"
+  # Adaptive icon (Android 8+): leaf on dark brand background
+  adaptive_icon_background: "#0A160E"
+  adaptive_icon_foreground: "assets/images/eco_icon_adaptive_fg.png"
+  # Android 12+ themed icon (monochrome)
+  adaptive_icon_monochrome: "assets/images/eco_icon_adaptive_fg.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
   assets:
     - assets/python_runner.html
     - assets/images/eco_icon.png
+    - assets/images/eco_icon_adaptive_fg.png
