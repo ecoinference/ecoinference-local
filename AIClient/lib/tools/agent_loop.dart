@@ -22,7 +22,8 @@ class ToolCallResult {
 /// The UI state machine lives in [ChatScreen]; this class handles only
 /// parsing and message construction so it can be tested independently.
 class AgentLoop {
-  static final _toolCallOpenRe = RegExp(r'<tool_call\s*>');
+  /// Matches both our format (<tool_call>) and Gemma's native format (<|tool_call>).
+  static final _toolCallOpenRe = RegExp(r'<\|?tool_call\s*>');
 
   /// Returns true if [response] appears to contain a tool call opening tag.
   /// Centralises detection so callers don't duplicate the pattern.
@@ -76,6 +77,22 @@ class AgentLoop {
         .replaceAll(RegExp(r'\s*```$'), '')
         .trim();
 
+    // ── Gemma native format: call:TOOLNAME{key: "value"} ─────────────────────
+    // Gemma 4 sometimes emits <|tool_call>call:web_search{query:"..."}<tool_call|>
+    // instead of our JSON envelope. Detect and rewrite it before JSON parsing.
+    if (jsonStr.startsWith('call:')) {
+      final colonIdx = jsonStr.indexOf(':');
+      final braceIdx = jsonStr.indexOf('{', colonIdx + 1);
+      if (colonIdx >= 0 && braceIdx >= 0) {
+        final nativeName = jsonStr.substring(colonIdx + 1, braceIdx).trim();
+        final rawArgs    = jsonStr.substring(braceIdx);
+        log('native format detected: tool="$nativeName"');
+        // Rewrite as our JSON envelope so the existing 3-attempt parser handles it.
+        jsonStr = '{"name":"$nativeName","args":${_normalizeRelaxedJson(rawArgs)}}';
+        log('rewritten jsonStr=$jsonStr');
+      }
+    }
+
     // ── Parse JSON (3 attempts) ────────────────────────────────────────────
     Map<String, dynamic>? data;
 
@@ -118,6 +135,14 @@ class AgentLoop {
     log('SUCCESS → $name');
     return ToolCallResult(textBefore: textBefore, toolName: name, args: args);
   }
+
+  /// Converts JS-style object notation (unquoted keys) to valid JSON.
+  /// e.g. {query:"foo"} → {"query":"foo"}
+  /// Only touches keys (identifiers immediately after { or ,); leaves values alone.
+  static String _normalizeRelaxedJson(String s) => s.replaceAllMapped(
+        RegExp(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)'),
+        (m) => '${m[1]}"${m[2]}"${m[3]}',
+      );
 
   /// Appends missing closing braces/brackets to truncated JSON.
   static String _autoCloseJson(String s) {
