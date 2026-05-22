@@ -33,6 +33,14 @@ dependencies:
   webview_flutter: ^4.7.0
   # Image picker for camera / gallery attachment to chat messages
   image_picker: ^1.0.7
+  # ── Voice I/O ─────────────────────────────────────────────────────────────
+  # Speech-to-text (mic input)
+  speech_to_text: ^7.4.0
+  # Text-to-speech (auto-read responses)
+  flutter_tts: ^4.0.0
+  # ── Deep links ────────────────────────────────────────────────────────────
+  # Receive aiclient:// URL scheme on both iOS and Android
+  app_links: ^6.0.0
 
 dev_dependencies:
   flutter_test:

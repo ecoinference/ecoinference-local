@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,13 +14,17 @@ import '../../services/location_service.dart';
 import '../../services/memory_service.dart';
 import '../../services/server_launcher.dart';
 import '../../services/weather_service.dart';
+import '../../services/deep_link_service.dart';
 import '../../services/search_confirmation_service.dart';
+import '../../services/stt_service.dart';
+import '../../services/tts_service.dart';
 import '../../tools/agent_loop.dart';
 import '../../tools/hardware_tools.dart';
 import '../../tools/python_command.dart';
 import '../../tools/python_runner.dart';
 import '../../tools/tool_definition.dart';
 import '../../tools/tool_result.dart';
+import '../../tools/url_tools.dart';
 import '../../tools/web_search_tool.dart';
 import '../../widgets/message_bubble.dart';
 import '../chart/chart_screen.dart';
@@ -30,9 +35,24 @@ import '../test/features_test_screen.dart';
 
 /// Main chat interface. Streams tokens from the server as they arrive.
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.config});
+  const ChatScreen({
+    super.key,
+    required this.config,
+    this.initialMessage,
+    this.autoSend = false,
+    this.initialSystem,
+  });
 
   final ServerConfig config;
+
+  /// Pre-fill the input field with this text (from a deep link).
+  final String? initialMessage;
+
+  /// If true, [initialMessage] is sent automatically on open.
+  final bool autoSend;
+
+  /// Override the persisted system prompt for this session (deep link).
+  final String? initialSystem;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -77,6 +97,13 @@ class _ChatScreenState extends State<ChatScreen> {
   static const _kMessagesKey        = 'chat_messages';
   static const _kBraveApiKey        = 'brave_search_api_key';
 
+  // ── Voice state ────────────────────────────────────────────────────────────
+  bool _ttsEnabled  = false;
+  bool _sttListening = false;
+
+  // ── Deep-link subscription ─────────────────────────────────────────────────
+  StreamSubscription<DeepLinkPayload>? _deepLinkSub;
+
   /// Maximum number of messages (user + assistant) sent to the server.
   /// Older messages beyond this limit are shown in the UI but excluded from
   /// the request, keeping the context window manageable.
@@ -89,8 +116,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadSystemPrompt();
     _loadMessages();
     registerHardwareTools();
+    registerUrlTools();
+    setUrlLaunchConfirmCallback(_showUrlLaunchDialog);
     PythonRunner.instance.initialize();
     _initWebSearch(); // async — loads API key then registers tool
+    _initVoice();     // async — loads TTS preference
+    _initDeepLinks(); // handles cold-start and warm-start aiclient:// links
     _refreshContext(); // async — runs in background, no await
   }
 
@@ -203,6 +234,156 @@ class _ChatScreenState extends State<ChatScreen> {
     return allowed;
   }
 
+  // ── Voice I/O ─────────────────────────────────────────────────────────────
+
+  Future<void> _initVoice() async {
+    final enabled = await TtsService.isEnabled();
+    if (mounted) setState(() => _ttsEnabled = enabled);
+    await TtsService.instance.initialize();
+  }
+
+  Future<void> _toggleTts() async {
+    final next = !_ttsEnabled;
+    setState(() => _ttsEnabled = next);
+    await TtsService.setEnabled(next);
+    if (!next) await TtsService.instance.stop();
+  }
+
+  Future<void> _toggleMic() async {
+    if (_sttListening) {
+      await SttService.instance.stop();
+      setState(() => _sttListening = false);
+      return;
+    }
+    final available = await SttService.instance.initialize();
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone not available or permission denied.')),
+        );
+      }
+      return;
+    }
+    setState(() => _sttListening = true);
+    await SttService.instance.listen(
+      onResult: (text, isFinal) {
+        if (!mounted) return;
+        setState(() => _inputCtrl.text = text);
+        if (isFinal) {
+          setState(() => _sttListening = false);
+          // Move cursor to end after STT fills the field.
+          _inputCtrl.selection = TextSelection.fromPosition(
+            TextPosition(offset: _inputCtrl.text.length),
+          );
+        }
+      },
+      onListeningChanged: (listening) {
+        if (mounted) setState(() => _sttListening = listening);
+      },
+    );
+  }
+
+  // ── Deep link handling ─────────────────────────────────────────────────────
+
+  /// Called from [initState]. Handles cold-start payload (if app was launched
+  /// via aiclient://) and subscribes to warm-start links.
+  void _initDeepLinks() {
+    // Apply widget params first (passed directly from ConnectionScreen).
+    _applyDeepLinkParams(
+      message: widget.initialMessage,
+      autoSend: widget.autoSend,
+      system: widget.initialSystem,
+    );
+
+    // Cold-start link (stored by DeepLinkService before runApp).
+    final pending = DeepLinkService.consumePending();
+    if (pending != null) {
+      _applyDeepLinkParams(
+        message: pending.message,
+        autoSend: pending.autoSend,
+        system: pending.system,
+      );
+    }
+
+    // Warm-start links (app already running).
+    _deepLinkSub = DeepLinkService.payloadStream.listen((payload) {
+      if (!mounted) return;
+      _applyDeepLinkParams(
+        message: payload.message,
+        autoSend: payload.autoSend,
+        system: payload.system,
+      );
+    });
+  }
+
+  void _applyDeepLinkParams({
+    String? message,
+    bool autoSend = false,
+    String? system,
+  }) {
+    if (message == null && system == null) return;
+    if (system != null && system.isNotEmpty) {
+      setState(() => _systemPrompt = system);
+      _saveSystemPrompt(system);
+    }
+    if (message != null && message.isNotEmpty) {
+      setState(() => _inputCtrl.text = message);
+      if (autoSend) {
+        // Defer by one frame so build has completed.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _send();
+        });
+      }
+    }
+  }
+
+  // ── URL launch confirmation dialog ────────────────────────────────────────
+
+  Future<bool> _showUrlLaunchDialog(String url) async {
+    if (!mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(children: [
+              Icon(Icons.open_in_new, size: 20),
+              SizedBox(width: 8),
+              Text('Open App'),
+            ]),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('The assistant wants to open:'),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText(
+                    url,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Open'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   Future<String?> _fetchWeather() async {
     final location = await LocationService.getLocation();
     if (location == null) return null;
@@ -259,6 +440,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _streamSub?.cancel();
+    _deepLinkSub?.cancel();
+    TtsService.instance.stop();
+    SttService.instance.cancel();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -277,6 +461,12 @@ class _ChatScreenState extends State<ChatScreen> {
     // Allow send when there is text, an image, or both.
     if ((text.isEmpty && _pendingImageBytes == null) || _loading) return;
     _inputCtrl.clear();
+    // Stop any ongoing TTS/STT when the user sends a new message.
+    TtsService.instance.stop();
+    if (_sttListening) {
+      SttService.instance.stop();
+      setState(() => _sttListening = false);
+    }
 
     // Snapshot and clear pending image before any async work.
     final imageBase64 = _pendingImageBase64;
@@ -621,6 +811,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (text.isNotEmpty) {
         setState(() => _messages.add(
             ChatMessage(role: MessageRole.assistant, content: text)));
+        if (_ttsEnabled) unawaited(TtsService.instance.speak(text));
       }
 
       // Refresh in-memory context so the next message sees the updated facts.
@@ -1012,6 +1203,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 backgroundColor: theme.colorScheme.secondaryContainer,
               ),
             ),
+          // TTS toggle: speaker icon fills when auto-read is on.
+          IconButton(
+            icon: Icon(_ttsEnabled
+                ? Icons.volume_up_rounded
+                : Icons.volume_off_rounded),
+            tooltip: _ttsEnabled ? 'Auto-read on — tap to mute' : 'Auto-read off — tap to enable',
+            color: _ttsEnabled ? theme.colorScheme.primary : null,
+            onPressed: _toggleTts,
+          ),
           IconButton(
             icon: const Icon(Icons.tune_outlined),
             tooltip: 'System prompt',
@@ -1152,6 +1352,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     _pendingImageBytes = null;
                     _pendingImageBase64 = null;
                   }),
+                  onMicTap: _toggleMic,
+                  sttListening: _sttListening,
                 ),
               ),
             ],
@@ -1206,6 +1408,8 @@ class _InputBar extends StatelessWidget {
     this.pendingImageBytes,
     this.onPickImage,
     this.onClearImage,
+    this.onMicTap,
+    this.sttListening = false,
   });
 
   final TextEditingController controller;
@@ -1221,6 +1425,12 @@ class _InputBar extends StatelessWidget {
 
   /// Called when the user taps the × on the pending thumbnail.
   final VoidCallback? onClearImage;
+
+  /// Called when the user taps the mic button.
+  final VoidCallback? onMicTap;
+
+  /// True while the STT engine is actively listening — mic icon turns red.
+  final bool sttListening;
 
   @override
   Widget build(BuildContext context) {
@@ -1286,6 +1496,17 @@ class _InputBar extends StatelessWidget {
                   tooltip: 'Attach image',
                   visualDensity: VisualDensity.compact,
                   onPressed: onPickImage,
+                ),
+              // Mic button — red when STT is active
+              if (!loading)
+                IconButton(
+                  icon: Icon(
+                    sttListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                    color: sttListening ? theme.colorScheme.error : null,
+                  ),
+                  tooltip: sttListening ? 'Tap to stop' : 'Voice input',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onMicTap,
                 ),
               Expanded(
                 child: TextField(

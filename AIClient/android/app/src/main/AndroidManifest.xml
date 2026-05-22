@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <!-- Image picker: gallery access (Android 12 and below) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <!-- Voice input: speech_to_text requires microphone -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <application
         android:label="AI Client"
@@ -37,6 +39,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- aiclient:// deep link: other apps can launch AIClient with a
+                 pre-filled message, e.g.:
+                   aiclient://chat?message=Hello&send=true&system=You+are+a+coder -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="aiclient" android:host="chat"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

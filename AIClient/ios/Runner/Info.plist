@@ -54,6 +54,30 @@
 		<string>aiserver</string>
 	</array>
 
+	<!-- Register aiclient:// as this app's incoming URL scheme.
+	     Other apps can open AIClient with:
+	       aiclient://chat?message=Hello&send=true&system=You+are+a+coder -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.gemma4.aiClient</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>aiclient</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Voice input: speech_to_text requires microphone access -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Used for voice input — speak your message to the AI assistant.</string>
+	<!-- speech_to_text also needs speech recognition permission on iOS -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Used to convert your spoken words into text for the AI assistant.</string>
+
 	<!-- Allow plain HTTP connections to the local AIServer instance.
 	     NSAllowsLocalNetworking covers localhost, *.local, and link-local
 	     addresses without the broad NSAllowsArbitraryLoads flag. -->
