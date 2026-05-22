@@ -134,15 +134,18 @@ class EcoTheme {
 /// Renders "Eco[bold-green]Inference[regular].ai[teal-small]"
 /// Drop this anywhere an inline wordmark is needed.
 class EcoWordmark extends StatelessWidget {
-  const EcoWordmark({super.key, this.fontSize = 24});
+  const EcoWordmark({super.key, this.fontSize = 24, this.showDotAi = true});
 
   final double fontSize;
+  final bool showDotAi;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inferenceColor = isDark ? EcoColors.nearWhite : EcoColors.darkText;
     return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.clip,
       text: TextSpan(
         style: TextStyle(fontSize: fontSize, letterSpacing: -0.5),
         children: [
@@ -162,14 +165,15 @@ class EcoWordmark extends StatelessWidget {
               fontSize: fontSize,
             ),
           ),
-          TextSpan(
-            text: '.ai',
-            style: TextStyle(
-              color: EcoColors.teal,
-              fontWeight: FontWeight.w400,
-              fontSize: fontSize * 0.58,
+          if (showDotAi)
+            TextSpan(
+              text: '.ai',
+              style: TextStyle(
+                color: EcoColors.teal,
+                fontWeight: FontWeight.w400,
+                fontSize: fontSize * 0.58,
+              ),
             ),
-          ),
         ],
       ),
     );

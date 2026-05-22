@@ -1186,7 +1186,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const EcoWordmark(fontSize: 18),
+            const EcoWordmark(fontSize: 15, showDotAi: false),
             Text(
               widget.config.baseUrl,
               style: theme.textTheme.labelSmall?.copyWith(
