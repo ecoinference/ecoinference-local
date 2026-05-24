@@ -339,7 +339,7 @@ final class LiteRtLmEngine {
         }
         dlog("load: set_cache_dir=\(cacheDir)")
         litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
-        litert_lm_set_min_log_level(0) // VERBOSE — temporary for diagnostics
+        litert_lm_set_min_log_level(2) // ERROR only (0=INFO 1=WARNING 2=ERROR 3=FATAL)
 
         // ── Memory snapshot before the long engine-init ──────────────────────
         let availBefore   = processAvailableMemoryMB()
