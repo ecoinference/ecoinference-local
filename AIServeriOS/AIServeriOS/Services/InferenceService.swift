@@ -58,6 +58,10 @@ final class InferenceService {
         engine.cancelActiveSession()
     }
 
+    func resetConversation() {
+        engine.resetConversation()
+    }
+
     // ── Inference ─────────────────────────────────────────────────────────────
 
     func chatStream(

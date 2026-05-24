@@ -90,7 +90,7 @@ enum ModelCatalog {
             downloadUrl:     "\(piBase)/gemma-4-E2B-it.litertlm",
             downloaded:      false,
             loaded:          false,
-            supportsVision:  true
+            supportsVision:  true    // .litertlm bundle includes the SigLIP encoder
         ),
         ModelInfo(
             id:              "gemma4-e4b-it",
@@ -103,7 +103,7 @@ enum ModelCatalog {
             downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false,
-            supportsVision:  true
+            supportsVision:  true    // .litertlm bundle includes the SigLIP encoder
         ),
     ]
 

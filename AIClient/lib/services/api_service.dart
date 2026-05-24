@@ -19,7 +19,7 @@ class ApiService {
   ApiService._internal(this.config)
       : _dio = Dio(BaseOptions(
           baseUrl: config.baseUrl,
-          connectTimeout: const Duration(seconds: 5),
+          connectTimeout: const Duration(seconds: 4),
           receiveTimeout: const Duration(minutes: 3),
           headers: {'Content-Type': 'application/json'},
         ));
@@ -231,12 +231,12 @@ class ApiService {
       if (choices == null || choices.isEmpty) {
         throw const ApiException('Empty choices in response');
       }
-      final content =
+      final raw =
           (choices.first as Map?)?['message']?['content'] as String?;
-      if (content == null) {
+      if (raw == null) {
         throw const ApiException('Missing content in response');
       }
-      return content;
+      return _stripGemmaTokens(raw);
     } on DioException catch (e) {
       throw ApiException(_msg(e));
     }
@@ -284,13 +284,35 @@ class ApiService {
           if (choices == null || choices.isEmpty) continue;
           final delta =
               choices.first['delta'] as Map<String, dynamic>?;
-          final content = delta?['content'] as String?;
-          if (content != null && content.isNotEmpty) yield content;
+          final raw = delta?['content'] as String?;
+          if (raw != null && raw.isNotEmpty) {
+            final content = _stripGemmaTokens(raw);
+            if (content.isNotEmpty) yield content;
+          }
         } catch (_) {
           // Skip malformed / partial JSON chunks.
         }
       }
     }
+  }
+
+  // ── Token sanitisation ───────────────────────────────────────────────────────
+
+  /// Strips Gemma chat-template control tokens from model output.
+  /// This is defence-in-depth — AIServeriOS strips them server-side too, but
+  /// partial tokens split across SSE chunks can slip through.
+  static String _stripGemmaTokens(String text) {
+    var s = text;
+    for (final tok in const [
+      '<end_of_turn>', '<start_of_turn>', '<eos>', '</s>',
+    ]) {
+      s = s.replaceAll(tok, '');
+    }
+    // Strip residual role labels left after <start_of_turn> removal.
+    s = s.replaceAll('\nmodel\n', '\n').replaceAll('\nuser\n', '\n');
+    if (s.startsWith('model\n')) s = s.substring(6);
+    if (s.startsWith('user\n'))  s = s.substring(5);
+    return s;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────

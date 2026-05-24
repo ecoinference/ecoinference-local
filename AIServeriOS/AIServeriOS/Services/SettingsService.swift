@@ -1,7 +1,9 @@
 import Foundation
+import Combine
 
 /// Persists user preferences via UserDefaults.
-final class SettingsService {
+/// Conforms to ObservableObject so SwiftUI views can react to changes.
+final class SettingsService: ObservableObject {
 
     static let shared = SettingsService()
     private init() {}
@@ -9,50 +11,59 @@ final class SettingsService {
     private let defaults = UserDefaults.standard
 
     private enum Key {
-        static let serverPort       = "server_port"
-        static let hfToken          = "hf_token"
-        static let selectedModelId  = "selected_model_id"
-        static let useGpu           = "use_gpu"
-        static let autoStart        = "auto_start"
+        static let hfToken        = "hf_token"
+        static let selectedModelId = "selected_model_id"
+        static let useGpu          = "use_gpu"
+        static let maxNumTokens    = "max_num_tokens"
+        static let systemPrompt    = "system_prompt"
     }
 
-    var serverPort: UInt16 {
-        get { UInt16(defaults.integer(forKey: Key.serverPort).nonZero ?? 8080) }
-        set { defaults.set(Int(newValue), forKey: Key.serverPort) }
+    // ── HuggingFace token ─────────────────────────────────────────────────────
+
+    @Published var hfToken: String = "" {
+        didSet { defaults.set(hfToken, forKey: Key.hfToken) }
     }
 
-    var autoStart: Bool {
-        get { defaults.bool(forKey: Key.autoStart) }
-        set { defaults.set(newValue, forKey: Key.autoStart) }
+    // ── Model settings ────────────────────────────────────────────────────────
+
+    @Published var selectedModelId: String? = nil {
+        didSet { defaults.set(selectedModelId, forKey: Key.selectedModelId) }
     }
 
-    var hfToken: String {
-        get {
-            // Return stored value if the user has explicitly set one.
-            if let stored = defaults.string(forKey: Key.hfToken), !stored.isEmpty {
-                return stored
-            }
-            // Fall back to the build-time default from Local.xcconfig → Info.plist.
-            // This seeds the token without committing it to source control.
+    @Published var useGpu: Bool = false {
+        didSet { defaults.set(useGpu, forKey: Key.useGpu) }
+    }
+
+    /// KV-cache budget (prompt + history + output). Clamped to 512–8192.
+    @Published var maxNumTokens: Int = 8192 {
+        didSet {
+            let clamped = max(512, min(8192, maxNumTokens))
+            if clamped != maxNumTokens { maxNumTokens = clamped; return }
+            defaults.set(maxNumTokens, forKey: Key.maxNumTokens)
+        }
+    }
+
+    /// Optional system prompt injected at the start of every conversation.
+    @Published var systemPrompt: String? = nil {
+        didSet { defaults.set(systemPrompt, forKey: Key.systemPrompt) }
+    }
+
+    // ── Initialise from persisted values ──────────────────────────────────────
+
+    func load() {
+        // HF token — prefer UserDefaults, fall back to build-time xcconfig value.
+        if let stored = defaults.string(forKey: Key.hfToken), !stored.isEmpty {
+            hfToken = stored
+        } else {
             let buildDefault = Bundle.main.object(forInfoDictionaryKey: "HFTokenDefault")
                 as? String ?? ""
-            // Ignore the unexpanded placeholder from builds without Local.xcconfig.
-            return buildDefault.hasPrefix("hf_") ? buildDefault : ""
+            hfToken = buildDefault.hasPrefix("hf_") ? buildDefault : ""
         }
-        set { defaults.set(newValue, forKey: Key.hfToken) }
-    }
 
-    var selectedModelId: String? {
-        get { defaults.string(forKey: Key.selectedModelId) }
-        set { defaults.set(newValue, forKey: Key.selectedModelId) }
+        selectedModelId = defaults.string(forKey: Key.selectedModelId)
+        useGpu          = defaults.bool(forKey: Key.useGpu)
+        let stored      = defaults.integer(forKey: Key.maxNumTokens)
+        maxNumTokens    = stored > 0 ? stored : 8192
+        systemPrompt    = defaults.string(forKey: Key.systemPrompt)
     }
-
-    var useGpu: Bool {
-        get { defaults.bool(forKey: Key.useGpu) }
-        set { defaults.set(newValue, forKey: Key.useGpu) }
-    }
-}
-
-private extension Int {
-    var nonZero: Int? { self == 0 ? nil : self }
 }

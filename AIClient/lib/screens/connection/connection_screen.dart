@@ -77,7 +77,16 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     try {
       final config = ServerConfig(host: host, port: port);
       ApiService.configure(config);
-      final status = await ApiService.instance.checkHealth();
+      // Hard timeout guards against Dio's connectTimeout not firing on iOS
+      // loopback (CFNetwork quirk with 127.0.0.1 when nothing is listening).
+      final status = await ApiService.instance.checkHealth().timeout(
+            const Duration(seconds: 6),
+            onTimeout: () => const HealthStatus(
+              ok: false,
+              modelLoaded: false,
+              error: 'Connection timed out — is the server running?',
+            ),
+          );
       if (mounted) setState(() => _serverStatus = status);
     } catch (_) {
       if (mounted) {
@@ -190,7 +199,14 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     try {
       // Configure the singleton before checking health.
       ApiService.configure(config);
-      final health = await ApiService.instance.checkHealth();
+      final health = await ApiService.instance.checkHealth().timeout(
+            const Duration(seconds: 6),
+            onTimeout: () => const HealthStatus(
+              ok: false,
+              modelLoaded: false,
+              error: 'Connection timed out — is the server running?',
+            ),
+          );
 
       if (!mounted) return;
 
@@ -252,6 +268,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                 'assets/images/eco_icon.png',
                 width: 96,
                 height: 96,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.eco_rounded,
+                  size: 72,
+                  color: EcoColors.green,
+                ),
               ),
               const SizedBox(height: 20),
               const EcoWordmark(fontSize: 28),

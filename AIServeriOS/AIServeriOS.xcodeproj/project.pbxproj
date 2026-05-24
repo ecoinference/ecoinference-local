@@ -9,30 +9,31 @@
 /* Begin PBXBuildFile section */
 		00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */; };
 		18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; };
-		1B055401A71F2D2C74CDF5F4 /* ModelRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28244344A89C5428164FBB8E /* ModelRoutes.swift */; };
 		1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5575423A70E4EFBDEF641903 /* ApiModels.swift */; };
 		24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		49D0AB481804FC3FC942B2CF /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6E5E00261378B45C281246 /* SettingsService.swift */; };
 		57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */; };
-		5BFC63DA3E2C6FDBDEF31757 /* CatalogRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002975E945A40384F1E2CA51 /* CatalogRoutes.swift */; };
 		67617D8834DD9FE217942EEA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */; };
 		689B14AAFBCA1FAE6577538E /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; };
-		6E287B4449D060A0B0C9478A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873C8C7D00B52C3E3E06355B /* ContentView.swift */; };
-		7F0AAF666177971BF9051310 /* InferenceRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */; };
 		7FE5BA49E0F231E989694333 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF6509717621980EF5701E /* AppState.swift */; };
-		832EEB6EDB9F60994C87E94D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */; };
-		89AA7B33B9FC9A0ABF8F3DFF /* HttpTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */; };
 		8C8C7617212C28F696F0646C /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		9C83A0F35AB653172F527094 /* HealthRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5F9DF7645A7B955097709F /* HealthRoutes.swift */; };
 		9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C88C8C5E98E94753A85860 /* ModelInfo.swift */; };
-		A36098BC9C77C4BBF180223E /* HttpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */; };
 		A4CEC31E08311287D678DDC3 /* libLiteRtMetalAccelerator.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; };
-		AC6BA5A29D5D7BDA7524BB5D /* DownloadRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */; };
 		B9ECD4048284260BD8F440C3 /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C00270A1D2F8100A2630A8F0 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; };
 		DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */; };
 		F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E71EF145C50AA63582F547E /* DownloadService.swift */; };
+		167F6CF845D266AFF5869BE2 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE18F57AD215F158553B1B8C /* DebugLogger.swift */; };
+		8955AC4D996688223D8E8436 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */; };
+		6C708F9743BEEA22496D47D9 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31FDFF7D6340B3889BBB90B /* ChatView.swift */; };
+		B625B7060E057A1375C67D2B /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */; };
+		9427E70309498CDBF08B3846 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */; };
+		A1B2C3D4E5F601234567890A /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789FF /* TestView.swift */; };
+		BB00110022003300AA000001 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300AA000002 /* LocationService.swift */; };
+		BB00110022003300BB000001 /* PythonCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300BB000002 /* PythonCommand.swift */; };
+		BB00110022003300CC000001 /* ToolDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300CC000002 /* ToolDefinition.swift */; };
+		BB00110022003300DD000001 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300DD000002 /* AgentLoop.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -53,15 +54,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		002975E945A40384F1E2CA51 /* CatalogRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogRoutes.swift; sourceTree = "<group>"; };
-		098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRoutes.swift; sourceTree = "<group>"; };
-		0C5F9DF7645A7B955097709F /* HealthRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRoutes.swift; sourceTree = "<group>"; };
 		1C0361C19D1024C961B6CCFC /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
 		1F78B51514F26DFB18DE0304 /* AIServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIServeriOS.entitlements; sourceTree = "<group>"; };
-		28244344A89C5428164FBB8E /* ModelRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRoutes.swift; sourceTree = "<group>"; };
-		3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpTypes.swift; sourceTree = "<group>"; };
-		3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpServer.swift; sourceTree = "<group>"; };
 		47EF6509717621980EF5701E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		4C6E5E00261378B45C281246 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		4D264C438947D35E525C0B18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -69,17 +64,24 @@
 		52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libGemmaModelConstraintProvider.xcframework; path = Frameworks/libGemmaModelConstraintProvider.xcframework; sourceTree = "<group>"; };
 		5575423A70E4EFBDEF641903 /* ApiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiModels.swift; sourceTree = "<group>"; };
 		56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtLm.xcframework; path = Frameworks/libLiteRtLm.xcframework; sourceTree = "<group>"; };
-		6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6E71EF145C50AA63582F547E /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
-		873C8C7D00B52C3E3E06355B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FE18F57AD215F158553B1B8C /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogger.swift; sourceTree = "<group>"; };
 		A2C88C8C5E98E94753A85860 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
 		BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
 		C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
 		CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRtLmEngine.swift; sourceTree = "<group>"; };
 		D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServeriOSApp.swift; sourceTree = "<group>"; };
-		E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceRoutes.swift; sourceTree = "<group>"; };
 		F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
+		19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E31FDFF7D6340B3889BBB90B /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
+		CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60123456789FF /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		BB00110022003300AA000002 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		BB00110022003300BB000002 /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
+		BB00110022003300CC000002 /* ToolDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolDefinition.swift; sourceTree = "<group>"; };
+		BB00110022003300DD000002 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,15 +99,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		16AAA087276A069D74934E90 /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				873C8C7D00B52C3E3E06355B /* ContentView.swift */,
-				6A4FEFF9C2C50C73A03FF9DB /* SettingsView.swift */,
-			);
-			path = UI;
-			sourceTree = "<group>";
-		};
 		16CCFDDF75AB3610364FF196 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,18 +108,6 @@
 				C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		4ED80617D4B9B691A488B360 /* Routes */ = {
-			isa = PBXGroup;
-			children = (
-				002975E945A40384F1E2CA51 /* CatalogRoutes.swift */,
-				098B17DAF140F9AD04AC2672 /* DownloadRoutes.swift */,
-				0C5F9DF7645A7B955097709F /* HealthRoutes.swift */,
-				E4A96403AD00B67D17130DF2 /* InferenceRoutes.swift */,
-				28244344A89C5428164FBB8E /* ModelRoutes.swift */,
-			);
-			path = Routes;
 			sourceTree = "<group>";
 		};
 		7E64FB5EBF6D9DDEF74E7B1E = {
@@ -143,8 +124,11 @@
 			isa = PBXGroup;
 			children = (
 				6E71EF145C50AA63582F547E /* DownloadService.swift */,
+				FE18F57AD215F158553B1B8C /* DebugLogger.swift */,
 				4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */,
 				4C6E5E00261378B45C281246 /* SettingsService.swift */,
+				BB00110022003300AA000002 /* LocationService.swift */,
+				BB00110022003300BB000002 /* PythonCommand.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -153,6 +137,8 @@
 			isa = PBXGroup;
 			children = (
 				CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */,
+				BB00110022003300CC000002 /* ToolDefinition.swift */,
+				BB00110022003300DD000002 /* AgentLoop.swift */,
 			);
 			path = Inference;
 			sourceTree = "<group>";
@@ -160,9 +146,6 @@
 		A7B0835BBF90A57DE59EE34F /* Server */ = {
 			isa = PBXGroup;
 			children = (
-				3CFFAB5DA425BB69765E6F5C /* HttpServer.swift */,
-				3CE88F04A9C62EAFA4420086 /* HttpTypes.swift */,
-				4ED80617D4B9B691A488B360 /* Routes */,
 			);
 			path = Server;
 			sourceTree = "<group>";
@@ -198,6 +181,11 @@
 			children = (
 				21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */,
 				D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */,
+				19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */,
+				E31FDFF7D6340B3889BBB90B /* ChatView.swift */,
+				EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */,
+				CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */,
+			A1B2C3D4E5F60123456789FF /* TestView.swift */,
 				47EF6509717621980EF5701E /* AppState.swift */,
 				CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */,
 				4D264C438947D35E525C0B18 /* Info.plist */,
@@ -281,20 +269,21 @@
 				00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */,
 				1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */,
 				7FE5BA49E0F231E989694333 /* AppState.swift in Sources */,
-				5BFC63DA3E2C6FDBDEF31757 /* CatalogRoutes.swift in Sources */,
-				6E287B4449D060A0B0C9478A /* ContentView.swift in Sources */,
-				AC6BA5A29D5D7BDA7524BB5D /* DownloadRoutes.swift in Sources */,
 				F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */,
-				9C83A0F35AB653172F527094 /* HealthRoutes.swift in Sources */,
-				A36098BC9C77C4BBF180223E /* HttpServer.swift in Sources */,
-				89AA7B33B9FC9A0ABF8F3DFF /* HttpTypes.swift in Sources */,
-				7F0AAF666177971BF9051310 /* InferenceRoutes.swift in Sources */,
+				167F6CF845D266AFF5869BE2 /* DebugLogger.swift in Sources */,
 				DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */,
 				57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */,
 				9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */,
-				1B055401A71F2D2C74CDF5F4 /* ModelRoutes.swift in Sources */,
 				4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */,
-				832EEB6EDB9F60994C87E94D /* SettingsView.swift in Sources */,
+				8955AC4D996688223D8E8436 /* RootView.swift in Sources */,
+				6C708F9743BEEA22496D47D9 /* ChatView.swift in Sources */,
+				B625B7060E057A1375C67D2B /* ModelsView.swift in Sources */,
+				9427E70309498CDBF08B3846 /* SettingsView.swift in Sources */,
+			A1B2C3D4E5F601234567890A /* TestView.swift in Sources */,
+			BB00110022003300AA000001 /* LocationService.swift in Sources */,
+			BB00110022003300BB000001 /* PythonCommand.swift in Sources */,
+			BB00110022003300CC000001 /* ToolDefinition.swift in Sources */,
+			BB00110022003300DD000001 /* AgentLoop.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -318,8 +307,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
-				PRODUCT_NAME = AIServer;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -342,8 +331,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
-				PRODUCT_NAME = AIServer;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
