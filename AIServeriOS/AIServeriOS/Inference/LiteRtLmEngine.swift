@@ -240,6 +240,12 @@ final class LiteRtLmEngine {
     private var engine:                 OpaquePointer? // LiteRtLmEngine*
     private var persistentSession:      OpaquePointer? // LiteRtLmSession* — non-multimodal only
     private var persistentConversation: OpaquePointer? // LiteRtLmConversation* — multimodal only (lazy)
+    // Keep configs alive as long as the conversation lives.
+    // Hypothesis: the C library holds a pointer into convCfg/sessCfg rather than
+    // copying, so deleting them (even after conversation_create) corrupts state
+    // and causes send_message to return nil.
+    private var persistentConvCfg:  OpaquePointer? // LiteRtLmConversationConfig*
+    private var persistentSessCfg:  OpaquePointer? // LiteRtLmSessionConfig*
     private(set) var loadedModelId: String?
     private(set) var isMultimodal = false
     private let sessionLock = NSLock()
@@ -270,6 +276,14 @@ final class LiteRtLmEngine {
             persistentConversation = nil
             dlog("resetConversation: persistentConversation deleted")
         }
+        if let cfg = persistentConvCfg {
+            litert_lm_conversation_config_delete(cfg)
+            persistentConvCfg = nil
+        }
+        if let cfg = persistentSessCfg {
+            litert_lm_session_config_delete(cfg)
+            persistentSessCfg = nil
+        }
         dlog("resetConversation: committedMessageCount=0 committedConvTurnCount=0")
     }
 
@@ -293,9 +307,12 @@ final class LiteRtLmEngine {
         // Verify file exists and is plausibly complete
         let attrs = try FileManager.default.attributesOfItem(atPath: modelPath)
         let size = (attrs[.size] as? Int) ?? 0
-        guard size > 1_048_576 else {
+        dlog("load: modelPath=\(modelPath) size=\(size) bytes (\(size / 1_048_576) MB)")
+        // Require at least 100 MB — a 1 MB floor would accept a heavily-truncated download
+        // that the engine loads without error but fails at inference time.
+        guard size > 100 * 1_048_576 else {
             throw InferenceError.engineCreationFailed(
-                "Model file too small (\(size) bytes). Partial download?"
+                "Model file too small (\(size / 1_048_576) MB). Partial download?"
             )
         }
 
@@ -403,9 +420,13 @@ final class LiteRtLmEngine {
     func unload() {
         cancelActiveSession()
         if let conv = persistentConversation { litert_lm_conversation_delete(conv) }
+        if let cfg  = persistentConvCfg      { litert_lm_conversation_config_delete(cfg) }
+        if let cfg  = persistentSessCfg      { litert_lm_session_config_delete(cfg) }
         if let s    = persistentSession      { litert_lm_session_delete(s) }
         if let e    = engine                 { litert_lm_engine_delete(e) }
         persistentConversation = nil
+        persistentConvCfg      = nil
+        persistentSessCfg      = nil
         persistentSession      = nil
         engine                 = nil
         loadedModelId          = nil
@@ -526,34 +547,57 @@ final class LiteRtLmEngine {
     private func makeConversation(systemText: String) throws -> OpaquePointer {
         guard let eng = engine else { throw InferenceError.noModelLoaded }
 
-        // Session config: set max_output_tokens so image patches fit in the KV cache.
+        // Session config: set max_output_tokens and sampler params.
+        // The flutter_gemma Dart reference client ALWAYS sets sampler params
+        // (type=TopP) before calling conversation_config_create.  Without explicit
+        // sampler params the session config defaults to kTypeUnspecified=0, which
+        // causes litert_lm_conversation_send_message to return nil silently.
         guard let sessCfg = litert_lm_session_config_create() else {
             throw InferenceError.sessionCreationFailed
         }
-        defer { litert_lm_session_config_delete(sessCfg) }
         litert_lm_session_config_set_max_output_tokens(sessCfg, 512)
+        var samplerParams = LiteRtLmSamplerParams(
+            type:        kTopP,
+            top_k:       40,
+            top_p:       0.95,
+            temperature: 1.0,
+            seed:        0
+        )
+        litert_lm_session_config_set_sampler_params(sessCfg, &samplerParams)
 
         // Patched 6-arg config_create — engine MUST be non-nil or returns nil.
         // system_message_json: plain text (not a JSON content item).
         // tools_json / messages_json: nil (no tools, fresh conversation).
         // enable_constrained_decoding: false (only needed with tools).
-        let sysPtr: UnsafePointer<CChar>? = systemText.isEmpty ? nil
-            : (systemText as NSString).utf8String
-        dlog("makeConversation: config_create engine=\(eng) systemText=\(systemText.prefix(80))")
-        guard let cfg = litert_lm_conversation_config_create(
-            eng, sessCfg, sysPtr, nil, nil, false
-        ) else {
+        //
+        // NOTE: sessCfg and cfg are stored in persistentSessCfg/persistentConvCfg
+        // rather than deleted immediately.  The C library may hold a pointer into
+        // these structs (rather than copying), so deleting them before send_message
+        // would leave the conversation with dangling references.
+        dlog("makeConversation: config_create engine=\(eng) systemText(len=\(systemText.count))")
+        let cfg: OpaquePointer? = systemText.isEmpty
+            ? litert_lm_conversation_config_create(eng, sessCfg, nil, nil, nil, false)
+            : systemText.withCString { sysPtr in
+                litert_lm_conversation_config_create(eng, sessCfg, sysPtr, nil, nil, false)
+            }
+        guard let cfg else {
+            litert_lm_session_config_delete(sessCfg)
             dlog("makeConversation: config_create returned nil")
             throw InferenceError.sessionCreationFailed
         }
-        defer { litert_lm_conversation_config_delete(cfg) }
         dlog("makeConversation: cfg=\(cfg) — calling conversation_create")
 
         guard let conv = litert_lm_conversation_create(eng, cfg) else {
+            litert_lm_conversation_config_delete(cfg)
+            litert_lm_session_config_delete(sessCfg)
             dlog("makeConversation: conversation_create returned nil")
             throw InferenceError.sessionCreationFailed
         }
-        dlog("makeConversation: created OK conv=\(conv)")
+        // Store configs alongside the conversation so they remain valid for
+        // the entire lifetime of the conversation object.
+        persistentConvCfg = cfg
+        persistentSessCfg = sessCfg
+        dlog("makeConversation: created OK conv=\(conv) — configs retained")
         return conv
     }
 
@@ -648,11 +692,14 @@ final class LiteRtLmEngine {
                     let innerStream = AsyncStream<String> { innerCont in
                         let ctx    = ConvStreamContext(continuation: innerCont)
                         let ctxPtr = Unmanaged.passRetained(ctx).toOpaque()
+                        // native-v0.12.0: send_message_stream also requires non-null optional_args.
+                        let optArgs = litert_lm_conversation_optional_args_create()
                         let rc = msgJson.withCString { msgPtr in
                             litert_lm_conversation_send_message_stream(
-                                conv, msgPtr, nil, liteRtLmConvStreamCallback, ctxPtr
+                                conv, msgPtr, nil, optArgs, liteRtLmConvStreamCallback, ctxPtr
                             )
                         }
+                        litert_lm_conversation_optional_args_delete(optArgs)
                         dlog("chatStream(mm): send_message_stream returned rc=\(rc)")
                     }
 
@@ -783,8 +830,14 @@ final class LiteRtLmEngine {
             dlog("chat(mm): turn \(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson totalLen=\(msgJson.count)")
             dlog("chat(mm): msgJson prefix=\(msgJson.prefix(300))")
 
+            // native-v0.12.0: send_message requires a non-null optional_args.
+            guard let optArgs = litert_lm_conversation_optional_args_create() else {
+                throw InferenceError.generationFailed("optional_args_create returned nil")
+            }
+            defer { litert_lm_conversation_optional_args_delete(optArgs) }
+            dlog("chat(mm): calling send_message conv=\(conv) msgLen=\(msgJson.count)")
             let jsonResp: OpaquePointer? = msgJson.withCString { msgPtr in
-                litert_lm_conversation_send_message(conv, msgPtr, nil)
+                litert_lm_conversation_send_message(conv, msgPtr, nil, optArgs)
             }
             dlog("chat(mm): send_message returned — resp=\(jsonResp != nil ? "ok" : "nil")")
 

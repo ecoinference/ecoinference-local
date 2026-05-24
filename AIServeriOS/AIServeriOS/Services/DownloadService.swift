@@ -46,12 +46,18 @@ final class DownloadService {
         return docs.appendingPathComponent(model.fileName)
     }
 
-    /// True if the model file is present and reasonably large (> 1 MB).
+    /// True if the model file is present and at least 90 % of the declared size.
+    ///
+    /// A 1 MB floor is far too low — a truncated 2 GB download would pass it.
+    /// We require at least 90 % of `model.fileSizeMb` so any significantly
+    /// incomplete download is caught here rather than silently fed to the engine.
     func isDownloaded(_ model: ModelInfo) -> Bool {
         let url = filePath(for: model)
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let size = attrs[.size] as? Int else { return false }
-        return size > 1_048_576
+        // 90 % of declared size (fileSizeMb uses decimal MB for display, so ×1_000_000)
+        let minBytes = model.fileSizeMb * 1_000_000 * 9 / 10
+        return size >= minBytes
     }
 
     /// Delete a downloaded model file.

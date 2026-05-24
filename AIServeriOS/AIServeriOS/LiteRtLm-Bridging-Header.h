@@ -34,8 +34,12 @@ typedef struct LiteRtLmEngineSettings     LiteRtLmEngineSettings;
 typedef struct LiteRtLmConversation       LiteRtLmConversation;
 typedef struct LiteRtLmSessionConfig      LiteRtLmSessionConfig;
 typedef struct LiteRtLmConversationConfig LiteRtLmConversationConfig;
-typedef struct LiteRtLmJsonResponse       LiteRtLmJsonResponse;
-typedef struct LiteRtLmBenchmarkInfo      LiteRtLmBenchmarkInfo;
+typedef struct LiteRtLmJsonResponse            LiteRtLmJsonResponse;
+typedef struct LiteRtLmBenchmarkInfo           LiteRtLmBenchmarkInfo;
+/// Introduced in the native-v0.12.0 patched dylib.
+/// Must be non-NULL in send_message / send_message_stream — passing NULL
+/// causes the library to read garbage from the stack and return nil/segfault.
+typedef struct LiteRtLmConversationOptionalArgs LiteRtLmConversationOptionalArgs;
 
 // ── Enumerations ─────────────────────────────────────────────────────────────
 
@@ -189,26 +193,35 @@ void litert_lm_conversation_cancel_process(LiteRtLmConversation* conversation);
 
 // ── Conversation inference ─────────────────────────────────────────────────────
 
+/// Lifecycle for the optional-args object required by send_message[_stream].
+LiteRtLmConversationOptionalArgs* litert_lm_conversation_optional_args_create(void);
+void litert_lm_conversation_optional_args_delete(LiteRtLmConversationOptionalArgs* args);
+
 /// Blocking: send message and return response as JSON.
 /// message_json — {"role":"user","content":[{"type":"text","text":"..."},
 ///                 {"type":"image","blob":"<base64>"}]}
 /// extra_context — optional JSON string (e.g. {"enable_thinking":true}); NULL = none.
+/// optional_args — must be non-NULL (native-v0.12.0 patch); create with
+///                 litert_lm_conversation_optional_args_create().
 /// Returns NULL on failure.
 LiteRtLmJsonResponse* litert_lm_conversation_send_message(
-    LiteRtLmConversation* conversation,
-    const char*           message_json,
-    const char*           extra_context);
+    LiteRtLmConversation*             conversation,
+    const char*                       message_json,
+    const char*                       extra_context,
+    LiteRtLmConversationOptionalArgs* optional_args);
 
 /// Streaming: send message and stream response via callback.
 /// Each chunk is JSON: {"role":"assistant","content":[{"type":"text","text":"..."}]}.
 /// End-of-stream: is_final=true with NULL chunk.
+/// optional_args — must be non-NULL (native-v0.12.0 patch).
 /// Returns 0 on success.
 int litert_lm_conversation_send_message_stream(
-    LiteRtLmConversation*  conversation,
-    const char*            message_json,
-    const char*            extra_context,
-    LiteRtLmStreamCallback callback,
-    void*                  callback_data);
+    LiteRtLmConversation*             conversation,
+    const char*                       message_json,
+    const char*                       extra_context,
+    LiteRtLmConversationOptionalArgs* optional_args,
+    LiteRtLmStreamCallback            callback,
+    void*                             callback_data);
 
 // ── JSON response ──────────────────────────────────────────────────────────────
 

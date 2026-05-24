@@ -83,7 +83,7 @@ enum ModelCatalog {
             id:              "gemma4-e2b-it",
             displayName:     "Gemma 4 E2B",
             fileName:        "gemma-4-E2B-it.litertlm",
-            fileSizeMb:      2580,
+            fileSizeMb:      2588,
             platform:        "ios",
             requiresHfToken: false,
             licenseUrl:      "\(hfBase)/litert-community/gemma-4-E2B-it-litert-lm",
