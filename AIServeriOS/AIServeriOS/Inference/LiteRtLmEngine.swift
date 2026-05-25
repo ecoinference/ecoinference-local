@@ -553,7 +553,7 @@ final class LiteRtLmEngine {
         if let raw = imageData {
             let jpeg = scaledJpegData(raw, maxDimension: maxVisionDimension)
             let b64  = jpeg.base64EncodedString()
-            engineLog.debug("buildConversationMessageJson: image \(raw.count)→\(jpeg.count) bytes b64=\(b64.count) chars")
+            dlog("buildMsgJson: raw=\(raw.count)B jpeg=\(jpeg.count)B b64=\(b64.count) maxDim=\(Int(maxVisionDimension))")
             items += "{\"type\":\"image\",\"blob\":\"\(b64)\"}"
             items += ","
         }
@@ -890,21 +890,22 @@ final class LiteRtLmEngine {
                 text: userMsg.text, imageData: userMsg.imageData,
                 maxVisionDimension: maxVisionDimension
             )
-            engineLog.debug("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
+            dlog("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson=\(msgJson.count)chars committedTurns=\(committedConvTurnCount)")
 
             // native-v0.12.0: send_message requires a non-null optional_args.
             guard let optArgs = litert_lm_conversation_optional_args_create() else {
                 throw InferenceError.generationFailed("optional_args_create returned nil")
             }
             defer { litert_lm_conversation_optional_args_delete(optArgs) }
-            engineLog.debug("chat(mm): calling send_message")
+            dlog("chat(mm): calling send_message")
             let jsonResp: OpaquePointer? = msgJson.withCString { msgPtr in
                 litert_lm_conversation_send_message(conv, msgPtr, nil, optArgs)
             }
-            engineLog.debug("chat(mm): send_message returned — resp=\(jsonResp != nil ? "ok" : "nil")")
+            dlog("chat(mm): send_message returned \(jsonResp != nil ? "OK" : "NIL")")
 
             guard let jsonResp else {
                 // Do NOT increment committedConvTurnCount — the turn was not committed.
+                dlog("chat(mm): FAIL — send_message nil on turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) maxContextTokens via engine=\(maxConvOutputTokens)")
                 throw InferenceError.generationFailed("conversation_send_message returned nil")
             }
             committedConvTurnCount += 1

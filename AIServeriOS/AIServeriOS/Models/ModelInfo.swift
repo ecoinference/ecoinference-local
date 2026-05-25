@@ -14,7 +14,13 @@ struct ModelInfo: Codable, Identifiable {
     let downloadUrl: String
     var downloaded: Bool
     var loaded: Bool
+    /// Whether to load in multimodal mode (Conversation API). True does NOT
+    /// guarantee the bundle can process image payloads — see supportsImageInput.
     let supportsVision: Bool
+    /// Whether the UI should offer image attachment for this model.
+    /// A model may use the Conversation API (supportsVision=true) for better
+    /// text quality while its LiteRT-LM bundle lacks a working SigLIP encoder.
+    let supportsImageInput: Bool
     /// Whether the .litertlm bundle includes a speculative-decoding draft model.
     /// Only enable when confirmed — passing true for a bundle without a draft
     /// model causes send_message to return nil silently.
@@ -36,7 +42,8 @@ struct ModelInfo: Codable, Identifiable {
         case downloadUrl    = "download_url"
         case downloaded
         case loaded
-        case supportsVision = "supports_vision"
+        case supportsVision      = "supports_vision"
+        case supportsImageInput  = "supports_image_input"
         case supportsSpeculativeDecoding = "supports_speculative_decoding"
         case maxContextTokens = "max_context_tokens"
     }
@@ -53,7 +60,8 @@ struct ModelInfo: Codable, Identifiable {
         downloadUrl     = try c.decode(String.self, forKey: .downloadUrl)
         downloaded      = try c.decodeIfPresent(Bool.self, forKey: .downloaded) ?? false
         loaded          = try c.decodeIfPresent(Bool.self, forKey: .loaded)     ?? false
-        supportsVision              = try c.decodeIfPresent(Bool.self, forKey: .supportsVision) ?? false
+        supportsVision              = try c.decodeIfPresent(Bool.self, forKey: .supportsVision)              ?? false
+        supportsImageInput          = try c.decodeIfPresent(Bool.self, forKey: .supportsImageInput)          ?? supportsVision
         supportsSpeculativeDecoding = try c.decodeIfPresent(Bool.self, forKey: .supportsSpeculativeDecoding) ?? false
         maxContextTokens            = try c.decodeIfPresent(Int.self,  forKey: .maxContextTokens) ?? 4096
     }
@@ -62,7 +70,8 @@ struct ModelInfo: Codable, Identifiable {
     init(id: String, displayName: String, fileName: String, fileSizeMb: Int,
          platform: String, requiresHfToken: Bool, licenseUrl: String?,
          downloadUrl: String, downloaded: Bool, loaded: Bool,
-         supportsVision: Bool = false, supportsSpeculativeDecoding: Bool = false,
+         supportsVision: Bool = false, supportsImageInput: Bool? = nil,
+         supportsSpeculativeDecoding: Bool = false,
          maxContextTokens: Int = 4096) {
         self.id              = id
         self.displayName     = displayName
@@ -75,6 +84,7 @@ struct ModelInfo: Codable, Identifiable {
         self.downloaded      = downloaded
         self.loaded          = loaded
         self.supportsVision              = supportsVision
+        self.supportsImageInput          = supportsImageInput ?? supportsVision
         self.supportsSpeculativeDecoding = supportsSpeculativeDecoding
         self.maxContextTokens            = maxContextTokens
     }
@@ -122,7 +132,8 @@ enum ModelCatalog {
             downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false,
-            supportsVision:              false, // SigLIP encoder not present in bundle; image send_message returns nil
+            supportsVision:              true,  // load via Conversation API for best text quality
+            supportsImageInput:          false, // SigLIP not functional in bundle; image send_message corrupts engine
             supportsSpeculativeDecoding: false, // draft model not confirmed in bundle
             maxContextTokens:            2048   // HF README benchmarks at context=2048
         ),

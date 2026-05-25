@@ -191,7 +191,7 @@ struct ChatView: View {
 
             // ── Text field row ────────────────────────────────────────────────
             HStack(alignment: .bottom, spacing: 2) {
-                if modelReady && isMultimodal {
+                if modelReady && appState.imageInputEnabled {
                     Button { showSourceSheet = true } label: {
                         Image(systemName: "paperclip")
                             .font(.system(size: 22))
@@ -456,10 +456,18 @@ struct ChatView: View {
             } catch {
                 chatLog.error("  chat() error turn=\(turnIndex): \(error.localizedDescription)")
                 let errText = error.localizedDescription
+                // If send_message returned nil the C engine may be in a corrupted
+                // state — even subsequent text turns will fail until a full reload.
+                // Unload now so the UI correctly reflects the invalid engine state.
+                let needsUnload = errText.contains("conversation_send_message returned nil")
                 await MainActor.run {
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
                         messages[idx] = Message(role: .error, text: "⚠️ \(errText)")
+                    }
+                    if needsUnload {
+                        dlog("send: engine corrupted after send_message nil — forcing unload")
+                        appState.unloadModel()
                     }
                 }
             }

@@ -23,11 +23,15 @@ final class AppState: ObservableObject {
 
     // ── Model ─────────────────────────────────────────────────────────────────
 
-    @Published private(set) var modelLoaded      = false
+    @Published private(set) var modelLoaded        = false
     @Published private(set) var loadedModelId: String?
-    @Published private(set) var isLoading        = false
+    @Published private(set) var isLoading          = false
     @Published private(set) var loadError: String?
     @Published private(set) var loadErrorModelId: String?
+    /// True when the loaded model's bundle supports image attachment in the UI.
+    /// Distinct from the model being in multimodal mode (supportsVision) — a model
+    /// may use the Conversation API without supporting actual image payloads.
+    @Published private(set) var imageInputEnabled  = false
 
     // ── Download ──────────────────────────────────────────────────────────────
 
@@ -66,6 +70,7 @@ final class AppState: ObservableObject {
             m.loaded     = (m.id == loadedId)
             return m
         }
+        imageInputEnabled = models.first(where: { $0.loaded })?.supportsImageInput ?? false
     }
 
     // MARK: - Download
@@ -161,10 +166,11 @@ final class AppState: ObservableObject {
 
     func unloadModel() {
         inference.unload()
-        modelLoaded      = false
-        loadedModelId    = nil
-        loadError        = nil
-        loadErrorModelId = nil
+        modelLoaded       = false
+        loadedModelId     = nil
+        loadError         = nil
+        loadErrorModelId  = nil
+        imageInputEnabled = false
         refreshCatalog()
     }
 }
