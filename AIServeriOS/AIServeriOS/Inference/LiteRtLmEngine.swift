@@ -256,6 +256,13 @@ final class LiteRtLmEngine {
     private var committedMessageCount: Int = 0
     /// Number of user turns already sent to `persistentConversation`.
     private var committedConvTurnCount: Int = 0
+    /// Max JPEG dimension for multimodal image inputs, computed from maxNumTokens at load time.
+    /// Each 16×16 patch costs one KV token; an 800 px image generates ~2500 patches which
+    /// overflows a 2048-token context after output reservation.
+    private var maxVisionDimension: CGFloat = 800
+    /// Max output tokens for the conversation session config — smaller for low-context models
+    /// to leave more KV budget available for image patches and the prompt prefill.
+    private var maxConvOutputTokens: Int32 = 512
 
     var isLoaded: Bool { engine != nil && (persistentSession != nil || isMultimodal) }
 
@@ -412,6 +419,16 @@ final class LiteRtLmEngine {
             dlog("load: multimodal engine created for \(modelId) — Conversation deferred to first call")
         }
 
+        // Derive vision budget from context size.
+        // At 16×16 patches, an 800 px image produces ~2500 patch tokens — more than the
+        // entire 2048-token context of E4B.  Scale both the image ceiling and the output
+        // reservation down so patch tokens + text + output fit inside maxNumTokens.
+        //   E4B (2048): 448 px → 28×28 = 784 patches; 256 output → input budget 1792 ✓
+        //   E2B (4096): 800 px → 50×50 = 2500 patches; 512 output → input budget 3584 ✓
+        maxVisionDimension  = maxNumTokens <= 2048 ? 448 : 800
+        maxConvOutputTokens = maxNumTokens <= 2048 ? 256 : 512
+        dlog("load: maxVisionDimension=\(Int(maxVisionDimension))px maxConvOutputTokens=\(maxConvOutputTokens)")
+
         engine                = newEngine
         persistentSession     = newSession
         loadedModelId         = modelId
@@ -437,6 +454,8 @@ final class LiteRtLmEngine {
         isMultimodal           = false
         committedMessageCount  = 0
         committedConvTurnCount = 0
+        maxVisionDimension     = 800
+        maxConvOutputTokens    = 512
         dlog("unload: conversation + session + engine destroyed")
     }
 
@@ -528,10 +547,11 @@ final class LiteRtLmEngine {
     ///
     /// Images are pre-scaled to ≤ 800×800 px before base64 encoding to keep the
     /// JSON payload manageable (raw iPhone photos can exceed internal buffer limits).
-    private static func buildConversationMessageJson(text: String, imageData: Data?) -> String {
+    private static func buildConversationMessageJson(text: String, imageData: Data?,
+                                                      maxVisionDimension: CGFloat = 800) -> String {
         var items = ""
         if let raw = imageData {
-            let jpeg = scaledJpegData(raw)           // resize to ≤ 800×800
+            let jpeg = scaledJpegData(raw, maxDimension: maxVisionDimension)
             let b64  = jpeg.base64EncodedString()
             engineLog.debug("buildConversationMessageJson: image \(raw.count)→\(jpeg.count) bytes b64=\(b64.count) chars")
             items += "{\"type\":\"image\",\"blob\":\"\(b64)\"}"
@@ -559,7 +579,7 @@ final class LiteRtLmEngine {
         guard let sessCfg = litert_lm_session_config_create() else {
             throw InferenceError.sessionCreationFailed
         }
-        litert_lm_session_config_set_max_output_tokens(sessCfg, 512)
+        litert_lm_session_config_set_max_output_tokens(sessCfg, maxConvOutputTokens)
         var samplerParams = LiteRtLmSamplerParams(
             type:        kTopP,
             top_k:       40,
@@ -716,7 +736,8 @@ final class LiteRtLmEngine {
                     }
                     let userMsg = userMessages[turnIndex]
                     let msgJson = LiteRtLmEngine.buildConversationMessageJson(
-                        text: userMsg.text, imageData: userMsg.imageData
+                        text: userMsg.text, imageData: userMsg.imageData,
+                        maxVisionDimension: self.maxVisionDimension
                     )
                     engineLog.debug("chatStream(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
 
@@ -866,7 +887,8 @@ final class LiteRtLmEngine {
             }
             let userMsg = userMessages[turnIndex]
             let msgJson = LiteRtLmEngine.buildConversationMessageJson(
-                text: userMsg.text, imageData: userMsg.imageData
+                text: userMsg.text, imageData: userMsg.imageData,
+                maxVisionDimension: maxVisionDimension
             )
             engineLog.debug("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
 

@@ -122,7 +122,7 @@ enum ModelCatalog {
             downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false,
-            supportsVision:              true,  // .litertlm bundle includes the SigLIP encoder
+            supportsVision:              false, // SigLIP encoder not present in bundle; image send_message returns nil
             supportsSpeculativeDecoding: false, // draft model not confirmed in bundle
             maxContextTokens:            2048   // HF README benchmarks at context=2048
         ),
