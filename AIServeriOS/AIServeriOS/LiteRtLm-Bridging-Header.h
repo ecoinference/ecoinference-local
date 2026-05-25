@@ -109,6 +109,29 @@ void litert_lm_engine_settings_enable_benchmark(
 
 void litert_lm_engine_settings_delete(LiteRtLmEngineSettings* settings);
 
+// ── Benchmark ─────────────────────────────────────────────────────────────────
+
+/// Returns a new LiteRtLmBenchmarkInfo snapshot; caller must call
+/// litert_lm_benchmark_info_delete when done.  Returns NULL if benchmarking
+/// was not enabled via litert_lm_engine_settings_enable_benchmark().
+LiteRtLmBenchmarkInfo* litert_lm_session_get_benchmark_info(
+    LiteRtLmSession* session);
+
+LiteRtLmBenchmarkInfo* litert_lm_conversation_get_benchmark_info(
+    LiteRtLmConversation* conversation);
+
+void   litert_lm_benchmark_info_delete(LiteRtLmBenchmarkInfo* benchmark_info);
+double litert_lm_benchmark_info_get_time_to_first_token(
+           const LiteRtLmBenchmarkInfo* benchmark_info);
+double litert_lm_benchmark_info_get_total_init_time_in_second(
+           const LiteRtLmBenchmarkInfo* benchmark_info);
+int    litert_lm_benchmark_info_get_num_decode_turns(
+           const LiteRtLmBenchmarkInfo* benchmark_info);
+double litert_lm_benchmark_info_get_decode_tokens_per_sec_at(
+           const LiteRtLmBenchmarkInfo* benchmark_info, int index);
+int    litert_lm_benchmark_info_get_decode_token_count_at(
+           const LiteRtLmBenchmarkInfo* benchmark_info, int index);
+
 // ── Engine lifecycle ──────────────────────────────────────────────────────────
 
 /// Returns NULL on failure. Blocking — may take several seconds.

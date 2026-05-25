@@ -337,6 +337,7 @@ final class LiteRtLmEngine {
             litert_lm_engine_settings_set_max_num_images(engineSettings, 1)
         }
         litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
+        litert_lm_engine_settings_enable_benchmark(engineSettings)
         litert_lm_set_min_log_level(2) // ERROR only (0=INFO 1=WARNING 2=ERROR 3=FATAL)
 
         // ── Memory snapshot before the long engine-init ──────────────────────
@@ -598,6 +599,35 @@ final class LiteRtLmEngine {
         return conv
     }
 
+    // ── Benchmark logging ─────────────────────────────────────────────────────
+
+    /// Reads the latest benchmark snapshot from a Conversation and logs
+    /// TTFT and decode tokens/sec via dlog() (on-device debug log).
+    /// Safe to call even if benchmarking is unavailable — returns silently
+    /// if get_benchmark_info returns nil.
+    private func logBenchmark(conversation: OpaquePointer) {
+        guard let info = litert_lm_conversation_get_benchmark_info(conversation) else {
+            engineLog.debug("logBenchmark: get_benchmark_info returned nil (benchmark not enabled?)")
+            return
+        }
+        defer { litert_lm_benchmark_info_delete(info) }
+
+        let ttft       = litert_lm_benchmark_info_get_time_to_first_token(info)
+        let numDecodes = litert_lm_benchmark_info_get_num_decode_turns(info)
+
+        // Use the last decode turn for tokens/sec (most recent inference).
+        var decodeTps   = 0.0
+        var decodeCount: Int32 = 0
+        if numDecodes > 0 {
+            let idx     = Int32(numDecodes - 1)
+            decodeTps   = litert_lm_benchmark_info_get_decode_tokens_per_sec_at(info, idx)
+            decodeCount = litert_lm_benchmark_info_get_decode_token_count_at(info, idx)
+        }
+
+        dlog(String(format: "benchmark: TTFT=%.3fs  decode=%.1f tok/s (%d tokens)",
+                    ttft, decodeTps, decodeCount))
+    }
+
     // ── Streaming inference ───────────────────────────────────────────────────
 
     /// Streams token chunks for a list of chat messages.
@@ -705,6 +735,7 @@ final class LiteRtLmEngine {
                     self.committedConvTurnCount += 1
                     engineLog.debug("chatStream(mm): response \(fullText.count) chars committedConvTurnCount=\(self.committedConvTurnCount)")
                     engineLog.info("chatStream(mm): \(fullText.count) chars")
+                    self.logBenchmark(conversation: conv)
 
                     let clean = fullText
                         .removingGemmaStopTokens()
@@ -840,6 +871,7 @@ final class LiteRtLmEngine {
             }
             committedConvTurnCount += 1
             engineLog.debug("chat(mm): committedConvTurnCount=\(self.committedConvTurnCount)")
+            logBenchmark(conversation: conv)
             defer { litert_lm_json_response_delete(jsonResp) }
 
             let rawJson = litert_lm_json_response_get_string(jsonResp)
