@@ -61,6 +61,7 @@ struct ChatView: View {
     )
 
     var body: some View {
+        NavigationStack {
         VStack(spacing: 0) {
 
             // ── No-model banner ───────────────────────────────────────────────
@@ -97,6 +98,9 @@ struct ChatView: View {
             }
             .background(.background)
         }
+        .navigationTitle("Chat")
+        .navigationBarTitleDisplayMode(.inline)
+        } // NavigationStack
         // ── Image source picker ───────────────────────────────────────────────
         .confirmationDialog("Attach Image", isPresented: $showSourceSheet) {
             Button("Photo Library") { pickerSource = .photoLibrary; showImagePicker = true }
