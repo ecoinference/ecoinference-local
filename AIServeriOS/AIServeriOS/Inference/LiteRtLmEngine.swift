@@ -163,7 +163,7 @@ private func liteRtLmConvStreamCallback(
 
     if let errorMsg, errorMsg.pointee != 0 {
         let msg = String(cString: errorMsg)
-        dlog("liteRtLmConvStreamCallback: error=\(msg) isFinal=\(isFinal)")
+        engineLog.error("convStreamCallback: error=\(msg) isFinal=\(isFinal)")
         ctx.continuation.finish()
         if isFinal { Unmanaged<ConvStreamContext>.fromOpaque(userData).release() }
         return
@@ -178,7 +178,7 @@ private func liteRtLmConvStreamCallback(
     }
 
     if isFinal {
-        dlog("liteRtLmConvStreamCallback: isFinal=true — finishing")
+        engineLog.debug("convStreamCallback: isFinal=true — finishing")
         ctx.continuation.finish()
         Unmanaged<ConvStreamContext>.fromOpaque(userData).release()
     }
@@ -209,7 +209,7 @@ private func liteRtLmStreamCallback(
     }
 
     if isFinal {
-        dlog("liteRtLmStreamCallback: isFinal=true — finishing continuation")
+        engineLog.debug("sessionStreamCallback: isFinal=true — finishing continuation")
         ctx.continuation.finish()
         Unmanaged<StreamContext>.fromOpaque(userData).release()
     }
@@ -325,19 +325,17 @@ final class LiteRtLmEngine {
             for: .cachesDirectory, in: .userDomainMask
         ).first!.path
 
-        dlog("load: calling engine_settings_create — backend=\(backendStr) visionBackend=\(visionBackendStr ?? "nil") multimodal=\(multimodal)")
+        engineLog.debug("load: engine_settings_create — backend=\(backendStr) visionBackend=\(visionBackendStr ?? "nil") multimodal=\(multimodal)")
         let engineSettings = litert_lm_engine_settings_create(
             modelPath, backendStr, visionBackendStr, nil
         )!
         defer { litert_lm_engine_settings_delete(engineSettings) }
 
-        dlog("load: set_max_num_tokens=\(maxNumTokens)")
+        engineLog.debug("load: max_num_tokens=\(maxNumTokens) max_num_images=\(multimodal ? 1 : 0) cache_dir set")
         litert_lm_engine_settings_set_max_num_tokens(engineSettings, Int32(maxNumTokens))
         if multimodal {
-            dlog("load: set_max_num_images=1")
             litert_lm_engine_settings_set_max_num_images(engineSettings, 1)
         }
-        dlog("load: set_cache_dir=\(cacheDir)")
         litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
         litert_lm_set_min_log_level(2) // ERROR only (0=INFO 1=WARNING 2=ERROR 3=FATAL)
 
@@ -349,10 +347,10 @@ final class LiteRtLmEngine {
         let estimatedRequired = multimodal ? 1_500 : 600
         dlog("load: memory before engine_create — available=\(availBefore) MB  resident=\(residentBefore) MB  estimatedRequired=\(estimatedRequired) MB")
         if availBefore < estimatedRequired {
-            dlog("load: WARNING — available memory (\(availBefore) MB) may be insufficient for this model (\(estimatedRequired) MB estimated)")
+            engineLog.warning("load: available memory (\(availBefore) MB) may be insufficient (need ~\(estimatedRequired) MB)")
         }
 
-        dlog("load: maxNumTokens=\(maxNumTokens) multimodal=\(multimodal) — calling litert_lm_engine_create …")
+        engineLog.info("load: calling litert_lm_engine_create — maxNumTokens=\(maxNumTokens) multimodal=\(multimodal)")
         guard let newEngine = litert_lm_engine_create(engineSettings) else {
             let availAfter    = processAvailableMemoryMB()
             let residentAfter = residentMemoryMB()
@@ -363,7 +361,7 @@ final class LiteRtLmEngine {
             // process consumed more than expected, leaving very little headroom.
             let oomLikely = availAfter < 150 || availBefore < estimatedRequired
             if oomLikely {
-                dlog("load: classifying failure as OOM (availAfter=\(availAfter) MB  availBefore=\(availBefore) MB)")
+                engineLog.error("load: classifying as OOM — availAfter=\(availAfter) MB  availBefore=\(availBefore) MB")
                 throw InferenceError.outOfMemory(
                     available: availAfter,
                     resident:  residentAfter,
@@ -394,7 +392,7 @@ final class LiteRtLmEngine {
                 throw InferenceError.sessionCreationFailed
             }
             litert_lm_session_config_set_max_output_tokens(sessCfg, 2048)
-            dlog("load: creating session — max_output_tokens=2048")
+            engineLog.debug("load: creating session — max_output_tokens=2048")
             guard let sess = litert_lm_engine_create_session(newEngine, sessCfg) else {
                 derr("load: litert_lm_engine_create_session returned nil")
                 litert_lm_session_config_delete(sessCfg)
@@ -479,14 +477,14 @@ final class LiteRtLmEngine {
                                         maxDimension: CGFloat = 800,
                                         quality: CGFloat = 0.85) -> Data {
         guard let image = UIImage(data: data) else {
-            dlog("scaledJpegData: UIImage(data:) failed — using original \(data.count) bytes")
+            engineLog.error("scaledJpegData: UIImage(data:) failed — using original \(data.count) bytes")
             return data
         }
         let longest = max(image.size.width, image.size.height)
         guard longest > maxDimension else {
             // Already fits — just re-encode to ensure it's JPEG.
             let out = image.jpegData(compressionQuality: quality) ?? data
-            dlog("scaledJpegData: already ≤\(Int(maxDimension))px — recompressed \(data.count)→\(out.count) bytes")
+            engineLog.debug("scaledJpegData: already ≤\(Int(maxDimension))px — recompressed \(data.count)→\(out.count) bytes")
             return out
         }
         let scale   = maxDimension / longest
@@ -495,7 +493,7 @@ final class LiteRtLmEngine {
         let renderer = UIGraphicsImageRenderer(size: newSize)
         let resized  = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
         let out      = resized.jpegData(compressionQuality: quality) ?? data
-        dlog("scaledJpegData: \(Int(image.size.width))×\(Int(image.size.height)) → \(Int(newSize.width))×\(Int(newSize.height)) | \(data.count)→\(out.count) bytes")
+        engineLog.debug("scaledJpegData: \(Int(image.size.width))×\(Int(image.size.height)) → \(Int(newSize.width))×\(Int(newSize.height)) | \(data.count)→\(out.count) bytes")
         return out
     }
 
@@ -529,7 +527,7 @@ final class LiteRtLmEngine {
         if let raw = imageData {
             let jpeg = scaledJpegData(raw)           // resize to ≤ 800×800
             let b64  = jpeg.base64EncodedString()
-            dlog("buildConversationMessageJson: image \(raw.count)→\(jpeg.count) bytes b64=\(b64.count) chars")
+            engineLog.debug("buildConversationMessageJson: image \(raw.count)→\(jpeg.count) bytes b64=\(b64.count) chars")
             items += "{\"type\":\"image\",\"blob\":\"\(b64)\"}"
             items += ","
         }
@@ -574,7 +572,7 @@ final class LiteRtLmEngine {
         // rather than deleted immediately.  The C library may hold a pointer into
         // these structs (rather than copying), so deleting them before send_message
         // would leave the conversation with dangling references.
-        dlog("makeConversation: config_create engine=\(eng) systemText(len=\(systemText.count))")
+        engineLog.debug("makeConversation: config_create systemText.count=\(systemText.count)")
         let cfg: OpaquePointer? = systemText.isEmpty
             ? litert_lm_conversation_config_create(eng, sessCfg, nil, nil, nil, false)
             : systemText.withCString { sysPtr in
@@ -582,15 +580,14 @@ final class LiteRtLmEngine {
             }
         guard let cfg else {
             litert_lm_session_config_delete(sessCfg)
-            dlog("makeConversation: config_create returned nil")
+            engineLog.error("makeConversation: config_create returned nil")
             throw InferenceError.sessionCreationFailed
         }
-        dlog("makeConversation: cfg=\(cfg) — calling conversation_create")
 
         guard let conv = litert_lm_conversation_create(eng, cfg) else {
             litert_lm_conversation_config_delete(cfg)
             litert_lm_session_config_delete(sessCfg)
-            dlog("makeConversation: conversation_create returned nil")
+            engineLog.error("makeConversation: conversation_create returned nil")
             throw InferenceError.sessionCreationFailed
         }
         // Store configs alongside the conversation so they remain valid for
@@ -640,7 +637,7 @@ final class LiteRtLmEngine {
                     self.sessionLock.lock()
                     self.sessionActive = false
                     self.sessionLock.unlock()
-                    dlog("chatStream: defer — sessionActive cleared")
+                    engineLog.debug("chatStream: defer — sessionActive cleared")
                 }
 
                 engineLog.info("chatStream: starting — \(messages.count) messages isMultimodal=\(self.isMultimodal)")
@@ -678,7 +675,7 @@ final class LiteRtLmEngine {
                     let userMessages = messages.filter { $0.role == "user" }
                     let turnIndex    = self.committedConvTurnCount
                     guard turnIndex < userMessages.count else {
-                        dlog("chatStream(mm): all \(userMessages.count) user turns already committed — nothing to do")
+                        engineLog.debug("chatStream(mm): all \(userMessages.count) user turns already committed — nothing to do")
                         continuation.finish()
                         return
                     }
@@ -686,8 +683,7 @@ final class LiteRtLmEngine {
                     let msgJson = LiteRtLmEngine.buildConversationMessageJson(
                         text: userMsg.text, imageData: userMsg.imageData
                     )
-                    dlog("chatStream(mm): turn \(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson totalLen=\(msgJson.count)")
-                    dlog("chatStream(mm): msgJson prefix=\(msgJson.prefix(300))")
+                    engineLog.debug("chatStream(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
 
                     let innerStream = AsyncStream<String> { innerCont in
                         let ctx    = ConvStreamContext(continuation: innerCont)
@@ -700,14 +696,14 @@ final class LiteRtLmEngine {
                             )
                         }
                         litert_lm_conversation_optional_args_delete(optArgs)
-                        dlog("chatStream(mm): send_message_stream returned rc=\(rc)")
+                        engineLog.debug("chatStream(mm): send_message_stream rc=\(rc)")
                     }
 
                     var fullText = ""
                     for await token in innerStream { fullText += token }
                     // Only increment on success (non-empty implies the stream fired).
                     self.committedConvTurnCount += 1
-                    dlog("chatStream(mm): response \(fullText.count) chars committedConvTurnCount=\(self.committedConvTurnCount)")
+                    engineLog.debug("chatStream(mm): response \(fullText.count) chars committedConvTurnCount=\(self.committedConvTurnCount)")
                     engineLog.info("chatStream(mm): \(fullText.count) chars")
 
                     let clean = fullText
@@ -744,18 +740,16 @@ final class LiteRtLmEngine {
                                 size: textBuf.count > 0 ? textBuf.count - 1 : 0
                             )
                             var input = textInput
-                            dlog("chatStream: calling generate_content_stream (non-multimodal)")
+                            engineLog.debug("chatStream: calling generate_content_stream (non-multimodal)")
                             let rc = litert_lm_session_generate_content_stream(
                                 session, &input, 1, liteRtLmStreamCallback, ctxPtr
                             )
-                            dlog("chatStream: generate_content_stream returned \(rc) — callback fires async")
+                            engineLog.debug("chatStream: generate_content_stream returned \(rc)")
                         }
                     }
 
-                    dlog("chatStream: for-await — blocking until isFinal callback fires")
                     var raw = ""
                     for await token in innerStream { raw += token }
-                    dlog("chatStream: for-await done raw=\(raw.count) chars")
                     engineLog.info("chatStream: raw output \(raw.count) chars")
 
                     let boundary = "<start_of_turn>model\n"
@@ -797,7 +791,7 @@ final class LiteRtLmEngine {
             sessionLock.lock()
             sessionActive = false
             sessionLock.unlock()
-            dlog("chat: inference complete — sessionActive cleared, committed=\(committedMessageCount)")
+            engineLog.debug("chat: inference complete — sessionActive cleared committed=\(self.committedMessageCount)")
         }
 
         // ── Multimodal: Conversation API ─────────────────────────────────────────
@@ -820,42 +814,41 @@ final class LiteRtLmEngine {
             let userMessages = messages.filter { $0.role == "user" }
             let turnIndex    = committedConvTurnCount
             guard turnIndex < userMessages.count else {
-                dlog("chat(mm): all \(userMessages.count) user turns already committed")
+                engineLog.debug("chat(mm): all \(userMessages.count) user turns already committed")
                 return ""
             }
             let userMsg = userMessages[turnIndex]
             let msgJson = LiteRtLmEngine.buildConversationMessageJson(
                 text: userMsg.text, imageData: userMsg.imageData
             )
-            dlog("chat(mm): turn \(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson totalLen=\(msgJson.count)")
-            dlog("chat(mm): msgJson prefix=\(msgJson.prefix(300))")
+            engineLog.debug("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
 
             // native-v0.12.0: send_message requires a non-null optional_args.
             guard let optArgs = litert_lm_conversation_optional_args_create() else {
                 throw InferenceError.generationFailed("optional_args_create returned nil")
             }
             defer { litert_lm_conversation_optional_args_delete(optArgs) }
-            dlog("chat(mm): calling send_message conv=\(conv) msgLen=\(msgJson.count)")
+            engineLog.debug("chat(mm): calling send_message")
             let jsonResp: OpaquePointer? = msgJson.withCString { msgPtr in
                 litert_lm_conversation_send_message(conv, msgPtr, nil, optArgs)
             }
-            dlog("chat(mm): send_message returned — resp=\(jsonResp != nil ? "ok" : "nil")")
+            engineLog.debug("chat(mm): send_message returned — resp=\(jsonResp != nil ? "ok" : "nil")")
 
             guard let jsonResp else {
                 // Do NOT increment committedConvTurnCount — the turn was not committed.
                 throw InferenceError.generationFailed("conversation_send_message returned nil")
             }
             committedConvTurnCount += 1
-            dlog("chat(mm): committedConvTurnCount=\(committedConvTurnCount)")
+            engineLog.debug("chat(mm): committedConvTurnCount=\(self.committedConvTurnCount)")
             defer { litert_lm_json_response_delete(jsonResp) }
 
             let rawJson = litert_lm_json_response_get_string(jsonResp)
                 .map { String(cString: $0) } ?? ""
-            dlog("chat(mm): rawJson len=\(rawJson.count) — \(rawJson.prefix(300))")
+            engineLog.debug("chat(mm): rawJson len=\(rawJson.count)")
 
             // Extract the text value from the JSON response object.
             let text = convChunkText(rawJson) ?? rawJson
-            dlog("chat(mm): extracted text \(text.count) chars — \(text.prefix(200))")
+            engineLog.info("chat(mm): extracted text \(text.count) chars")
             return text.removingGemmaStopTokens()
                        .trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -872,7 +865,7 @@ final class LiteRtLmEngine {
             let latestUser = newMessages.last(where: { $0.role == "user" })?.text ?? ""
             prompt = "<end_of_turn>\n<start_of_turn>user\n\(latestUser)<end_of_turn>\n<start_of_turn>model\n"
         }
-        dlog("chat: turn \(alreadyCommitted == 0 ? "1(full)" : "N(incr)") prompt \(prompt.count) chars — calling generate_content")
+        engineLog.debug("chat: turn \(alreadyCommitted == 0 ? "1(full)" : "N(incr)") prompt \(prompt.count) chars — calling generate_content")
 
         guard let session = persistentSession else {
             throw InferenceError.noModelLoaded
@@ -888,7 +881,7 @@ final class LiteRtLmEngine {
         }
         // Advance committed count — all messages are now in the session KV-cache.
         committedMessageCount = messages.count
-        dlog("chat: generate_content returned — responses=\(responses != nil ? "ok" : "nil") committedNow=\(committedMessageCount)")
+        engineLog.debug("chat: generate_content returned — responses=\(responses != nil ? "ok" : "nil") committedNow=\(self.committedMessageCount)")
 
         guard let responses else {
             throw InferenceError.generationFailed("generate_content returned nil")
@@ -897,7 +890,7 @@ final class LiteRtLmEngine {
 
         let raw = litert_lm_responses_get_response_text_at(responses, 0)
             .map { String(cString: $0) } ?? ""
-        dlog("chat: raw output \(raw.count) chars")
+        engineLog.info("chat: raw output \(raw.count) chars")
 
         let boundary = "<start_of_turn>model\n"
         let response: String
