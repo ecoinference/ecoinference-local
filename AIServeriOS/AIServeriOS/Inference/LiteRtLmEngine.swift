@@ -338,6 +338,7 @@ final class LiteRtLmEngine {
         }
         litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
         litert_lm_engine_settings_enable_benchmark(engineSettings)
+        litert_lm_engine_settings_set_enable_speculative_decoding(engineSettings, true)
         litert_lm_set_min_log_level(2) // ERROR only (0=INFO 1=WARNING 2=ERROR 3=FATAL)
 
         // ── Memory snapshot before the long engine-init ──────────────────────

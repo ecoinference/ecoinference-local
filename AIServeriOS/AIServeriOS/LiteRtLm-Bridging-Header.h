@@ -107,6 +107,9 @@ void litert_lm_engine_settings_set_cache_dir(
 void litert_lm_engine_settings_enable_benchmark(
     LiteRtLmEngineSettings* settings);
 
+void litert_lm_engine_settings_set_enable_speculative_decoding(
+    LiteRtLmEngineSettings* settings, bool enable);
+
 void litert_lm_engine_settings_delete(LiteRtLmEngineSettings* settings);
 
 // ── Benchmark ─────────────────────────────────────────────────────────────────
