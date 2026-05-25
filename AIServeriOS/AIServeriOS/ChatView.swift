@@ -115,18 +115,20 @@ struct ChatView: View {
                 showImagePicker = false
             } onCancel: { showImagePicker = false }
         }
-        // ── Deep link: prefill / auto-send ────────────────────────────────────
+        // ── Deep link handler ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
-            guard case .openChat(let prefill, let autoSend, let system) = action else { return }
-            if let prefill { inputText = prefill }
-            if autoSend, let prefill, !prefill.isEmpty {
-                send(text: prefill, systemOverride: system)
+            guard let action else { return }
+            switch action {
+            case .openChat(let prefill, let autoSend, let system):
+                if let prefill { inputText = prefill }
+                if autoSend, let prefill, !prefill.isEmpty {
+                    send(text: prefill, systemOverride: system)
+                }
+            case .backgroundInfer(let prompt, let callback):
+                runBackgroundInfer(prompt: prompt, callbackURL: callback)
+            default:
+                break
             }
-        }
-        // ── Deep link: background infer ───────────────────────────────────────
-        .onChange(of: appState.deepLink) { _, action in
-            guard case .backgroundInfer(let prompt, let callback) = action else { return }
-            runBackgroundInfer(prompt: prompt, callbackURL: callback)
         }
     }
 
@@ -309,6 +311,10 @@ struct ChatView: View {
                     if let idx = messages.firstIndex(where: { $0.id == targetId }) {
                         messages[idx].text = code
                     }
+                    // Clear inferenceHistory so the next regular chat starts fresh.
+                    // resetConversation() wiped the engine's KV-cache; stale history here
+                    // would cause the next send() to replay the wrong message index.
+                    inferenceHistory = []
                     scrollToBottom()
                 }
                 dlog("handleToolCommand: UI updated with code (\(code.count) chars)")

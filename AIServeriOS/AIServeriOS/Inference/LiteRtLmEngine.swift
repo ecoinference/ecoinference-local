@@ -732,12 +732,23 @@ final class LiteRtLmEngine {
                         }
                         litert_lm_conversation_optional_args_delete(optArgs)
                         engineLog.debug("chatStream(mm): send_message_stream rc=\(rc)")
+                        if rc != 0 {
+                            // The callback will not fire — release the retained context to
+                            // prevent a permanent leak and close the inner stream immediately.
+                            Unmanaged<ConvStreamContext>.fromOpaque(ctxPtr).release()
+                            innerCont.finish()
+                        }
                     }
 
                     var fullText = ""
                     for await token in innerStream { fullText += token }
-                    // Only increment on success (non-empty implies the stream fired).
-                    self.committedConvTurnCount += 1
+                    // Only advance committedConvTurnCount when the engine accepted the message.
+                    // An empty response means send_message_stream failed (rc ≠ 0 or the
+                    // callback fired an error path), so we skip the increment to keep
+                    // committedConvTurnCount in sync with the engine's actual KV-cache state.
+                    if !fullText.isEmpty {
+                        self.committedConvTurnCount += 1
+                    }
                     engineLog.debug("chatStream(mm): response \(fullText.count) chars committedConvTurnCount=\(self.committedConvTurnCount)")
                     engineLog.info("chatStream(mm): \(fullText.count) chars")
                     self.logBenchmark(conversation: conv)
@@ -941,52 +952,6 @@ final class LiteRtLmEngine {
 
     // ── Gemma prompt formatting ───────────────────────────────────────────────
 
-    /// Formats a message list into the Gemma-4 multimodal chat template.
-    ///
-    /// Gemma 4 uses `<|turn>role\n…<turn|>\n` delimiters (not Gemma-2's
-    /// `<start_of_turn>`/`<end_of_turn>`).  An `<|image|>` placeholder is
-    /// inserted for every user message that has attached image data; the actual
-    /// image bytes are passed separately as a `kLiteRtLmInputDataTypeImage` input
-    /// to `generate_content[_stream]`.
-    ///
-    /// Format (system present, one user+image turn):
-    ///   <|turn>system\n{system}<turn|>\n
-    ///   <|turn>user\n\n<|image|>\n\n{text}<turn|>\n
-    ///   <|turn>model\n            ← triggers generation
-    static func buildGemma4MultimodalPrompt(messages: [InferenceMessage]) -> String {
-        var sb = ""
-
-        let systemText = messages
-            .filter { $0.role == "system" }
-            .map    { $0.text }
-            .joined(separator: "\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !systemText.isEmpty {
-            sb += "<|turn>system\n\(systemText)<turn|>\n"
-        }
-
-        for msg in messages where msg.role != "system" {
-            switch msg.role {
-            case "user":
-                sb += "<|turn>user\n"
-                if msg.imageData != nil {
-                    // Image placeholder precedes the text, matching the Jinja template
-                    // that emits '\n\n<|image|>\n\n' for image content items.
-                    sb += "\n\n<|image|>\n\n"
-                }
-                sb += msg.text + "<turn|>\n"
-            case "assistant":
-                sb += "<|turn>model\n\(msg.text)<turn|>\n"
-            default:
-                break
-            }
-        }
-
-        sb += "<|turn>model\n"
-        return sb
-    }
-
     /// Formats a list of `InferenceMessage`s into the Gemma chat template.
     ///
     ///   <start_of_turn>user
@@ -1068,22 +1033,10 @@ private extension String {
     }
 }
 
-// MARK: - Streaming stop-token filter
+// MARK: - Gemma special-token constants
 
-/// Strips Gemma special tokens and prompt echo from the LiteRT-LM output stream.
-///
-/// The iOS LiteRT-LM SDK echoes the full input prompt at the start of the
-/// stream before the generated response.  The prompt always ends with the
-/// marker `<start_of_turn>model\n`; anything before the LAST occurrence of
-/// that marker is prompt echo and must be discarded.
-///
-/// Usage:
-///   let filter = GemmaStopTokenFilter()
-///   for await chunk in stream { if let out = filter.feed(chunk) { yield out } }
-///   if let tail = filter.flush() { yield tail }
-///
-final class GemmaStopTokenFilter {
-
+/// Namespace for Gemma stop-token strings used by `removingGemmaStopTokens()`.
+private enum GemmaStopTokenFilter {
     static let tokens: [String] = [
         // Gemma 3 turn tokens
         "<end_of_turn>", "<start_of_turn>", "</start_of_turn>",
@@ -1095,77 +1048,4 @@ final class GemmaStopTokenFilter {
         "<|tool_call>", "<tool_call|>",
         "<|tool_response>", "<tool_response|>",
     ]
-
-    /// Length of the longest special token — used as the hold-back tail window.
-    private static let maxTokenLen = tokens.map(\.count).max()!  // 14
-
-    /// The marker that separates echoed prompt from actual model response.
-    /// We use just `<start_of_turn>model` (without requiring the trailing `\n`)
-    /// because some SDK versions omit the newline in the echoed prompt.
-    private static let boundary = "<start_of_turn>model"         // 20 chars
-
-    /// If the boundary is not found within this many UTF-8 bytes we assume the
-    /// SDK is NOT echoing the prompt and switch to direct-emit mode.
-    private static let maxEchoScanBytes = 2048
-
-    private var pending       = ""
-    private var boundaryFound = false
-
-    // MARK: - Public API
-
-    /// Feed a new chunk. Returns safe-to-emit text, or nil if still buffering.
-    func feed(_ chunk: String) -> String? {
-        pending += chunk
-        return process(final: false)
-    }
-
-    /// Flush all remaining buffered text (call once the stream has ended).
-    func flush() -> String? {
-        defer { pending = "" }
-        return process(final: true)
-    }
-
-    // MARK: - Core
-
-    private func process(final: Bool) -> String? {
-        if !boundaryFound {
-            if let range = pending.range(of: Self.boundary, options: .backwards) {
-                // Found prompt/response boundary — discard the echoed prompt.
-                pending       = String(pending[range.upperBound...])
-                boundaryFound = true
-                // Fall through to emit what remains after the boundary.
-            } else if final || pending.utf8.count >= Self.maxEchoScanBytes {
-                // Either the stream ended or we've scanned enough bytes to be
-                // confident the SDK is not echoing — switch to direct-emit mode.
-                boundaryFound = true
-            } else {
-                // Still accumulating.  Keep a tail window so a boundary that
-                // straddles two consecutive chunks is not missed.
-                let window = Self.boundary.count - 1  // 19 chars
-                if pending.count > window {
-                    pending = String(pending.suffix(window))
-                }
-                return nil
-            }
-        }
-
-        // ── Strip special tokens ──────────────────────────────────────────────
-        for token in Self.tokens {
-            pending = pending.replacingOccurrences(of: token, with: "")
-        }
-        // Strip residual role labels left after <start_of_turn> removal.
-        pending = pending.replacingOccurrences(of: "\nmodel\n", with: "\n")
-        pending = pending.replacingOccurrences(of: "\nuser\n",  with: "\n")
-        if pending.hasPrefix("model\n") { pending = String(pending.dropFirst(6)) }
-        if pending.hasPrefix("user\n")  { pending = String(pending.dropFirst(5)) }
-
-        if final { return pending.isEmpty ? nil : pending }
-
-        // Hold back the tail so a special token split across chunks is caught.
-        guard pending.count > Self.maxTokenLen else { return nil }
-        let cut  = pending.index(pending.endIndex, offsetBy: -Self.maxTokenLen)
-        let safe = String(pending[..<cut])
-        pending  = String(pending[cut...])
-        return safe.isEmpty ? nil : safe
-    }
 }

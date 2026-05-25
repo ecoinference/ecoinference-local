@@ -57,10 +57,12 @@ final class InferenceService {
     }
 
     func cancelInference() {
+        lock.lock(); defer { lock.unlock() }
         engine.cancelActiveSession()
     }
 
     func resetConversation() {
+        lock.lock(); defer { lock.unlock() }
         engine.resetConversation()
     }
 

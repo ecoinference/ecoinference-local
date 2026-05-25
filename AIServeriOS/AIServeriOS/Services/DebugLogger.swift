@@ -16,6 +16,8 @@ final class DebugLogger {
     private var handle: FileHandle?
     private let queue  = DispatchQueue(label: "ai.ecoinference.debuglog")
     private let maxBytes = 2 * 1024 * 1024   // 2 MB rolling cap
+    /// Reused formatter — accessed only on the serial `queue`, so thread-safe.
+    private static let dateFormatter = ISO8601DateFormatter()
 
     var logFileURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -26,13 +28,16 @@ final class DebugLogger {
 
     func log(_ message: String, level: String = "INFO",
              file: String = #fileID, line: Int = #line) {
-        let ts    = ISO8601DateFormatter().string(from: Date())
         let fname = URL(fileURLWithPath: file).lastPathComponent
-        let entry = "[\(ts)] [\(level)] \(fname):\(line) \(message)\n"
         sysLog.info("\(message)")
         // Synchronous write so log entries survive a hard crash (abort/SIGSEGV).
         // queue.async was losing the last N entries before process termination.
-        queue.sync { self.write(entry) }
+        // The formatter is accessed only on the serial queue — thread-safe.
+        queue.sync {
+            let ts    = Self.dateFormatter.string(from: Date())
+            let entry = "[\(ts)] [\(level)] \(fname):\(line) \(message)\n"
+            self.write(entry)
+        }
     }
 
     func error(_ message: String, file: String = #fileID, line: Int = #line) {
