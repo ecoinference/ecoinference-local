@@ -37,16 +37,18 @@ final class InferenceService {
     ///   for a text-only model adds overhead; omitting it for a vision model
     ///   causes a native crash when an image is provided.
     func load(
-        modelId:      String,
-        modelPath:    String,
-        useGpu:       Bool,
-        maxNumTokens: Int  = 8192,
-        multimodal:   Bool = false
+        modelId:             String,
+        modelPath:           String,
+        useGpu:              Bool,
+        maxNumTokens:        Int  = 8192,
+        multimodal:          Bool = false,
+        speculativeDecoding: Bool = false
     ) throws {
         lock.lock(); defer { lock.unlock() }
         try engine.load(modelId: modelId, modelPath: modelPath,
                         useGpu: useGpu, maxNumTokens: maxNumTokens,
-                        multimodal: multimodal)
+                        multimodal: multimodal,
+                        speculativeDecoding: speculativeDecoding)
     }
 
     func unload() {

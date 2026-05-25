@@ -296,11 +296,12 @@ final class LiteRtLmEngine {
     ///   to its compiled limit. Default 8192 uses the full context window of the
     ///   Gemma 4 E2B .litertlm export.
     func load(
-        modelId:      String,
-        modelPath:    String,
-        useGpu:       Bool,
-        maxNumTokens: Int  = 8192,
-        multimodal:   Bool = false
+        modelId:             String,
+        modelPath:           String,
+        useGpu:              Bool,
+        maxNumTokens:        Int  = 8192,
+        multimodal:          Bool = false,
+        speculativeDecoding: Bool = false
     ) throws {
         unload()
 
@@ -338,7 +339,10 @@ final class LiteRtLmEngine {
         }
         litert_lm_engine_settings_set_cache_dir(engineSettings, cacheDir)
         litert_lm_engine_settings_enable_benchmark(engineSettings)
-        litert_lm_engine_settings_set_enable_speculative_decoding(engineSettings, true)
+        if speculativeDecoding {
+            litert_lm_engine_settings_set_enable_speculative_decoding(engineSettings, true)
+            engineLog.info("load: speculative decoding enabled")
+        }
         litert_lm_set_min_log_level(2) // ERROR only (0=INFO 1=WARNING 2=ERROR 3=FATAL)
 
         // ── Memory snapshot before the long engine-init ──────────────────────

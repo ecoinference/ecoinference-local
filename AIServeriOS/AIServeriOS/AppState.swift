@@ -132,13 +132,13 @@ final class AppState: ObservableObject {
                 // flutter_gemma recommends 4096 tokens for multimodal models;
                 // the vision KV-cache pushes memory usage high enough that 8192
                 // causes litert_lm_engine_create to fail on device.
-                let maxTokens = info.supportsVision ? 4096 : 8192
                 try inferenceSvc.load(
-                    modelId:      modelId,
-                    modelPath:    modelPath,
-                    useGpu:       useGpu,
-                    maxNumTokens: maxTokens,
-                    multimodal:   info.supportsVision
+                    modelId:             modelId,
+                    modelPath:           modelPath,
+                    useGpu:              useGpu,
+                    maxNumTokens:        info.maxContextTokens,
+                    multimodal:          info.supportsVision,
+                    speculativeDecoding: info.supportsSpeculativeDecoding
                 )
                 await MainActor.run { [weak self] in
                     self?.modelLoaded       = true
