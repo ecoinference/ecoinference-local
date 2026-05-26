@@ -132,10 +132,24 @@ enum ModelCatalog {
             downloadUrl:     "\(piBase)/gemma-4-E4B-it.litertlm",
             downloaded:      false,
             loaded:          false,
-            supportsVision:              true,  // load via Conversation API for best text quality
-            supportsImageInput:          false, // SigLIP not functional in bundle; image send_message corrupts engine
-            supportsSpeculativeDecoding: false, // draft model not confirmed in bundle
-            maxContextTokens:            2048   // HF README benchmarks at context=2048
+            // supportsVision=true loads via the Conversation API (needed for Gemma 4 prompt format).
+            // supportsImageInput=false disables the image attachment UI — E4B's vision encoder
+            // is incompatible with iOS LiteRT-LM native-v0.12.0:
+            //   • Original model_type → STABLEHLO_COMPOSITE executor → fails (op not in iOS dylib)
+            //   • Patched model_type "tZ4Y" → TFLite/XNNPack executor → fails (162/1477 ops in
+            //     E4B's larger SigLIP encoder are not delegatable; XNNPack reshape fails at runtime)
+            // E2B works because its smaller encoder uses ops fully supported by this XNNPack build.
+            // Fix requires a newer iOS LiteRT-LM library from Google with broader XNNPack coverage.
+            // supportsVision=false: E4B's Conversation API path fails on iOS LiteRT-LM
+            // native-v0.12.0 — the llm_litert_compiled_model_executor and vision encoder both
+            // hit "Failed to allocate tensors" due to STABLEHLO_COMPOSITE / XNNPack op gaps
+            // in the iOS build (E4B's larger SigLIP encoder uses 162 non-XNNPack-delegatable
+            // ops; E2B's smaller encoder is fully supported). Text works via the session path.
+            // Re-enable supportsVision when a newer iOS LiteRT-LM library supports E4B's ops.
+            supportsVision:              false,
+            supportsImageInput:          false,
+            supportsSpeculativeDecoding: false,
+            maxContextTokens:            4096
         ),
     ]
 

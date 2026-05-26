@@ -164,6 +164,7 @@ private func liteRtLmConvStreamCallback(
     if let errorMsg, errorMsg.pointee != 0 {
         let msg = String(cString: errorMsg)
         engineLog.error("convStreamCallback: error=\(msg) isFinal=\(isFinal)")
+        derr("convStreamCallback error: \(msg)")
         ctx.continuation.finish()
         if isFinal { Unmanaged<ConvStreamContext>.fromOpaque(userData).release() }
         return
@@ -534,31 +535,54 @@ final class LiteRtLmEngine {
 
     /// Builds the `message_json` argument for `litert_lm_conversation_send_message[_stream]`.
     ///
-    /// Format confirmed from flutter_gemma native-v0.12.0 litert_lm_client.dart:
+    /// Text only:
+    ///   {"role":"user","content":[{"type":"text","text":"<escaped>"}]}
     ///
-    ///   Text only:
-    ///     {"role":"user","content":[{"type":"text","text":"<escaped>"}]}
+    /// Image + text — mirrors the Android SDK's Content.ImageFile approach:
+    ///   The C engine reads the image from a file path, NOT from a base64 blob.
+    ///   `Content$ImageFile.toJson()` in litertlm-android generates:
+    ///     {"type":"image","path":"<absolutePath>"}
+    ///   iOS must do the same — the blob format causes send_message to return nil
+    ///   for E4B (the engine cannot decode a base64 blob for that bundle).
     ///
-    ///   Image + text:
-    ///     {"role":"user","content":[
-    ///       {"type":"image","blob":"<base64>"},
-    ///       {"type":"text","text":"<escaped>"}
-    ///     ]}
-    ///
-    /// Images are pre-scaled to ≤ 800×800 px before base64 encoding to keep the
-    /// JSON payload manageable (raw iPhone photos can exceed internal buffer limits).
-    private static func buildConversationMessageJson(text: String, imageData: Data?,
-                                                      maxVisionDimension: CGFloat = 800) -> String {
+    /// The image is pre-scaled and written to a temp file in NSTemporaryDirectory().
+    /// The caller MUST delete the file at the returned URL after send_message returns.
+    /// Returns (messageJson, tempImageURL?) — tempImageURL is non-nil when an image
+    /// file was written and needs cleanup.
+    private static func buildConversationMessageJson(
+        text: String,
+        imageData: Data?,
+        maxVisionDimension: CGFloat = 800
+    ) -> (json: String, tempImageURL: URL?) {
         var items = ""
+        var tempImageURL: URL? = nil
         if let raw = imageData {
             let jpeg = scaledJpegData(raw, maxDimension: maxVisionDimension)
-            let b64  = jpeg.base64EncodedString()
-            dlog("buildMsgJson: raw=\(raw.count)B jpeg=\(jpeg.count)B b64=\(b64.count) maxDim=\(Int(maxVisionDimension))")
-            items += "{\"type\":\"image\",\"blob\":\"\(b64)\"}"
-            items += ","
+            dlog("buildMsgJson: raw=\(raw.count)B jpeg=\(jpeg.count)B maxDim=\(Int(maxVisionDimension))")
+            // Write to a temp file so the C engine can read it by path.
+            // This matches the Android SDK's Content.ImageFile(absolutePath) approach.
+            // The blob ("type":"image","blob":"<base64>") format fails for E4B — the C
+            // engine returns nil from send_message when given an inline base64 blob for
+            // that bundle, even though it works for E2B.
+            let tmpDir = FileManager.default.temporaryDirectory
+            let tmpName = "litert_img_\(UInt64(Date().timeIntervalSince1970 * 1_000)).jpg"
+            let tmpURL  = tmpDir.appendingPathComponent(tmpName)
+            do {
+                try jpeg.write(to: tmpURL)
+                dlog("buildMsgJson: wrote temp image \(tmpName) (\(jpeg.count)B)")
+                items += "{\"type\":\"image\",\"path\":\"\(jsonEscape(tmpURL.path))\"}"
+                items += ","
+                tempImageURL = tmpURL
+            } catch {
+                // Temp-file write failed — fall back to base64 blob (works for E2B).
+                dlog("buildMsgJson: temp-file write failed (\(error)) — falling back to blob")
+                let b64 = jpeg.base64EncodedString()
+                items += "{\"type\":\"image\",\"blob\":\"\(b64)\"}"
+                items += ","
+            }
         }
         items += "{\"type\":\"text\",\"text\":\"\(jsonEscape(text))\"}"
-        return "{\"role\":\"user\",\"content\":[\(items)]}"
+        return ("{\"role\":\"user\",\"content\":[\(items)]}", tempImageURL)
     }
 
     /// Creates (or recreates) a `LiteRtLmConversation` for multimodal inference.
@@ -571,15 +595,21 @@ final class LiteRtLmEngine {
     private func makeConversation(systemText: String) throws -> OpaquePointer {
         guard let eng = engine else { throw InferenceError.noModelLoaded }
 
-        // Session config: set max_output_tokens and sampler params.
+        // Session config: set sampler params ONLY — no max_output_tokens.
         // The flutter_gemma Dart reference client ALWAYS sets sampler params
         // (type=TopP) before calling conversation_config_create.  Without explicit
         // sampler params the session config defaults to kTypeUnspecified=0, which
         // causes litert_lm_conversation_send_message to return nil silently.
+        //
+        // We intentionally do NOT set max_output_tokens here.  The Android SDK
+        // (litertlm-android) passes only SamplerConfig to nativeCreateConversation —
+        // there is no maxOutputTokens parameter on the Kotlin side.  Setting a low
+        // value (256) on iOS may interfere with image-prefill KV-cache allocation,
+        // causing send_message to return nil even on turn 0 with no history.
+        // The engine's internal default (set by SessionConfig::CreateDefault) is used.
         guard let sessCfg = litert_lm_session_config_create() else {
             throw InferenceError.sessionCreationFailed
         }
-        litert_lm_session_config_set_max_output_tokens(sessCfg, maxConvOutputTokens)
         var samplerParams = LiteRtLmSamplerParams(
             type:        kTopP,
             top_k:       40,
@@ -735,11 +765,11 @@ final class LiteRtLmEngine {
                         return
                     }
                     let userMsg = userMessages[turnIndex]
-                    let msgJson = LiteRtLmEngine.buildConversationMessageJson(
+                    let (msgJson, tempImageURL) = LiteRtLmEngine.buildConversationMessageJson(
                         text: userMsg.text, imageData: userMsg.imageData,
                         maxVisionDimension: self.maxVisionDimension
                     )
-                    engineLog.debug("chatStream(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count)")
+                    engineLog.debug("chatStream(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson.count=\(msgJson.count) tempImage=\(tempImageURL?.lastPathComponent ?? "none")")
 
                     let innerStream = AsyncStream<String> { innerCont in
                         let ctx    = ConvStreamContext(continuation: innerCont)
@@ -763,6 +793,11 @@ final class LiteRtLmEngine {
 
                     var fullText = ""
                     for await token in innerStream { fullText += token }
+                    // Temp image file is no longer needed once send_message_stream completes.
+                    if let url = tempImageURL {
+                        try? FileManager.default.removeItem(at: url)
+                        dlog("chatStream(mm): deleted temp image \(url.lastPathComponent)")
+                    }
                     // Only advance committedConvTurnCount when the engine accepted the message.
                     // An empty response means send_message_stream failed (rc ≠ 0 or the
                     // callback fired an error path), so we skip the increment to keep
@@ -886,17 +921,25 @@ final class LiteRtLmEngine {
                 return ""
             }
             let userMsg = userMessages[turnIndex]
-            let msgJson = LiteRtLmEngine.buildConversationMessageJson(
+            let (msgJson, tempImageURL) = LiteRtLmEngine.buildConversationMessageJson(
                 text: userMsg.text, imageData: userMsg.imageData,
                 maxVisionDimension: maxVisionDimension
             )
-            dlog("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson=\(msgJson.count)chars committedTurns=\(committedConvTurnCount)")
+            dlog("chat(mm): turn=\(turnIndex) hasImage=\(userMsg.imageData != nil) msgJson=\(msgJson.count)chars committedTurns=\(committedConvTurnCount) tempImage=\(tempImageURL?.lastPathComponent ?? "none")")
 
             // native-v0.12.0: send_message requires a non-null optional_args.
             guard let optArgs = litert_lm_conversation_optional_args_create() else {
+                if let url = tempImageURL { try? FileManager.default.removeItem(at: url) }
                 throw InferenceError.generationFailed("optional_args_create returned nil")
             }
-            defer { litert_lm_conversation_optional_args_delete(optArgs) }
+            defer {
+                litert_lm_conversation_optional_args_delete(optArgs)
+                // Clean up temp image file whether send_message succeeded or failed.
+                if let url = tempImageURL {
+                    try? FileManager.default.removeItem(at: url)
+                    dlog("chat(mm): deleted temp image \(url.lastPathComponent)")
+                }
+            }
             dlog("chat(mm): calling send_message")
             let jsonResp: OpaquePointer? = msgJson.withCString { msgPtr in
                 litert_lm_conversation_send_message(conv, msgPtr, nil, optArgs)
