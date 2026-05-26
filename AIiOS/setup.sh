@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup.sh — one-shot setup for AIServeriOS
+# setup.sh — one-shot setup for AIiOS
 # Run once after cloning.
 #
 # What it does:
@@ -16,7 +16,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "======================================================"
-echo " AIServeriOS  Setup"
+echo " AIiOS  Setup"
 echo "======================================================"
 
 # ── Check dependencies ────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ xcodegen generate
 echo ""
 echo "======================================================"
 echo " Setup complete!"
-echo " Open AIServeriOS.xcodeproj in Xcode."
+echo " Open AIiOS.xcodeproj in Xcode."
 echo " Set your Team ID in project.yml (DEVELOPMENT_TEAM)"
 echo " before archiving for a real device."
 echo "======================================================"

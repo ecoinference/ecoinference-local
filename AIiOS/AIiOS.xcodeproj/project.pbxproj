@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */; };
+		00CA93B772CB0B54792A80EA /* AIiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948576861D1B5E64462F2D6 /* AIiOSApp.swift */; };
 		18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; };
 		1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5575423A70E4EFBDEF641903 /* ApiModels.swift */; };
 		24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -56,7 +56,7 @@
 /* Begin PBXFileReference section */
 		1C0361C19D1024C961B6CCFC /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
 		1F78B51514F26DFB18DE0304 /* AIServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIServeriOS.entitlements; sourceTree = "<group>"; };
+		21867825B5ABA12D61228EEA /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
 		47EF6509717621980EF5701E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		4C6E5E00261378B45C281246 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		4D264C438947D35E525C0B18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -71,7 +71,7 @@
 		C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
 		CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRtLmEngine.swift; sourceTree = "<group>"; };
-		D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServeriOSApp.swift; sourceTree = "<group>"; };
+		D948576861D1B5E64462F2D6 /* AIiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIiOSApp.swift; sourceTree = "<group>"; };
 		F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
 		19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E31FDFF7D6340B3889BBB90B /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -113,8 +113,8 @@
 		7E64FB5EBF6D9DDEF74E7B1E = {
 			isa = PBXGroup;
 			children = (
-				FCC4FFAB055A61766CC3A20B /* AIServeriOS */,
-				C0E7EDF9DA119301BD459A88 /* AIServeriOS */,
+				FCC4FFAB055A61766CC3A20B /* AIiOS */,
+				C0E7EDF9DA119301BD459A88 /* AIiOS */,
 				16CCFDDF75AB3610364FF196 /* Frameworks */,
 				D439ECB489426E66E161B95E /* Products */,
 			);
@@ -159,12 +159,12 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		C0E7EDF9DA119301BD459A88 /* AIServeriOS */ = {
+		C0E7EDF9DA119301BD459A88 /* AIiOS */ = {
 			isa = PBXGroup;
 			children = (
 				1C0361C19D1024C961B6CCFC /* Local.xcconfig */,
 			);
-			name = AIServeriOS;
+			name = AIiOS;
 			path = .;
 			sourceTree = "<group>";
 		};
@@ -176,11 +176,11 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		FCC4FFAB055A61766CC3A20B /* AIServeriOS */ = {
+		FCC4FFAB055A61766CC3A20B /* AIiOS */ = {
 			isa = PBXGroup;
 			children = (
-				21867825B5ABA12D61228EEA /* AIServeriOS.entitlements */,
-				D948576861D1B5E64462F2D6 /* AIServeriOSApp.swift */,
+				21867825B5ABA12D61228EEA /* AIiOS.entitlements */,
+				D948576861D1B5E64462F2D6 /* AIiOSApp.swift */,
 				19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */,
 				E31FDFF7D6340B3889BBB90B /* ChatView.swift */,
 				EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */,
@@ -196,15 +196,15 @@
 				97F2D4387832390B3EFDB9D4 /* Services */,
 				16AAA087276A069D74934E90 /* UI */,
 			);
-			path = AIServeriOS;
+			path = AIiOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B1035ACCB8D35645FBB6BF9F /* AIServeriOS */ = {
+		B1035ACCB8D35645FBB6BF9F /* AIiOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIServeriOS" */;
+			buildConfigurationList = FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIiOS" */;
 			buildPhases = (
 				F6470A462D797079CFD89BCE /* Sources */,
 				003D83752F0D717511CD285A /* Resources */,
@@ -215,10 +215,10 @@
 			);
 			dependencies = (
 			);
-			name = AIServeriOS;
+			name = AIiOS;
 			packageProductDependencies = (
 			);
-			productName = AIServeriOS;
+			productName = AIiOS;
 			productReference = 1F78B51514F26DFB18DE0304 /* AIServer.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -231,7 +231,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
 			};
-			buildConfigurationList = 25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIServeriOS" */;
+			buildConfigurationList = 25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIiOS" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -245,7 +245,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B1035ACCB8D35645FBB6BF9F /* AIServeriOS */,
+				B1035ACCB8D35645FBB6BF9F /* AIiOS */,
 			);
 		};
 /* End PBXProject section */
@@ -266,7 +266,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00CA93B772CB0B54792A80EA /* AIServeriOSApp.swift in Sources */,
+				00CA93B772CB0B54792A80EA /* AIiOSApp.swift in Sources */,
 				1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */,
 				7FE5BA49E0F231E989694333 /* AppState.swift in Sources */,
 				F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */,
@@ -294,14 +294,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AIServeriOS/AIServeriOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 65P94N4JDC;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
 				);
-				INFOPLIST_FILE = AIServeriOS/Info.plist;
+				INFOPLIST_FILE = AIiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -318,14 +318,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AIServeriOS/AIServeriOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 65P94N4JDC;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
 				);
-				INFOPLIST_FILE = AIServeriOS/Info.plist;
+				INFOPLIST_FILE = AIiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -394,7 +394,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OBJC_BRIDGING_HEADER = "AIServeriOS/LiteRtLm-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "AIiOS/LiteRtLm-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.10;
 			};
@@ -463,7 +463,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OBJC_BRIDGING_HEADER = "AIServeriOS/LiteRtLm-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "AIiOS/LiteRtLm-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.10;
 			};
@@ -472,7 +472,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIServeriOS" */ = {
+		25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DD5595804073BFF2953CF814 /* Debug */,
@@ -481,7 +481,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIServeriOS" */ = {
+		FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				14285BA8A95C0B6C635AF231 /* Debug */,

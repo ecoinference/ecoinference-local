@@ -1,4 +1,4 @@
-name: AIServeriOS
+name: AIiOS
 options:
   bundleIdPrefix: com.gemma4
   deploymentTarget:
@@ -18,19 +18,19 @@ settings:
     #                                    before archiving for distribution.
     #                                    Leave commented for local device builds —
     #                                    Xcode auto-assigns from your account.
-    SWIFT_OBJC_BRIDGING_HEADER: AIServeriOS/LiteRtLm-Bridging-Header.h
+    SWIFT_OBJC_BRIDGING_HEADER: AIiOS/LiteRtLm-Bridging-Header.h
     OTHER_LDFLAGS:
       - "-rpath"
       - "@executable_path/Frameworks"
 
 targets:
-  AIServeriOS:
+  AIiOS:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
 
     info:
-      path: AIServeriOS/Info.plist
+      path: AIiOS/Info.plist
       properties:
         # URL scheme so AIClient can launch/stop this app via aiserver://start|stop
         CFBundleURLTypes:
@@ -43,17 +43,17 @@ targets:
           - audio
 
     entitlements:
-      path: AIServeriOS/AIServeriOS.entitlements
+      path: AIiOS/AIiOS.entitlements
 
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.gemma4.aiserver
         PRODUCT_NAME: AIServer
-        INFOPLIST_FILE: AIServeriOS/Info.plist
-        CODE_SIGN_ENTITLEMENTS: AIServeriOS/AIServeriOS.entitlements
+        INFOPLIST_FILE: AIiOS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AIiOS/AIiOS.entitlements
 
     sources:
-      - path: AIServeriOS
+      - path: AIiOS
         excludes:
           - "**/*.md"
 
