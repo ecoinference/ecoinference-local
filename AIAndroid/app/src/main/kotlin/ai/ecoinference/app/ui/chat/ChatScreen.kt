@@ -40,7 +40,11 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     val context           = LocalContext.current
     val modelLoaded       by appState.modelLoaded.collectAsStateWithLifecycle()
     val loadedModelId     by appState.loadedModelId.collectAsStateWithLifecycle()
+    val isModelLoading    by appState.isLoading.collectAsStateWithLifecycle()
     val imageInputEnabled by appState.imageInputEnabled.collectAsStateWithLifecycle()
+
+    // Only truly ready when loaded AND the load coroutine has finished
+    val modelReady = modelLoaded && !isModelLoading
 
     var messages          by remember { mutableStateOf(listOf<ChatMessage>()) }
     var inputText         by remember { mutableStateOf("") }
@@ -71,8 +75,10 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     fun sendMessage() {
         val text = inputText.trim()
         if (text.isEmpty() && pendingImageBytes == null) return
-        if (!modelLoaded) {
-            scope.launch { snackbarHostState.showSnackbar("No model loaded — go to Models tab") }
+        if (!modelReady) {
+            val msg = if (isModelLoading) "Model is still loading, please wait…"
+                      else "No model loaded — go to Models tab"
+            scope.launch { snackbarHostState.showSnackbar(msg) }
             return
         }
         val imageBytes = pendingImageBytes
@@ -145,23 +151,50 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         ) {
             EcoWordmark(fontSize = 18.sp, showDotAi = true)
             Spacer(Modifier.weight(1f))
-            // Model status chip — compact, right-aligned
+            // Model status chip — reflects loading / loaded / no-model states
             Surface(
                 shape  = MaterialTheme.shapes.small,
-                color  = if (modelLoaded) EcoColors.CardDark else MaterialTheme.colorScheme.surface,
+                color  = when {
+                    isModelLoading -> MaterialTheme.colorScheme.surface
+                    modelLoaded    -> EcoColors.CardDark
+                    else           -> MaterialTheme.colorScheme.surface
+                },
                 border = androidx.compose.foundation.BorderStroke(
-                    1.dp, if (modelLoaded) EcoColors.Green.copy(alpha = 0.5f)
-                          else EcoColors.CardBorder),
+                    1.dp, when {
+                        isModelLoading -> EcoColors.Green.copy(alpha = 0.3f)
+                        modelLoaded    -> EcoColors.Green.copy(alpha = 0.5f)
+                        else           -> EcoColors.CardBorder
+                    }
+                ),
             ) {
-                Text(
-                    text     = if (modelLoaded) (loadedModelId ?: "Loaded") else "No model",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = if (modelLoaded) EcoColors.DimGreen
-                               else EcoColors.NearWhite.copy(alpha = 0.4f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    modifier          = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (isModelLoading) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(10.dp),
+                            strokeWidth = 1.5.dp,
+                            color       = EcoColors.DimGreen,
+                        )
+                    }
+                    Text(
+                        text     = when {
+                            isModelLoading -> "Loading…"
+                            modelLoaded    -> loadedModelId ?: "Loaded"
+                            else           -> "No model"
+                        },
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = when {
+                            isModelLoading -> EcoColors.DimGreen
+                            modelLoaded    -> EcoColors.DimGreen
+                            else           -> EcoColors.NearWhite.copy(alpha = 0.4f)
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         HorizontalDivider(color = EcoColors.CardBorder, thickness = 0.5.dp)
@@ -173,6 +206,40 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
             contentPadding = PaddingValues(vertical = 8.dp),
         ) {
             items(messages) { msg -> MessageBubble(message = msg) }
+        }
+
+        // ── Model not ready banner ────────────────────────────────────────────
+        if (!modelReady) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color    = if (isModelLoading)
+                               EcoColors.CardDark
+                           else MaterialTheme.colorScheme.surface,
+            ) {
+                Row(
+                    modifier          = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if (isModelLoading) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(14.dp),
+                            strokeWidth = 2.dp,
+                            color       = EcoColors.Green,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text("Loading model, please wait…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = EcoColors.DimGreen)
+                    } else {
+                        Text("No model loaded — go to the Models tab to load one",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                    }
+                }
+            }
         }
 
         // ── Pending image chip ────────────────────────────────────────────────
@@ -199,7 +266,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (imageInputEnabled) {
+            if (imageInputEnabled && modelReady) {
                 IconButton(onClick = {
                     imagePicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
                 }) {
@@ -212,11 +279,21 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 value         = inputText,
                 onValueChange = { inputText = it },
                 modifier      = Modifier.weight(1f),
-                placeholder   = { Text("Message") },
+                enabled       = modelReady && !isGenerating,
+                placeholder   = {
+                    Text(when {
+                        isModelLoading -> "Waiting for model…"
+                        !modelLoaded   -> "Load a model first"
+                        else           -> "Message"
+                    })
+                },
                 maxLines      = 5,
                 colors        = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = EcoColors.Green,
-                    unfocusedBorderColor = EcoColors.CardBorder,
+                    focusedBorderColor    = EcoColors.Green,
+                    unfocusedBorderColor  = EcoColors.CardBorder,
+                    disabledBorderColor   = EcoColors.CardBorder.copy(alpha = 0.4f),
+                    disabledTextColor     = EcoColors.NearWhite.copy(alpha = 0.3f),
+                    disabledPlaceholderColor = EcoColors.NearWhite.copy(alpha = 0.3f),
                 ),
             )
 
@@ -232,11 +309,11 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 }
             } else {
                 IconButton(
-                    onClick = ::sendMessage,
-                    enabled = inputText.isNotBlank() || pendingImageBytes != null,
+                    onClick  = ::sendMessage,
+                    enabled  = modelReady && (inputText.isNotBlank() || pendingImageBytes != null),
                 ) {
                     Icon(Icons.Default.Send, contentDescription = "Send",
-                        tint = if (inputText.isNotBlank() || pendingImageBytes != null)
+                        tint = if (modelReady && (inputText.isNotBlank() || pendingImageBytes != null))
                                    EcoColors.Green
                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
                 }
