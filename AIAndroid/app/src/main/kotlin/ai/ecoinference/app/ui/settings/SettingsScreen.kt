@@ -1,6 +1,7 @@
 package ai.ecoinference.app.ui.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,7 +24,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(appState: AppState) {
+fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
     val settings          = appState.settings
     val modelLoaded       by appState.modelLoaded.collectAsStateWithLifecycle()
     val loadedModelId     by appState.loadedModelId.collectAsStateWithLifecycle()
@@ -41,6 +42,8 @@ fun SettingsScreen(appState: AppState) {
     var localSystemPrompt by remember(systemPrompt) { mutableStateOf(systemPrompt) }
 
     Scaffold(
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },

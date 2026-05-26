@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -30,7 +31,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(appState: AppState) {
+fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     val context          = LocalContext.current
     val modelLoaded      by appState.modelLoaded.collectAsStateWithLifecycle()
     val loadedModelId    by appState.loadedModelId.collectAsStateWithLifecycle()
@@ -153,6 +154,8 @@ fun ChatScreen(appState: AppState) {
     }
 
     Scaffold(
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0),   // outer Scaffold already accounts for nav bar
         topBar = {
             TopAppBar(
                 title = {
@@ -201,10 +204,11 @@ fun ChatScreen(appState: AppState) {
                 }
             }
 
-            // Input bar
+            // Input bar — imePadding() lifts the row above the software keyboard
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .imePadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
