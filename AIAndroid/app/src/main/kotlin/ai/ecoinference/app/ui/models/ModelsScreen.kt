@@ -75,6 +75,7 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
                         isLoading        = isLoading,
                         onDownload       = { appState.startDownload(model.id) },
                         onLoad           = { useGpu -> appState.loadModel(model.id, useGpu) },
+                        onUnload         = { appState.unloadModel() },
                         onDelete         = { appState.deleteModel(model.id) },
                         onCancelDownload = { appState.cancelDownload() },
                     )

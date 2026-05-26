@@ -19,7 +19,7 @@ private enum class Tab { Chat, Models, Settings }
 
 @Composable
 fun RootScreen(appState: AppState) {
-    var selectedTab by remember { mutableStateOf(Tab.Chat) }
+    var selectedTab by remember { mutableStateOf(Tab.Models) }
     val deepLink    by appState.deepLink.collectAsStateWithLifecycle()
 
     // Handle deep links

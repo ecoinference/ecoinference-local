@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Eject
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
@@ -24,6 +25,7 @@ fun ModelCard(
     isLoading:          Boolean,
     onDownload:         () -> Unit,
     onLoad:             (useGpu: Boolean) -> Unit,
+    onUnload:           () -> Unit,
     onDelete:           () -> Unit,
     onCancelDownload:   () -> Unit,
 ) {
@@ -155,7 +157,19 @@ fun ModelCard(
                         }
                     }
                     model.loaded -> {
-                        // No load button when already loaded
+                        // Unload button
+                        OutlinedButton(
+                            onClick = onUnload,
+                            colors  = ButtonDefaults.outlinedButtonColors(
+                                contentColor = EcoColors.DimGreen),
+                            border  = BorderStroke(1.dp, EcoColors.Green.copy(alpha = 0.5f)),
+                        ) {
+                            Icon(Icons.Default.Eject, contentDescription = null,
+                                modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Unload")
+                        }
+                        // Delete (only when loaded — unload first, then delete)
                         OutlinedButton(
                             onClick = onDelete,
                             colors  = ButtonDefaults.outlinedButtonColors(
@@ -164,8 +178,6 @@ fun ModelCard(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null,
                                 modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Delete")
                         }
                     }
                     else -> {
