@@ -62,13 +62,14 @@ struct ChatView: View {
     )
 
     var body: some View {
+        NavigationStack {
         VStack(spacing: 0) {
 
-            // ── Title bar ─────────────────────────────────────────────────────
+            // ── Compact title bar ─────────────────────────────────────────────
             Text("Chat")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 .background(.background)
                 .overlay(alignment: .bottom) { Divider() }
 
@@ -106,6 +107,9 @@ struct ChatView: View {
             }
             .background(.background)
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        } // NavigationStack
         // ── Image source picker ───────────────────────────────────────────────
         .confirmationDialog("Attach Image", isPresented: $showSourceSheet) {
             Button("Photo Library") { pickerSource = .photoLibrary; showImagePicker = true }
