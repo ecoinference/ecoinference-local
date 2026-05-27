@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
@@ -52,6 +53,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     var pendingImageBytes by remember { mutableStateOf<ByteArray?>(null) }
     var isGenerating      by remember { mutableStateOf(false) }
     var generatingJob     by remember { mutableStateOf<Job?>(null) }
+    var showClearDialog   by remember { mutableStateOf(false) }
 
     val listState         = rememberLazyListState()
     val scope             = rememberCoroutineScope()
@@ -134,6 +136,29 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         }
     }
 
+    // ── Clear chat confirmation dialog ────────────────────────────────────────
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title            = { Text("Clear chat?") },
+            text             = { Text("This will remove all messages. The loaded model stays in memory.") },
+            confirmButton    = {
+                TextButton(onClick = {
+                    showClearDialog   = false
+                    generatingJob?.cancel()
+                    isGenerating      = false
+                    messages          = emptyList()
+                    pendingImageUri   = null
+                    pendingImageBytes = null
+                    inputText         = ""
+                }) { Text("Clear", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton    = {
+                TextButton(onClick = { showClearDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
     // No inner Scaffold. adjustResize in the manifest shrinks the window when
     // the keyboard opens — no imePadding() needed (adding it double-counts
     // the keyboard height and pushes the TextField off-screen).
@@ -151,6 +176,17 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         ) {
             EcoWordmark(fontSize = 18.sp, showDotAi = true)
             Spacer(Modifier.weight(1f))
+            // Clear chat button — only visible when there are messages
+            if (messages.isNotEmpty() && !isGenerating) {
+                IconButton(onClick = { showClearDialog = true }) {
+                    Icon(
+                        Icons.Default.DeleteSweep,
+                        contentDescription = "Clear chat",
+                        tint   = EcoColors.NearWhite.copy(alpha = 0.4f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
             // Model status chip — reflects loading / loaded / no-model states
             Surface(
                 shape  = MaterialTheme.shapes.small,
