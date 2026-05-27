@@ -21,15 +21,17 @@ object ToolRegistry {
     fun systemPromptBlock(): String {
         if (tools.isEmpty()) return ""
         return buildString {
-            appendLine("You have access to the following tools. To call a tool, reply with:")
-            appendLine("<tool_call>{\"name\":\"<tool_name>\",\"args\":{...}}</tool_call>")
-            appendLine("Wait for a <tool_result> before continuing.")
+            appendLine("You have access to tools. When you need real-time or device information, call a tool.")
+            appendLine("To call a tool you MUST use this EXACT format — valid JSON only, no other syntax:")
+            appendLine("<tool_call>{\"name\":\"tool_name\",\"args\":{\"param\":\"value\"}}</tool_call>")
+            appendLine("After calling a tool, wait for <tool_result> before writing your final answer.")
+            appendLine("Do NOT guess or make up answers that require real-time data — use a tool instead.")
             appendLine()
             appendLine("Available tools:")
             for (t in tools.values) {
-                appendLine("- **${t.name}**: ${t.description}")
+                appendLine("- ${t.name}: ${t.description}")
                 if (t.parametersDoc.isNotBlank()) appendLine("  Parameters: ${t.parametersDoc}")
-                appendLine("  Example: ${t.argsExample}")
+                appendLine("  Call example: <tool_call>{\"name\":\"${t.name}\",\"args\":${t.argsExample}}</tool_call>")
             }
         }
     }
