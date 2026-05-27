@@ -17,9 +17,9 @@ private val jsonParser = Json { ignoreUnknownKeys = true }
 /**
  * Runs the agentic tool-call loop.
  *
- * Handles two model output formats:
- *   Canonical: {"name":"tool_name","args":{...}}
- *   Shorthand: tool_name{key:"value"} (Gemma 4 style)
+ * Tool-call turns are buffered silently — the raw <tool_call> JSON and
+ * [Tool:] / [Result:] markers are never shown to the user.
+ * Only the final clean response (no tool call) is emitted to the UI.
  */
 fun runAgentLoop(
     messages:     List<InferenceMessage>,
@@ -35,27 +35,30 @@ fun runAgentLoop(
     while (iterations < MAX_TOOL_ITERATIONS) {
         Log.d(TAG, "Iteration $iterations — calling chatStream")
 
+        // Buffer the response silently — never emit tool-call scaffolding to the UI
         val sb = StringBuilder()
         inference.chatStream(history, maxTokens, temperature).collect { token ->
             sb.append(token)
-            emit(token)
         }
         val response = sb.toString().trim()
         Log.d(TAG, "Model response (iter=$iterations):\n$response")
 
         val match = TOOL_CALL_RE.find(response)
         if (match == null) {
-            Log.d(TAG, "No <tool_call> found — loop done")
+            // No tool call — this is the final clean answer; emit it now
+            Log.d(TAG, "No <tool_call> found — emitting final response")
+            emit(response)
             break
         }
 
+        // Tool call found — parse and execute silently
         val raw = match.groupValues[1].trim()
         Log.d(TAG, "Raw tool_call content: $raw")
 
         val parsed = parseToolCall(raw)
         if (parsed == null) {
             Log.e(TAG, "Failed to parse tool call: $raw")
-            emit("\n[Tool parse error: could not parse tool call]")
+            emit("Sorry, I couldn't parse the tool call.")
             break
         }
 
@@ -65,19 +68,18 @@ fun runAgentLoop(
         val tool = ToolRegistry.find(toolName)
         if (tool == null) {
             Log.e(TAG, "Unknown tool: $toolName")
-            emit("\n[Unknown tool: $toolName]")
+            emit("Sorry, I tried to use an unknown tool: $toolName.")
             break
         }
 
-        emit("\n[Tool: $toolName]\n")
         val result = try {
             tool.execute(toolArgs).also { Log.d(TAG, "Tool result: $it") }
         } catch (e: Exception) {
             Log.e(TAG, "Tool execution error: ${e.message}")
             "Error: ${e.message}"
         }
-        emit("[Result: $result]\n")
 
+        // Inject tool result into history and continue
         history += InferenceMessage(role = "assistant", text = response)
         history += InferenceMessage(
             role = "user",
@@ -99,19 +101,15 @@ fun runAgentLoop(
  * Parses the content between <tool_call> tags into (toolName, argsJson).
  *
  * Handles two formats Gemma 4 may produce:
- *
- * 1. Canonical JSON:  {"name":"web_search","args":{"query":"..."}}
- * 2. Shorthand:       web_search{"query":"..."} or web_search{query:"..."}
- *
- * For shorthand, unquoted JSON keys are normalised before parsing.
+ *   1. Canonical JSON:  {"name":"web_search","args":{"query":"..."}}
+ *   2. Shorthand:       web_search{"query":"..."} or web_search{query:"..."}
  */
 private fun parseToolCall(raw: String): Pair<String, String>? {
-    // ── Format 1: starts with { — canonical {"name":...,"args":...} ──────────
+    // Format 1: starts with { — canonical {"name":...,"args":...}
     if (raw.startsWith("{")) {
         return try {
             val obj      = jsonParser.parseToJsonElement(raw).jsonObject
-            val toolName = obj["name"]?.jsonPrimitive?.content
-                ?: return null
+            val toolName = obj["name"]?.jsonPrimitive?.content ?: return null
             val toolArgs = obj["args"]?.jsonObject?.toString() ?: "{}"
             Pair(toolName, toolArgs)
         } catch (e: Exception) {
@@ -120,36 +118,29 @@ private fun parseToolCall(raw: String): Pair<String, String>? {
         }
     }
 
-    // ── Format 2: shorthand  tool_name{...} ──────────────────────────────────
+    // Format 2: shorthand  tool_name{...}
     val braceIdx = raw.indexOf('{')
     if (braceIdx > 0) {
-        val toolName = raw.substring(0, braceIdx).trim()
-        val rawArgs  = raw.substring(braceIdx).trim()
-        // Normalise unquoted keys: {key:"val"} → {"key":"val"}
+        val toolName  = raw.substring(0, braceIdx).trim()
+        val rawArgs   = raw.substring(braceIdx).trim()
         val fixedArgs = normaliseJsonKeys(rawArgs)
         return try {
-            jsonParser.parseToJsonElement(fixedArgs) // validate
+            jsonParser.parseToJsonElement(fixedArgs)
             Pair(toolName, fixedArgs)
         } catch (e: Exception) {
             Log.e(TAG, "Shorthand parse failed for args '$fixedArgs': ${e.message}")
-            // Last resort: return empty args so at least the tool is called
             Pair(toolName, "{}")
         }
     }
 
-    // ── Format 3: bare tool name with no args ─────────────────────────────────
+    // Format 3: bare tool name with no args
     val bare = raw.trim()
-    if (bare.isNotBlank() && !bare.contains(" ")) {
-        return Pair(bare, "{}")
-    }
+    if (bare.isNotBlank() && !bare.contains(" ")) return Pair(bare, "{}")
 
     return null
 }
 
-/**
- * Adds double-quotes around unquoted JSON object keys.
- * e.g. {query:"foo"} → {"query":"foo"}
- */
+/** Adds double-quotes around unquoted JSON object keys. */
 private fun normaliseJsonKeys(json: String): String =
     json.replace(Regex("([{,]\\s*)([a-zA-Z_][a-zA-Z0-9_]*)\\s*:")) { mr ->
         "${mr.groupValues[1]}\"${mr.groupValues[2]}\":"
