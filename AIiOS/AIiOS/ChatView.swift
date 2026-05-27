@@ -63,11 +63,15 @@ struct ChatView: View {
 
     var body: some View {
         NavigationStack {
+        ZStack(alignment: .top) {
+            // Fill the entire NavigationStack frame (including behind Dynamic
+            // Island and below home indicator) so no black window shows through.
+            Color(.systemBackground).ignoresSafeArea()
+
         VStack(spacing: 0) {
 
             // ── Compact title bar ─────────────────────────────────────────────
-            // No top padding — safe area already separates text from Dynamic
-            // Island. Background extends behind status bar so no black gap shows.
+            // Safe area separates text from Dynamic Island — no top padding needed.
             Text("Chat")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
@@ -111,6 +115,7 @@ struct ChatView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        } // ZStack
         } // NavigationStack
         // ── Image source picker ───────────────────────────────────────────────
         .confirmationDialog("Attach Image", isPresented: $showSourceSheet) {

@@ -11,22 +11,25 @@ struct RootView: View {
     enum Tab { case chat, models, settings }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        // ZStack base fills the raw UIWindow (black on OLED) behind the TabView.
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
+            TabView(selection: $selectedTab) {
 
-            ChatView()
-                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
-                .tag(Tab.chat)
+                ChatView()
+                    .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
+                    .tag(Tab.chat)
 
-            ModelsView()
-                .tabItem { Label("Models", systemImage: "cpu") }
-                .tag(Tab.models)
+                ModelsView()
+                    .tabItem { Label("Models", systemImage: "cpu") }
+                    .tag(Tab.models)
 
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tag(Tab.settings)
+            }
+            .toolbarBackground(.visible, for: .tabBar)
         }
-        .background(Color(.systemBackground).ignoresSafeArea())
-        .toolbarBackground(.visible, for: .tabBar)
         // ── Deep link routing ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
             guard let action else { return }
