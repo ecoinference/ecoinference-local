@@ -81,6 +81,9 @@ dependencies {
     // Downloads
     implementation(libs.okhttp)
 
+    // Math & signal processing (stats, FFT, regression) — no network calls
+    implementation(libs.commons.math)
+
     // On-device inference — LiteRT-LM (.litertlm bundle support)
     implementation(libs.litertlm.android)
 

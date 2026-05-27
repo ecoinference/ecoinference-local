@@ -182,8 +182,8 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     Icon(
                         Icons.Default.DeleteSweep,
                         contentDescription = "Clear chat",
-                        tint   = EcoColors.NearWhite.copy(alpha = 0.4f),
-                        modifier = Modifier.size(20.dp),
+                        tint     = EcoColors.Green,
+                        modifier = Modifier.size(26.dp),
                     )
                 }
             }
