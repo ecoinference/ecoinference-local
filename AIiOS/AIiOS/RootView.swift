@@ -25,6 +25,8 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        .background(Color(.systemBackground).ignoresSafeArea())
+        .toolbarBackground(.visible, for: .tabBar)
         // ── Deep link routing ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
             guard let action else { return }

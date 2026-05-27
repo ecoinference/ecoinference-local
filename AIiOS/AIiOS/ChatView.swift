@@ -66,11 +66,13 @@ struct ChatView: View {
         VStack(spacing: 0) {
 
             // ── Compact title bar ─────────────────────────────────────────────
+            // No top padding — safe area already separates text from Dynamic
+            // Island. Background extends behind status bar so no black gap shows.
             Text("Chat")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-                .background(.background)
+                .padding(.bottom, 8)
+                .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
                 .overlay(alignment: .bottom) { Divider() }
 
             // ── No-model banner ───────────────────────────────────────────────
@@ -105,7 +107,7 @@ struct ChatView: View {
                 Divider()
                 inputBar
             }
-            .background(.background)
+            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
