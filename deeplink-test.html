@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoInference Deep-Link Tester</title>
+  <style>
+    :root {
+      --green:      #22c55e;
+      --dim-green:  #4ade80;
+      --dark:       #0a160e;
+      --card:       #0f2415;
+      --border:     #1a3a22;
+      --near-white: #f0fdf4;
+      --teal:       #14b8a6;
+      --error:      #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--dark);
+      color: var(--near-white);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 24px 16px 48px;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: -0.3px;
+    }
+    header h1 span { color: var(--near-white); font-weight: 300; }
+    header h1 small { color: var(--teal); font-size: 12px; }
+    .badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--dim-green);
+    }
+
+    /* Section */
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    section h2 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--dim-green);
+      margin-bottom: 12px;
+    }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .btn-row:last-child { margin-bottom: 0; }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    a.btn:active { opacity: 0.7; }
+    a.btn.primary {
+      background: var(--green);
+      color: #0a160e;
+      border-color: var(--green);
+    }
+    a.btn.outline {
+      background: transparent;
+      color: var(--dim-green);
+      border-color: rgba(34,197,94,0.4);
+    }
+    a.btn.danger {
+      background: transparent;
+      color: var(--error);
+      border-color: rgba(248,113,113,0.4);
+    }
+    a.btn.muted {
+      background: transparent;
+      color: rgba(240,253,244,0.4);
+      border-color: var(--border);
+    }
+
+    /* Input group */
+    .input-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .input-group label {
+      font-size: 12px;
+      color: var(--dim-green);
+      white-space: nowrap;
+      min-width: 70px;
+    }
+    .input-group input, .input-group select {
+      flex: 1;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--near-white);
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+    }
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--green);
+    }
+
+    /* URL preview */
+    .url-preview {
+      font-size: 11px;
+      font-family: monospace;
+      color: rgba(240,253,244,0.35);
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+
+    /* Log */
+    #log {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--dim-green);
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      min-height: 60px;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-entry { margin-bottom: 4px; }
+    .log-entry span.ts { color: rgba(240,253,244,0.3); }
+    .log-entry span.ok { color: var(--green); }
+    .log-entry span.err { color: var(--error); }
+
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(240,253,244,0.2);
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Eco<span>Inference</span><small>.ai</small></h1>
+  </div>
+  <span class="badge">Deep-Link Tester</span>
+</header>
+
+<!-- ── Navigation ───────────────────────────────────────────── -->
+<section>
+  <h2>Navigation</h2>
+  <div class="btn-row">
+    <a class="btn primary"  href="ecoinference://chat"     onclick="log('ecoinference://chat')">💬 Chat</a>
+    <a class="btn primary"  href="ecoinference://models"   onclick="log('ecoinference://models')">🤖 Models</a>
+    <a class="btn primary"  href="ecoinference://settings" onclick="log('ecoinference://settings')">⚙️ Settings</a>
+  </div>
+</section>
+
+<!-- ── Load Model ────────────────────────────────────────────── -->
+<section>
+  <h2>Load Model</h2>
+  <div class="input-group">
+    <label>Model ID</label>
+    <select id="loadModelId" onchange="updateLoadUrl()">
+      <option value="gemma4-e2b-it">gemma4-e2b-it (E2B)</option>
+      <option value="gemma4-e4b-it">gemma4-e4b-it (E4B)</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="input-group" id="customIdRow" style="display:none">
+    <label>Custom ID</label>
+    <input id="customModelId" type="text" placeholder="my-model-id" oninput="updateLoadUrl()">
+  </div>
+  <div class="btn-row">
+    <a class="btn outline" id="loadBtn" href="#" onclick="fireLoad(event)">▶ Load Model</a>
+  </div>
+  <div class="url-preview" id="loadUrlPreview">ecoinference://models/load?id=gemma4-e2b-it</div>
+</section>
+
+<!-- ── Inference (x-callback-url) ───────────────────────────── -->
+<section>
+  <h2>Inference · x-callback-url</h2>
+  <div class="input-group">
+    <label>Prompt</label>
+    <input id="inferPrompt" type="text" value="Say hello in one sentence." oninput="updateInferUrl()">
+  </div>
+  <div class="input-group">
+    <label>Callback</label>
+    <input id="inferCallback" type="text" placeholder="https://… or leave blank" oninput="updateInferUrl()">
+  </div>
+  <div class="btn-row">
+    <a class="btn outline" id="inferBtn" href="#" onclick="fireInfer(event)">⚡ Send Inference</a>
+  </div>
+  <div class="url-preview" id="inferUrlPreview"></div>
+</section>
+
+<!-- ── Edge Cases ────────────────────────────────────────────── -->
+<section>
+  <h2>Edge Cases</h2>
+  <div class="btn-row">
+    <a class="btn muted" href="ecoinference://"
+       onclick="log('ecoinference:// (bare scheme)')">Bare scheme</a>
+    <a class="btn muted" href="ecoinference://unknown"
+       onclick="log('ecoinference://unknown (bad route)')">Bad route</a>
+    <a class="btn muted" href="ecoinference://models/load"
+       onclick="log('ecoinference://models/load (missing id)')">Load — no ID</a>
+    <a class="btn danger" href="ecoinference://models/load?id="
+       onclick="log('ecoinference://models/load?id= (empty id)')">Load — empty ID</a>
+  </div>
+</section>
+
+<!-- ── Log ──────────────────────────────────────────────────── -->
+<section>
+  <h2>Log <a class="btn muted" style="font-size:11px;padding:2px 8px;float:right" href="#" onclick="clearLog(event)">Clear</a></h2>
+  <div id="log"><span style="color:rgba(240,253,244,0.25)">Tap a button to log the URL fired…</span></div>
+</section>
+
+<footer>ecoinference:// · v1.0 · open in Safari (iOS) or Chrome (Android)</footer>
+
+<script>
+  // ── Helpers ──────────────────────────────────────────────────
+  function ts() {
+    const d = new Date();
+    return d.toTimeString().slice(0,8);
+  }
+
+  function log(url) {
+    const el = document.getElementById('log');
+    if (el.querySelector('span[style]')) el.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="ts">${ts()} </span><span class="ok">→</span> ${url}`;
+    el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function clearLog(e) {
+    e.preventDefault();
+    document.getElementById('log').innerHTML =
+      '<span style="color:rgba(240,253,244,0.25)">Log cleared.</span>';
+  }
+
+  // ── Load model ───────────────────────────────────────────────
+  function getModelId() {
+    const sel = document.getElementById('loadModelId').value;
+    if (sel === 'custom') return document.getElementById('customModelId').value.trim();
+    return sel;
+  }
+
+  function updateLoadUrl() {
+    const sel = document.getElementById('loadModelId').value;
+    document.getElementById('customIdRow').style.display =
+      sel === 'custom' ? 'flex' : 'none';
+    const id = getModelId();
+    const url = id
+      ? `ecoinference://models/load?id=${encodeURIComponent(id)}`
+      : 'ecoinference://models/load';
+    document.getElementById('loadUrlPreview').textContent = url;
+  }
+
+  function fireLoad(e) {
+    e.preventDefault();
+    const id = getModelId();
+    const url = id
+      ? `ecoinference://models/load?id=${encodeURIComponent(id)}`
+      : 'ecoinference://models/load';
+    log(url);
+    window.location.href = url;
+  }
+
+  // ── Inference ────────────────────────────────────────────────
+  function buildInferUrl() {
+    const prompt   = document.getElementById('inferPrompt').value.trim();
+    const callback = document.getElementById('inferCallback').value.trim();
+    let url = `ecoinference://x-callback-url/infer?prompt=${encodeURIComponent(prompt)}`;
+    if (callback) url += `&callback=${encodeURIComponent(callback)}`;
+    return url;
+  }
+
+  function updateInferUrl() {
+    document.getElementById('inferUrlPreview').textContent = buildInferUrl();
+  }
+
+  function fireInfer(e) {
+    e.preventDefault();
+    const url = buildInferUrl();
+    log(url);
+    window.location.href = url;
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  updateLoadUrl();
+  updateInferUrl();
+</script>
+</body>
+</html>
