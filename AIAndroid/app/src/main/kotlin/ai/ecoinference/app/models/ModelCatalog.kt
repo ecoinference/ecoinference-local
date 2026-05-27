@@ -10,7 +10,7 @@ package ai.ecoinference.app.models
 object ModelCatalog {
 
     private const val HF_BASE = "https://huggingface.co"
-    private const val PI_BASE = "https://models.example.invalid"
+    private const val PI_BASE = "https://models.example.invalid/models"
 
     // ── Gemma 4 — Android (.litertlm, LiteRT-LM Kotlin SDK) ──────────────────
 
