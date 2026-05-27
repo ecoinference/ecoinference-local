@@ -11,9 +11,14 @@ struct RootView: View {
     enum Tab { case chat, models, settings }
 
     var body: some View {
-        // ZStack base fills the raw UIWindow (black on OLED) behind the TabView.
+        // .ignoresSafeArea() on the ZStack makes its LAYOUT frame = full screen
+        // (not just the safe-area-inset region).  Color therefore fills the full
+        // screen without needing to extend beyond any drawing-context bounds.
+        // On iOS 26 (Liquid Glass) SwiftUI may clip a child's rendering to the
+        // parent ZStack's drawing context; putting ignoresSafeArea on the
+        // container avoids that entirely.
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            Color(.systemBackground)
             TabView(selection: $selectedTab) {
 
                 ChatView()
@@ -30,6 +35,7 @@ struct RootView: View {
             }
             .toolbarBackground(.visible, for: .tabBar)
         }
+        .ignoresSafeArea()
         // ── Deep link routing ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
             guard let action else { return }

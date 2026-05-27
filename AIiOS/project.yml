@@ -51,7 +51,8 @@ targets:
         PRODUCT_NAME: EcoInference
         INFOPLIST_FILE: AIiOS/Info.plist
         CODE_SIGN_ENTITLEMENTS: AIiOS/AIiOS.entitlements
-        DEVELOPMENT_TEAM: 487YFRCHU5
+        DEVELOPMENT_TEAM: 65P94N4JDC
+        CODE_SIGN_STYLE: Automatic
 
     sources:
       - path: AIiOS

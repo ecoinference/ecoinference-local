@@ -72,8 +72,8 @@ struct ChatView: View {
 
             // ── Compact title bar ─────────────────────────────────────────────
             // Safe area separates text from Dynamic Island — no top padding needed.
-            Text("Chat")
-                .font(.headline)
+            Text("EcoChat")
+                .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 8)
                 .background(Color(.systemBackground).ignoresSafeArea(edges: .top))

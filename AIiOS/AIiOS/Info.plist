@@ -57,11 +57,19 @@
 			<string>AppIcon</string>
 		</dict>
 	</dict>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>EcoInference uses your location for the get_location and show_map tools.</string>
+	<string>EcoInference uses your location to answer location-aware queries.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>EcoInference uses the camera for torch/flashlight tools and photo attachments.</string>
+	<string>EcoInference uses the camera to attach images to your messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>EcoInference accesses your photo library to attach images to messages.</string>
+	<string>EcoInference reads photos you choose to attach to messages.</string>
 </dict>
 </plist>

@@ -246,7 +246,8 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					3B57DDEBD1296F4DD6772352 = {
-						DevelopmentTeam = 487YFRCHU5;
+						DevelopmentTeam = 65P94N4JDC;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -382,7 +383,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 487YFRCHU5;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 65P94N4JDC;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
@@ -406,7 +408,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 487YFRCHU5;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 65P94N4JDC;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
