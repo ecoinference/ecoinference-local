@@ -38,12 +38,16 @@ struct EcoInferenceApp: App {
             execute: { _ in
                 do {
                     let loc = try await LocationService.shared.requestLocation()
-                    return loc.toolResult
+                    return .text(loc.toolResult)
                 } catch {
-                    return "Location unavailable: \(error.localizedDescription)"
+                    return .text(#"{"error":"Location unavailable: \#(error.localizedDescription)"}"#)
                 }
             }
         ))
+        HardwareTools.register()
+        AstralTools.register()
+        MathTools.register()
+        ChartTools.register()
     }
 
     var body: some Scene {

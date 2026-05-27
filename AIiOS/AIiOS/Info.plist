@@ -10,10 +10,8 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-	<key>CFBundleDisplayName</key>
-	<string>EcoInference</string>
 	<key>CFBundleName</key>
-	<string>EcoInference</string>
+	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -22,26 +20,18 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>ai.ecoinference.app</string>
+			<string>com.gemma4.aiserver</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>ecoinference</string>
+				<string>aiserver</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>UISupportedInterfaceOrientations</key>
+	<key>UIBackgroundModes</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
+		<string>audio</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>EcoInference uses your location to give the AI model context about where you are (for questions about sunrise, local weather, maps, etc.).</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>EcoInference needs access to your photo library so you can attach images to messages for analysis by the AI model.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>EcoInference needs access to your camera so you can photograph objects for analysis by the AI model.</string>
 </dict>
 </plist>

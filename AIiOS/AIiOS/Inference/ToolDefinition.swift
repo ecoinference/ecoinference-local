@@ -13,8 +13,10 @@ struct ToolDefinition {
     let parametersDoc:   String
     /// Example args JSON for the system prompt, e.g. "{}".
     let argsExample:     String
-    /// The app-side function that performs the action and returns a result string.
-    let execute:         ([String: Any]) async -> String
+    /// The app-side function that performs the action and returns a ToolResult.
+    /// .text  → JSON/string the model reads.
+    /// .image → PNG chart for the UI; caption goes to the model.
+    let execute:         ([String: Any]) async -> ToolResult
 }
 
 // MARK: - ToolRegistry

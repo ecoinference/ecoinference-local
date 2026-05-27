@@ -7,10 +7,11 @@ private let chatLog = Logger(subsystem: "ai.ecoinference.app", category: "ChatVi
 // MARK: - Message model
 
 private struct Message: Identifiable {
-    let id    = UUID()
-    let role  : Role
-    var text  : String
-    var image : UIImage? = nil  // user messages: attached thumbnail for display
+    let id         = UUID()
+    let role       : Role
+    var text       : String
+    var image      : UIImage? = nil   // user messages: attached thumbnail for display
+    var chartImage : UIImage? = nil   // assistant messages: tool-generated chart
 
     enum Role {
         case user
@@ -378,7 +379,8 @@ struct ChatView: View {
         let targetId        = assistantMsg.id
 
         inferTask = Task.detached(priority: .userInitiated) {
-            var taskHistory = historySnapshot
+            var taskHistory     = historySnapshot
+            var pendingChart: UIImage? = nil
 
             chatLog.info("  Task started turn=\(turnIndex)")
             do {
@@ -405,19 +407,25 @@ struct ChatView: View {
                     }
 
                     // Execute the tool
-                    let toolResult: String
+                    let toolResultVal: ToolResult
                     if let tool = ToolRegistry.shared.find(toolCall.toolName) {
-                        toolResult = await tool.execute(toolCall.args)
+                        toolResultVal = await tool.execute(toolCall.args)
                     } else {
-                        toolResult = "Tool '\(toolCall.toolName)' not found."
+                        toolResultVal = .text("Tool '\(toolCall.toolName)' not found.")
                     }
-                    chatLog.info("  tool result: \(toolResult.prefix(80))")
+                    let toolResultText = toolResultVal.modelText
 
-                    // Update tool bubble with result
+                    // Capture any chart image
+                    if case .image(let img, _) = toolResultVal {
+                        pendingChart = img
+                    }
+                    chatLog.info("  tool result: \(toolResultText.prefix(80))")
+
+                    // Update tool bubble with result summary
                     await MainActor.run {
                         if let idx = messages.firstIndex(where: { $0.id == toolMsgId }) {
                             messages[idx] = Message(role: .tool(name: toolCall.toolName),
-                                                    text: toolResult)
+                                                    text: toolResultText)
                         }
                         scrollToBottom()
                     }
@@ -425,7 +433,7 @@ struct ChatView: View {
                     // Append to history and add new assistant placeholder
                     taskHistory.append(InferenceMessage(role: "assistant", text: response))
                     taskHistory.append(AgentLoop.toolResultMessage(toolName: toolCall.toolName,
-                                                                   result:   toolResult))
+                                                                   result:   toolResultText))
                     let nextAssistantMsg = Message(role: .assistant, text: "")
                     let nextTargetId: UUID = await MainActor.run {
                         messages.append(nextAssistantMsg)
@@ -444,11 +452,13 @@ struct ChatView: View {
                 // ── Final response ────────────────────────────────────────────
                 taskHistory.append(InferenceMessage(role: "assistant", text: response))
                 guard !Task.isCancelled else { return }
+                let chartToAttach = pendingChart
                 await MainActor.run {
                     // Update whichever assistant bubble is current (streamingId)
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
-                        messages[idx].text = response
+                        messages[idx].text       = response
+                        messages[idx].chartImage = chartToAttach
                     }
                     inferenceHistory = taskHistory
                     scrollToBottom()
@@ -619,18 +629,27 @@ private struct MessageBubble: View {
     // ── Assistant bubble ──────────────────────────────────────────────────────
     private var assistantBubble: some View {
         HStack(alignment: .bottom) {
-            Group {
-                if isStreaming && message.text.isEmpty {
-                    ThinkingDots()
-                        .padding(.horizontal, 16).padding(.vertical, 12)
-                } else {
-                    Text(message.text)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
+            VStack(alignment: .leading, spacing: 8) {
+                Group {
+                    if isStreaming && message.text.isEmpty {
+                        ThinkingDots()
+                            .padding(.horizontal, 16).padding(.vertical, 12)
+                    } else {
+                        Text(message.text)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
+                    }
+                }
+                .background(Color(.secondarySystemBackground))
+                .foregroundStyle(.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                if let chart = message.chartImage {
+                    Image(uiImage: chart)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
-            .background(Color(.secondarySystemBackground))
-            .foregroundStyle(.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
             Spacer(minLength: 40)
         }
     }

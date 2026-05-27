@@ -7,46 +7,51 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00CA93B772CB0B54792A80EA /* AIiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948576861D1B5E64462F2D6 /* AIiOSApp.swift */; };
-		18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; };
-		1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5575423A70E4EFBDEF641903 /* ApiModels.swift */; };
-		24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		49D0AB481804FC3FC942B2CF /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6E5E00261378B45C281246 /* SettingsService.swift */; };
-		57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */; };
-		67617D8834DD9FE217942EEA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */; };
-		689B14AAFBCA1FAE6577538E /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; };
-		7FE5BA49E0F231E989694333 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EF6509717621980EF5701E /* AppState.swift */; };
-		8C8C7617212C28F696F0646C /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C88C8C5E98E94753A85860 /* ModelInfo.swift */; };
-		A4CEC31E08311287D678DDC3 /* libLiteRtMetalAccelerator.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */; };
-		B9ECD4048284260BD8F440C3 /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		C00270A1D2F8100A2630A8F0 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */; };
-		DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */; };
-		F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E71EF145C50AA63582F547E /* DownloadService.swift */; };
-		167F6CF845D266AFF5869BE2 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE18F57AD215F158553B1B8C /* DebugLogger.swift */; };
-		8955AC4D996688223D8E8436 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */; };
-		6C708F9743BEEA22496D47D9 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31FDFF7D6340B3889BBB90B /* ChatView.swift */; };
-		B625B7060E057A1375C67D2B /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */; };
-		9427E70309498CDBF08B3846 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */; };
-		A1B2C3D4E5F601234567890A /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789FF /* TestView.swift */; };
-		BB00110022003300AA000001 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300AA000002 /* LocationService.swift */; };
-		BB00110022003300BB000001 /* PythonCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300BB000002 /* PythonCommand.swift */; };
-		BB00110022003300CC000001 /* ToolDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300CC000002 /* ToolDefinition.swift */; };
-		BB00110022003300DD000001 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00110022003300DD000002 /* AgentLoop.swift */; };
+		085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6006B64195BA7BEE44A142 /* SettingsView.swift */; };
+		08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABDAD50B9218431BBD5D0AD /* ChatView.swift */; };
+		0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7817202873F60215D64492 /* ApiModels.swift */; };
+		2655D9612602662244AD77E9 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317AD08BD60E54967FB94A71 /* SettingsService.swift */; };
+		2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; };
+		2A1C6826AC6E35910349AFAA /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		33DAF480D857839E6CAA6045 /* AIiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */; };
+		3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */; };
+		4718B5169B2B8741B7010B70 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 82302E30D1D9900FA1613871 /* Assets.xcassets */; };
+		4847408AAADA7756673A42D8 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F590FB8D3531E83DE497E7D /* DebugLogger.swift */; };
+		684F677333F44AAB60DE5903 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23521B3F2ED10C8615DAE214 /* LocationService.swift */; };
+		6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */; };
+		6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5757F96D605803F0D991C8D /* DownloadService.swift */; };
+		73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACFB2917A419EA15F57507C3 /* RootView.swift */; };
+		7C247C21E439FD23B25561D0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC649D8C9041D42CFA1757A /* AgentLoop.swift */; };
+		806D779F3909DB5956C4C43E /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */; };
+		8502C1F818D11ED52FED8EBC /* ToolDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */; };
+		86227D373E99F448BEC1A26D /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */; };
+		86B71E28926B962999DA46A1 /* LiteRtLmEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DDEC985502830F88444FB5F /* LiteRtLmEngine.swift */; };
+		9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2939FAA11821E3293733391A /* TestView.swift */; };
+		9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7143B3527A6184E9D6833F63 /* HardwareTools.swift */; };
+		A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC39CF38328F273C28DCECD0 /* ToolResult.swift */; };
+		A93B2AFBB1007B0C4857C8DA /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AFD97C1F00ABA0454B76B043 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5C3A369A04C20CF3DA3BF8 /* AppState.swift */; };
+		C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; };
+		DDCEBB06E9E03F2B3C1A9E33 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */; };
+		DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD5FAF636339EAFE648372D /* PythonCommand.swift */; };
+		EA663200CFB9C922C636B592 /* ChartTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6352949B2B9DDDEDD4D897A /* ChartTools.swift */; };
+		EBA520D8558A635F24094287 /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F156A24AF12C27D2DA0D314F /* AstralTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */; };
+		F38B25B916AB30E791F08022 /* MathTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C7FFBBADD4F233987049D14 /* MathTools.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E2CF8C286AF356231D824C51 /* Embed Frameworks */ = {
+		2187E11F6CFD30A935B54744 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				B9ECD4048284260BD8F440C3 /* libLiteRtLm.xcframework in Embed Frameworks */,
-				49D0AB481804FC3FC942B2CF /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */,
-				8C8C7617212C28F696F0646C /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */,
-				24CACFF90FA5C65A43088BF3 /* libStreamProxy.xcframework in Embed Frameworks */,
+				A93B2AFBB1007B0C4857C8DA /* libLiteRtLm.xcframework in Embed Frameworks */,
+				EBA520D8558A635F24094287 /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */,
+				0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */,
+				2A1C6826AC6E35910349AFAA /* libStreamProxy.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -54,162 +59,171 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1C0361C19D1024C961B6CCFC /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
-		1F78B51514F26DFB18DE0304 /* AIServer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIServer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		21867825B5ABA12D61228EEA /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
-		47EF6509717621980EF5701E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		4C6E5E00261378B45C281246 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
-		4D264C438947D35E525C0B18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceService.swift; sourceTree = "<group>"; };
-		52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libGemmaModelConstraintProvider.xcframework; path = Frameworks/libGemmaModelConstraintProvider.xcframework; sourceTree = "<group>"; };
-		5575423A70E4EFBDEF641903 /* ApiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiModels.swift; sourceTree = "<group>"; };
-		56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtLm.xcframework; path = Frameworks/libLiteRtLm.xcframework; sourceTree = "<group>"; };
-		6E71EF145C50AA63582F547E /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
-		FE18F57AD215F158553B1B8C /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogger.swift; sourceTree = "<group>"; };
-		A2C88C8C5E98E94753A85860 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
-		BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
-		C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
-		CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRtLmEngine.swift; sourceTree = "<group>"; };
-		D948576861D1B5E64462F2D6 /* AIiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIiOSApp.swift; sourceTree = "<group>"; };
-		F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
-		19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		E31FDFF7D6340B3889BBB90B /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
-		CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60123456789FF /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
-		BB00110022003300AA000002 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
-		BB00110022003300BB000002 /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
-		BB00110022003300CC000002 /* ToolDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolDefinition.swift; sourceTree = "<group>"; };
-		BB00110022003300DD000002 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
+		0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
+		0C6006B64195BA7BEE44A142 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		23521B3F2ED10C8615DAE214 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
+		2939FAA11821E3293733391A /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceService.swift; sourceTree = "<group>"; };
+		317AD08BD60E54967FB94A71 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
+		3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIiOSApp.swift; sourceTree = "<group>"; };
+		50206C46F81F7553590E4A1A /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
+		58A8051299A89A6166861451 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libGemmaModelConstraintProvider.xcframework; path = Frameworks/libGemmaModelConstraintProvider.xcframework; sourceTree = "<group>"; };
+		61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
+		6A5C3A369A04C20CF3DA3BF8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		6A7817202873F60215D64492 /* ApiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiModels.swift; sourceTree = "<group>"; };
+		6F590FB8D3531E83DE497E7D /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogger.swift; sourceTree = "<group>"; };
+		7143B3527A6184E9D6833F63 /* HardwareTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareTools.swift; sourceTree = "<group>"; };
+		7E42818491234BF49436D57E /* libLiteRtLm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtLm.xcframework; path = Frameworks/libLiteRtLm.xcframework; sourceTree = "<group>"; };
+		81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
+		82302E30D1D9900FA1613871 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8C7FFBBADD4F233987049D14 /* MathTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathTools.swift; sourceTree = "<group>"; };
+		8DDEC985502830F88444FB5F /* LiteRtLmEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteRtLmEngine.swift; sourceTree = "<group>"; };
+		AC39CF38328F273C28DCECD0 /* ToolResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolResult.swift; sourceTree = "<group>"; };
+		AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolDefinition.swift; sourceTree = "<group>"; };
+		ACFB2917A419EA15F57507C3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		ADC649D8C9041D42CFA1757A /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
+		B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstralTools.swift; sourceTree = "<group>"; };
+		BABDAD50B9218431BBD5D0AD /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		C6352949B2B9DDDEDD4D897A /* ChartTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTools.swift; sourceTree = "<group>"; };
+		CDD5FAF636339EAFE648372D /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
+		F5757F96D605803F0D991C8D /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
+		F8F30C2E93722C6645941BA9 /* AIiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AIiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
+		FDA0060B41B5BC1A612164CF /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		4160AA751415BDB35C4AD061 /* Frameworks */ = {
+		B6AEE698C482A3765D32FB10 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				689B14AAFBCA1FAE6577538E /* libLiteRtLm.xcframework in Frameworks */,
-				18ABC443051316A1DBB85EA7 /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
-				A4CEC31E08311287D678DDC3 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
-				C00270A1D2F8100A2630A8F0 /* libStreamProxy.xcframework in Frameworks */,
+				2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */,
+				3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
+				C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
+				6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		16CCFDDF75AB3610364FF196 /* Frameworks */ = {
+		0AEC69AEB7C627DD26C9E0E1 /* Tools */ = {
 			isa = PBXGroup;
 			children = (
-				52D91E44AE5DE788460AB939 /* libGemmaModelConstraintProvider.xcframework */,
-				56E9EB4F7BB94ECB4F3B009B /* libLiteRtLm.xcframework */,
-				BD72ED0F976A7897A5E9FDEB /* libLiteRtMetalAccelerator.xcframework */,
-				C90EA5B151A5912E86D66C4F /* libStreamProxy.xcframework */,
+				B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */,
+				C6352949B2B9DDDEDD4D897A /* ChartTools.swift */,
+				7143B3527A6184E9D6833F63 /* HardwareTools.swift */,
+				8C7FFBBADD4F233987049D14 /* MathTools.swift */,
+				AC39CF38328F273C28DCECD0 /* ToolResult.swift */,
 			);
-			name = Frameworks;
+			path = Tools;
 			sourceTree = "<group>";
 		};
-		7E64FB5EBF6D9DDEF74E7B1E = {
+		202D7DB7AC6390FA0AB48BD5 /* AIiOS */ = {
 			isa = PBXGroup;
 			children = (
-				FCC4FFAB055A61766CC3A20B /* AIiOS */,
-				C0E7EDF9DA119301BD459A88 /* AIiOS */,
-				16CCFDDF75AB3610364FF196 /* Frameworks */,
-				D439ECB489426E66E161B95E /* Products */,
+				FDA0060B41B5BC1A612164CF /* AIiOS.entitlements */,
+				3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */,
+				6A5C3A369A04C20CF3DA3BF8 /* AppState.swift */,
+				82302E30D1D9900FA1613871 /* Assets.xcassets */,
+				BABDAD50B9218431BBD5D0AD /* ChatView.swift */,
+				58A8051299A89A6166861451 /* Info.plist */,
+				61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */,
+				0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */,
+				ACFB2917A419EA15F57507C3 /* RootView.swift */,
+				0C6006B64195BA7BEE44A142 /* SettingsView.swift */,
+				2939FAA11821E3293733391A /* TestView.swift */,
+				7D459ADB81CE7883AF943388 /* Inference */,
+				6EF6B9015A1BB4870277F334 /* Models */,
+				6B5F45C348400A26EBD4B47D /* Services */,
+				0AEC69AEB7C627DD26C9E0E1 /* Tools */,
 			);
+			path = AIiOS;
 			sourceTree = "<group>";
 		};
-		97F2D4387832390B3EFDB9D4 /* Services */ = {
+		50137F35D91D6E722D6FC3A5 /* AIiOS */ = {
 			isa = PBXGroup;
 			children = (
-				6E71EF145C50AA63582F547E /* DownloadService.swift */,
-				FE18F57AD215F158553B1B8C /* DebugLogger.swift */,
-				4F1A570566DEFAACBA5C7F61 /* InferenceService.swift */,
-				4C6E5E00261378B45C281246 /* SettingsService.swift */,
-				BB00110022003300AA000002 /* LocationService.swift */,
-				BB00110022003300BB000002 /* PythonCommand.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		A3A6C1DF1E9CF166E98169A2 /* Inference */ = {
-			isa = PBXGroup;
-			children = (
-				CCD96EDDCC145EFAB7D58F06 /* LiteRtLmEngine.swift */,
-				BB00110022003300CC000002 /* ToolDefinition.swift */,
-				BB00110022003300DD000002 /* AgentLoop.swift */,
-			);
-			path = Inference;
-			sourceTree = "<group>";
-		};
-		A7B0835BBF90A57DE59EE34F /* Server */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Server;
-			sourceTree = "<group>";
-		};
-		BD30DEF6CBE86F6615D3C2B0 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				5575423A70E4EFBDEF641903 /* ApiModels.swift */,
-				A2C88C8C5E98E94753A85860 /* ModelInfo.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		C0E7EDF9DA119301BD459A88 /* AIiOS */ = {
-			isa = PBXGroup;
-			children = (
-				1C0361C19D1024C961B6CCFC /* Local.xcconfig */,
+				50206C46F81F7553590E4A1A /* Local.xcconfig */,
 			);
 			name = AIiOS;
 			path = .;
 			sourceTree = "<group>";
 		};
-		D439ECB489426E66E161B95E /* Products */ = {
+		519339993754C1F257EC9139 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1F78B51514F26DFB18DE0304 /* AIServer.app */,
+				F8F30C2E93722C6645941BA9 /* AIiOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		FCC4FFAB055A61766CC3A20B /* AIiOS */ = {
+		6B5F45C348400A26EBD4B47D /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				21867825B5ABA12D61228EEA /* AIiOS.entitlements */,
-				D948576861D1B5E64462F2D6 /* AIiOSApp.swift */,
-				19597EEEC7ACFA0A53AEF0A5 /* RootView.swift */,
-				E31FDFF7D6340B3889BBB90B /* ChatView.swift */,
-				EF8EF70DB3C298BDA5A47937 /* ModelsView.swift */,
-				CD59E0EB71DC1D5B631D2753 /* SettingsView.swift */,
-			A1B2C3D4E5F60123456789FF /* TestView.swift */,
-				47EF6509717621980EF5701E /* AppState.swift */,
-				CAC3A9D5F90A76AC2F93CF5B /* Assets.xcassets */,
-				4D264C438947D35E525C0B18 /* Info.plist */,
-				F9C0024612A777E4BA7D50BE /* LiteRtLm-Bridging-Header.h */,
-				A3A6C1DF1E9CF166E98169A2 /* Inference */,
-				BD30DEF6CBE86F6615D3C2B0 /* Models */,
-				A7B0835BBF90A57DE59EE34F /* Server */,
-				97F2D4387832390B3EFDB9D4 /* Services */,
-				16AAA087276A069D74934E90 /* UI */,
+				6F590FB8D3531E83DE497E7D /* DebugLogger.swift */,
+				F5757F96D605803F0D991C8D /* DownloadService.swift */,
+				2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */,
+				23521B3F2ED10C8615DAE214 /* LocationService.swift */,
+				CDD5FAF636339EAFE648372D /* PythonCommand.swift */,
+				317AD08BD60E54967FB94A71 /* SettingsService.swift */,
 			);
-			path = AIiOS;
+			path = Services;
+			sourceTree = "<group>";
+		};
+		6EF6B9015A1BB4870277F334 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6A7817202873F60215D64492 /* ApiModels.swift */,
+				25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7D459ADB81CE7883AF943388 /* Inference */ = {
+			isa = PBXGroup;
+			children = (
+				ADC649D8C9041D42CFA1757A /* AgentLoop.swift */,
+				8DDEC985502830F88444FB5F /* LiteRtLmEngine.swift */,
+				AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */,
+			);
+			path = Inference;
+			sourceTree = "<group>";
+		};
+		D43134CB4495D3C731AC267F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */,
+				7E42818491234BF49436D57E /* libLiteRtLm.xcframework */,
+				F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */,
+				81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		EFAB593B1CE2C02C3B4C05FA = {
+			isa = PBXGroup;
+			children = (
+				202D7DB7AC6390FA0AB48BD5 /* AIiOS */,
+				50137F35D91D6E722D6FC3A5 /* AIiOS */,
+				D43134CB4495D3C731AC267F /* Frameworks */,
+				519339993754C1F257EC9139 /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B1035ACCB8D35645FBB6BF9F /* AIiOS */ = {
+		3B57DDEBD1296F4DD6772352 /* AIiOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIiOS" */;
+			buildConfigurationList = CF6307830E5A377618D83269 /* Build configuration list for PBXNativeTarget "AIiOS" */;
 			buildPhases = (
-				F6470A462D797079CFD89BCE /* Sources */,
-				003D83752F0D717511CD285A /* Resources */,
-				4160AA751415BDB35C4AD061 /* Frameworks */,
-				E2CF8C286AF356231D824C51 /* Embed Frameworks */,
+				3B4A4685481675B3C9F1535C /* Sources */,
+				F236B3F0B3C75035512CFF07 /* Resources */,
+				B6AEE698C482A3765D32FB10 /* Frameworks */,
+				2187E11F6CFD30A935B54744 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -219,128 +233,87 @@
 			packageProductDependencies = (
 			);
 			productName = AIiOS;
-			productReference = 1F78B51514F26DFB18DE0304 /* AIServer.app */;
+			productReference = F8F30C2E93722C6645941BA9 /* AIiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		E72E54191B4633241C691647 /* Project object */ = {
+		A426503E2376294FDAF6D6FA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+				};
 			};
-			buildConfigurationList = 25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIiOS" */;
+			buildConfigurationList = 98457256D8125A1C875F8C23 /* Build configuration list for PBXProject "AIiOS" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
 				en,
 			);
-			mainGroup = 7E64FB5EBF6D9DDEF74E7B1E;
+			mainGroup = EFAB593B1CE2C02C3B4C05FA;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = D439ECB489426E66E161B95E /* Products */;
+			productRefGroup = 519339993754C1F257EC9139 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B1035ACCB8D35645FBB6BF9F /* AIiOS */,
+				3B57DDEBD1296F4DD6772352 /* AIiOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		003D83752F0D717511CD285A /* Resources */ = {
+		F236B3F0B3C75035512CFF07 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				67617D8834DD9FE217942EEA /* Assets.xcassets in Resources */,
+				4718B5169B2B8741B7010B70 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		F6470A462D797079CFD89BCE /* Sources */ = {
+		3B4A4685481675B3C9F1535C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00CA93B772CB0B54792A80EA /* AIiOSApp.swift in Sources */,
-				1E508070FD38D3BD160F46C3 /* ApiModels.swift in Sources */,
-				7FE5BA49E0F231E989694333 /* AppState.swift in Sources */,
-				F1B24CED39739F963354CE69 /* DownloadService.swift in Sources */,
-				167F6CF845D266AFF5869BE2 /* DebugLogger.swift in Sources */,
-				DAA307580444AD32AE0574B2 /* InferenceService.swift in Sources */,
-				57FDECAF97D194DBE06B5331 /* LiteRtLmEngine.swift in Sources */,
-				9D81176F375501D5AFD15A7E /* ModelInfo.swift in Sources */,
-				4FD062BE337DD648A6D6C7C6 /* SettingsService.swift in Sources */,
-				8955AC4D996688223D8E8436 /* RootView.swift in Sources */,
-				6C708F9743BEEA22496D47D9 /* ChatView.swift in Sources */,
-				B625B7060E057A1375C67D2B /* ModelsView.swift in Sources */,
-				9427E70309498CDBF08B3846 /* SettingsView.swift in Sources */,
-			A1B2C3D4E5F601234567890A /* TestView.swift in Sources */,
-			BB00110022003300AA000001 /* LocationService.swift in Sources */,
-			BB00110022003300BB000001 /* PythonCommand.swift in Sources */,
-			BB00110022003300CC000001 /* ToolDefinition.swift in Sources */,
-			BB00110022003300DD000001 /* AgentLoop.swift in Sources */,
+				33DAF480D857839E6CAA6045 /* AIiOSApp.swift in Sources */,
+				7C247C21E439FD23B25561D0 /* AgentLoop.swift in Sources */,
+				2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */,
+				AFD97C1F00ABA0454B76B043 /* AppState.swift in Sources */,
+				F156A24AF12C27D2DA0D314F /* AstralTools.swift in Sources */,
+				EA663200CFB9C922C636B592 /* ChartTools.swift in Sources */,
+				08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */,
+				4847408AAADA7756673A42D8 /* DebugLogger.swift in Sources */,
+				6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */,
+				9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */,
+				DDCEBB06E9E03F2B3C1A9E33 /* InferenceService.swift in Sources */,
+				86B71E28926B962999DA46A1 /* LiteRtLmEngine.swift in Sources */,
+				684F677333F44AAB60DE5903 /* LocationService.swift in Sources */,
+				F38B25B916AB30E791F08022 /* MathTools.swift in Sources */,
+				806D779F3909DB5956C4C43E /* ModelInfo.swift in Sources */,
+				86227D373E99F448BEC1A26D /* ModelsView.swift in Sources */,
+				DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */,
+				73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */,
+				2655D9612602662244AD77E9 /* SettingsService.swift in Sources */,
+				085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */,
+				9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */,
+				8502C1F818D11ED52FED8EBC /* ToolDefinition.swift in Sources */,
+				A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		14285BA8A95C0B6C635AF231 /* Debug */ = {
+		0782DA190DEFFFE2DE228057 /* Release */ = {
 			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 65P94N4JDC;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"Frameworks\"",
-				);
-				INFOPLIST_FILE = AIiOS/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
-				PRODUCT_NAME = EcoInference;
-				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		44AD4A5641C1B283B2123E51 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 65P94N4JDC;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"Frameworks\"",
-				);
-				INFOPLIST_FILE = AIiOS/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
-				PRODUCT_NAME = EcoInference;
-				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		CC91CFD83F5E4C72060AA57D /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1C0361C19D1024C961B6CCFC /* Local.xcconfig */;
+			baseConfigurationReference = 50206C46F81F7553590E4A1A /* Local.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -400,9 +373,55 @@
 			};
 			name = Release;
 		};
-		DD5595804073BFF2953CF814 /* Debug */ = {
+		0E327A228DAD8B441B9E13B1 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1C0361C19D1024C961B6CCFC /* Local.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				INFOPLIST_FILE = AIiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
+				PRODUCT_NAME = AIServer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		2E178F743841009582434E6C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				INFOPLIST_FILE = AIiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
+				PRODUCT_NAME = AIServer;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E41CE5E2D8C2A9249D7C7CA7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 50206C46F81F7553590E4A1A /* Local.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -472,25 +491,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		25C02CBD54C9477C257FFB32 /* Build configuration list for PBXProject "AIiOS" */ = {
+		98457256D8125A1C875F8C23 /* Build configuration list for PBXProject "AIiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				DD5595804073BFF2953CF814 /* Debug */,
-				CC91CFD83F5E4C72060AA57D /* Release */,
+				E41CE5E2D8C2A9249D7C7CA7 /* Debug */,
+				0782DA190DEFFFE2DE228057 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		FA442BCD79B3B8E58AB6D8A0 /* Build configuration list for PBXNativeTarget "AIiOS" */ = {
+		CF6307830E5A377618D83269 /* Build configuration list for PBXNativeTarget "AIiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14285BA8A95C0B6C635AF231 /* Debug */,
-				44AD4A5641C1B283B2123E51 /* Release */,
+				2E178F743841009582434E6C /* Debug */,
+				0E327A228DAD8B441B9E13B1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = E72E54191B4633241C691647 /* Project object */;
+	rootObject = A426503E2376294FDAF6D6FA /* Project object */;
 }
