@@ -14,15 +14,15 @@ object UrlTools {
             execute       = { args ->
                 val match = Regex("\"url\"\\s*:\\s*\"(.*?)\"").find(args)
                 val url   = match?.groupValues?.get(1)?.trim() ?: ""
-                if (url.isBlank()) return@ToolDefinition "Error: 'url' is required"
+                if (url.isBlank()) return@ToolDefinition ToolResult.Text("""{"error":"'url' is required"}""")
                 try {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(intent)
-                    """{"opened":"$url"}"""
+                    ToolResult.Text("""{"opened":"$url"}""")
                 } catch (e: Exception) {
-                    """{"error":"${e.message}"}"""
+                    ToolResult.Text("""{"error":"${e.message}"}""")
                 }
             }
         ))

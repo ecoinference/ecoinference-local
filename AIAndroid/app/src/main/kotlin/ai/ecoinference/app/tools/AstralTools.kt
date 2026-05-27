@@ -32,7 +32,7 @@ object AstralTools {
             argsExample   = "{}",
             execute       = { _ ->
                 val result = moonPhase()
-                """{"phase":"${result.name}","illumination_pct":${result.illuminationPct},"days_into_cycle":${"%.1f".format(result.daysIntoCycle)},"days_to_full":${"%.1f".format(result.daysToFull)},"days_to_new":${"%.1f".format(result.daysToNew)}}"""
+                ToolResult.Text("""{"phase":"${result.name}","illumination_pct":${result.illuminationPct},"days_into_cycle":${"%.1f".format(result.daysIntoCycle)},"days_to_full":${"%.1f".format(result.daysToFull)},"days_to_new":${"%.1f".format(result.daysToNew)}}""")
             }
         ))
     }
@@ -44,8 +44,8 @@ object AstralTools {
             parametersDoc = "latitude: number, longitude: number",
             argsExample   = "{\"latitude\":37.7749,\"longitude\":-122.4194}",
             execute       = { args ->
-                val lat = extractDouble(args, "latitude")  ?: return@ToolDefinition """{"error":"latitude required"}"""
-                val lon = extractDouble(args, "longitude") ?: return@ToolDefinition """{"error":"longitude required"}"""
+                val lat = extractDouble(args, "latitude")  ?: return@ToolDefinition ToolResult.Text("""{"error":"latitude required"}""")
+                val lon = extractDouble(args, "longitude") ?: return@ToolDefinition ToolResult.Text("""{"error":"longitude required"}""")
                 val tz  = java.util.TimeZone.getDefault()
                 val cal = java.util.Calendar.getInstance(tz)
                 val year  = cal.get(java.util.Calendar.YEAR)
@@ -53,9 +53,9 @@ object AstralTools {
                 val day   = cal.get(java.util.Calendar.DAY_OF_MONTH)
                 val times = sunTimes(lat, lon, year, month, day, tz.rawOffset / 3600000.0)
                 if (times == null) {
-                    """{"error":"Sun does not rise or set at this location on this date (polar day/night)"}"""
+                    ToolResult.Text("""{"error":"Sun does not rise or set at this location on this date (polar day/night)"}""")
                 } else {
-                    """{"sunrise":"${times.sunrise}","solar_noon":"${times.solarNoon}","sunset":"${times.sunset}","day_length_minutes":${times.dayLengthMinutes}}"""
+                    ToolResult.Text("""{"sunrise":"${times.sunrise}","solar_noon":"${times.solarNoon}","sunset":"${times.sunset}","day_length_minutes":${times.dayLengthMinutes}}""")
                 }
             }
         ))
@@ -68,8 +68,8 @@ object AstralTools {
             parametersDoc = "latitude: number, longitude: number",
             argsExample   = "{\"latitude\":37.7749,\"longitude\":-122.4194}",
             execute       = { args ->
-                val lat = extractDouble(args, "latitude")  ?: return@ToolDefinition """{"error":"latitude required"}"""
-                val lon = extractDouble(args, "longitude") ?: return@ToolDefinition """{"error":"longitude required"}"""
+                val lat = extractDouble(args, "latitude")  ?: return@ToolDefinition ToolResult.Text("""{"error":"latitude required"}""")
+                val lon = extractDouble(args, "longitude") ?: return@ToolDefinition ToolResult.Text("""{"error":"longitude required"}""")
                 val tz  = java.util.TimeZone.getDefault()
                 val cal = java.util.Calendar.getInstance(tz)
                 val year  = cal.get(java.util.Calendar.YEAR)
@@ -78,7 +78,7 @@ object AstralTools {
                 val tzOff = tz.rawOffset / 3600000.0
                 val civil    = twilightTimes(lat, lon, year, month, day, tzOff, 6.0)
                 val nautical = twilightTimes(lat, lon, year, month, day, tzOff, 12.0)
-                """{"civil_dawn":"${civil?.first ?: "N/A"}","civil_dusk":"${civil?.second ?: "N/A"}","nautical_dawn":"${nautical?.first ?: "N/A"}","nautical_dusk":"${nautical?.second ?: "N/A"}"}"""
+                ToolResult.Text("""{"civil_dawn":"${civil?.first ?: "N/A"}","civil_dusk":"${civil?.second ?: "N/A"}","nautical_dawn":"${nautical?.first ?: "N/A"}","nautical_dusk":"${nautical?.second ?: "N/A"}"}""")
             }
         ))
     }

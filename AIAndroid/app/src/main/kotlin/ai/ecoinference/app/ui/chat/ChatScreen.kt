@@ -29,11 +29,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.inference.InferenceMessage
 import ai.ecoinference.app.inference.InferenceService
+import ai.ecoinference.app.tools.AgentToken
 import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
 import ai.ecoinference.app.ui.theme.EcoWordmark
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Composable
@@ -115,18 +117,40 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 val inference   = InferenceService.getInstance(context)
                 val sb          = StringBuilder()
 
+                // Both paths unified as Flow<AgentToken> ─────────────────────
+                // Agent path:  runAgentLoop emits Text (full response) then
+                //              ChartImage tokens for any charts.
+                // Direct path: each streamed token arrives as AgentToken.Text,
+                //              giving live streaming UX without chart support.
                 val stream = if (ToolRegistry.all().isNotEmpty())
                     runAgentLoop(inferenceMessages, inference, maxTokens, temperature)
                 else
                     inference.chatStream(inferenceMessages, maxTokens, temperature)
+                        .map { AgentToken.Text(it) }
+
+                var pendingChart: ByteArray? = null
 
                 stream.collect { token ->
-                    sb.append(token)
-                    messages = messages.dropLast(1) +
-                        ChatMessage(role = "assistant", text = sb.toString(), isStreaming = true)
+                    when (token) {
+                        is AgentToken.Text -> {
+                            sb.append(token.chunk)
+                            messages = messages.dropLast(1) +
+                                ChatMessage(role = "assistant", text = sb.toString(), isStreaming = true)
+                        }
+                        is AgentToken.ChartImage -> {
+                            // Store first chart; additional charts overwrite (rare edge case)
+                            pendingChart = token.bytes
+                        }
+                    }
                 }
+
                 messages = messages.dropLast(1) +
-                    ChatMessage(role = "assistant", text = sb.toString(), isStreaming = false)
+                    ChatMessage(
+                        role       = "assistant",
+                        text       = sb.toString(),
+                        chartBytes = pendingChart,
+                        isStreaming = false,
+                    )
             } catch (e: Exception) {
                 messages = messages.dropLast(1) +
                     ChatMessage(role = "assistant", text = "Error: ${e.message}")

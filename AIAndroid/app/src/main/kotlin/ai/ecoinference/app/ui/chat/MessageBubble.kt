@@ -10,23 +10,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import ai.ecoinference.app.ui.theme.EcoColors
 
+/**
+ * A single chat message.
+ *
+ * [imageBytes]  — INPUT image attached by the user (e.g. photo for vision).
+ * [chartBytes]  — OUTPUT PNG rendered by a chart tool; displayed inline below text.
+ */
+@Suppress("ArrayInDataClass")
 data class ChatMessage(
-    val role:        String,   // "user" | "assistant"
+    val role:        String,          // "user" | "assistant"
     val text:        String,
-    val imageBytes:  ByteArray? = null,
+    val imageBytes:  ByteArray? = null,   // user-attached input image
+    val chartBytes:  ByteArray? = null,   // tool-generated output chart (PNG)
     val isStreaming: Boolean = false,
 )
 
 @Composable
 fun MessageBubble(message: ChatMessage) {
-    val isUser = message.role == "user"
+    val isUser     = message.role == "user"
+    val hasChart   = message.chartBytes != null
+    val isAssistant = !isUser
 
     Row(
         modifier = Modifier
@@ -36,7 +45,14 @@ fun MessageBubble(message: ChatMessage) {
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 300.dp)
+                .then(
+                    // Chart messages expand to near full width for readability;
+                    // regular messages stay capped at 300 dp.
+                    if (isAssistant && hasChart)
+                        Modifier.fillMaxWidth(0.95f)
+                    else
+                        Modifier.widthIn(max = 300.dp)
+                )
                 .clip(
                     RoundedCornerShape(
                         topStart    = if (isUser) 18.dp else 4.dp,
@@ -49,7 +65,7 @@ fun MessageBubble(message: ChatMessage) {
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
-            // Image thumbnail
+            // ── Input image thumbnail (user-attached) ──────────────────────
             message.imageBytes?.let { bytes ->
                 AsyncImage(
                     model              = bytes,
@@ -63,22 +79,35 @@ fun MessageBubble(message: ChatMessage) {
                 )
             }
 
-            // Text
+            // ── Text ───────────────────────────────────────────────────────
             if (message.text.isNotEmpty()) {
                 Text(
-                    text     = message.text,
-                    color    = if (isUser) EcoColors.DarkInner else EcoColors.NearWhite,
-                    fontSize = 15.sp,
+                    text       = message.text,
+                    color      = if (isUser) EcoColors.DarkInner else EcoColors.NearWhite,
+                    fontSize   = 15.sp,
                     lineHeight = 22.sp,
                 )
             }
 
-            // Streaming indicator
+            // ── Streaming indicator ────────────────────────────────────────
             if (message.isStreaming && message.text.isEmpty()) {
                 CircularProgressIndicator(
-                    modifier  = Modifier.size(18.dp),
-                    color     = EcoColors.DimGreen,
+                    modifier    = Modifier.size(18.dp),
+                    color       = EcoColors.DimGreen,
                     strokeWidth = 2.dp,
+                )
+            }
+
+            // ── Output chart (tool-generated PNG) ─────────────────────────
+            message.chartBytes?.let { bytes ->
+                Spacer(Modifier.height(10.dp))
+                AsyncImage(
+                    model              = bytes,
+                    contentDescription = "Chart",
+                    contentScale       = ContentScale.FillWidth,
+                    modifier           = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp)),
                 )
             }
         }

@@ -47,12 +47,12 @@ object HardwareTools {
                             client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
                         )
                         if (location != null) {
-                            """{"latitude":${location.latitude},"longitude":${location.longitude},"altitude":${location.altitude},"timezone":"${TimeZone.getDefault().id}"}"""
+                            ToolResult.Text("""{"latitude":${location.latitude},"longitude":${location.longitude},"altitude":${location.altitude},"timezone":"${TimeZone.getDefault().id}"}""")
                         } else {
-                            """{"error":"Location unavailable"}"""
+                            ToolResult.Text("""{"error":"Location unavailable"}""")
                         }
                     } catch (e: Exception) {
-                        """{"error":"${e.message}"}"""
+                        ToolResult.Text("""{"error":"${e.message}"}""")
                     }
                 }
             }
@@ -75,7 +75,7 @@ object HardwareTools {
                 val pct      = if (level >= 0 && scale > 0) level * 100 / scale else -1
                 val charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                                status == BatteryManager.BATTERY_STATUS_FULL
-                """{"level":$pct,"charging":$charging}"""
+                ToolResult.Text("""{"level":$pct,"charging":$charging}""")
             }
         ))
     }
@@ -102,12 +102,12 @@ object HardwareTools {
                     if (cameraId != null) {
                         mgr.setTorchMode(cameraId, target)
                         torchOn = target
-                        """{"torch":$target}"""
+                        ToolResult.Text("""{"torch":$target}""")
                     } else {
-                        """{"error":"No torch available"}"""
+                        ToolResult.Text("""{"error":"No torch available"}""")
                     }
                 } catch (e: Exception) {
-                    """{"error":"${e.message}"}"""
+                    ToolResult.Text("""{"error":"${e.message}"}""")
                 }
             }
         ))
@@ -132,7 +132,7 @@ object HardwareTools {
                         val cameraId = mgr.cameraIdList.firstOrNull { id ->
                             mgr.getCameraCharacteristics(id)
                                 .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-                        } ?: return@withContext """{"error":"No torch available"}"""
+                        } ?: return@withContext ToolResult.Text("""{"error":"No torch available"}""")
 
                         // (on_ms, off_ms) — 0 off_ms = no trailing gap on last symbol
                         val sos = listOf(
@@ -149,9 +149,9 @@ object HardwareTools {
                             mgr.setTorchMode(cameraId, false)
                             if (off > 0) delay(off)
                         }
-                        """{"result":"SOS signal complete (· · · — — — · · ·)"}"""
+                        ToolResult.Text("""{"result":"SOS signal complete (· · · — — — · · ·)"}""")
                     } catch (e: Exception) {
-                        """{"error":"${e.message}"}"""
+                        ToolResult.Text("""{"error":"${e.message}"}""")
                     }
                 }
             }
@@ -174,7 +174,7 @@ object HardwareTools {
                         val location = Tasks.await(
                             client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
                         )
-                        if (location == null) return@withContext """{"error":"Location unavailable"}"""
+                        if (location == null) return@withContext ToolResult.Text("""{"error":"Location unavailable"}""")
 
                         val lat = location.latitude
                         val lon = location.longitude
@@ -183,9 +183,9 @@ object HardwareTools {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(intent)
-                        """{"result":"Map opened","latitude":$lat,"longitude":$lon}"""
+                        ToolResult.Text("""{"result":"Map opened","latitude":$lat,"longitude":$lon}""")
                     } catch (e: Exception) {
-                        """{"error":"${e.message}"}"""
+                        ToolResult.Text("""{"error":"${e.message}"}""")
                     }
                 }
             }
@@ -205,8 +205,8 @@ object HardwareTools {
                 val msgMatch = Regex("\"message\"\\s*:\\s*\"(.*?)\"", RegexOption.DOT_MATCHES_ALL).find(args)
                 val to       = toMatch?.groupValues?.get(1)?.trim() ?: ""
                 val message  = msgMatch?.groupValues?.get(1)?.trim() ?: ""
-                if (to.isBlank())      return@ToolDefinition """{"error":"'to' is required"}"""
-                if (message.isBlank()) return@ToolDefinition """{"error":"'message' is required"}"""
+                if (to.isBlank())      return@ToolDefinition ToolResult.Text("""{"error":"'to' is required"}""")
+                if (message.isBlank()) return@ToolDefinition ToolResult.Text("""{"error":"'message' is required"}""")
                 try {
                     val uri    = Uri.parse("smsto:$to")
                     val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
@@ -214,9 +214,9 @@ object HardwareTools {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(intent)
-                    """{"result":"SMS composer opened for $to"}"""
+                    ToolResult.Text("""{"result":"SMS composer opened for $to"}""")
                 } catch (e: Exception) {
-                    """{"error":"${e.message}"}"""
+                    ToolResult.Text("""{"error":"${e.message}"}""")
                 }
             }
         ))

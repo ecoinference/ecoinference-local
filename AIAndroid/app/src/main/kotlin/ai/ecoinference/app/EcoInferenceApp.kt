@@ -5,6 +5,7 @@ import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.services.DownloadService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.tools.AstralTools
+import ai.ecoinference.app.tools.ChartTools
 import ai.ecoinference.app.tools.HardwareTools
 import ai.ecoinference.app.tools.MathTools
 import ai.ecoinference.app.tools.UrlTools
@@ -20,6 +21,7 @@ class EcoInferenceApp : Application() {
         HardwareTools.register(this)
         AstralTools.register()
         MathTools.register()
+        ChartTools.register()
         UrlTools.register(this)
     }
 }

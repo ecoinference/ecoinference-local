@@ -20,15 +20,19 @@ private val jsonParser = Json { ignoreUnknownKeys = true }
  * Tool-call turns are buffered silently — the raw <tool_call> JSON and
  * [Tool:] / [Result:] markers are never shown to the user.
  * Only the final clean response (no tool call) is emitted to the UI.
+ *
+ * Emits [AgentToken.Text] for the final text response and
+ * [AgentToken.ChartImage] for any chart images produced by tools.
  */
 fun runAgentLoop(
     messages:     List<InferenceMessage>,
     inference:    InferenceService,
     maxTokens:    Int   = 2048,
     temperature:  Float = 0.8f,
-): Flow<String> = flow {
-    val history = messages.toMutableList()
-    var iterations = 0
+): Flow<AgentToken> = flow {
+    val history       = messages.toMutableList()
+    val pendingCharts = mutableListOf<AgentToken.ChartImage>()
+    var iterations    = 0
 
     Log.d(TAG, "runAgentLoop start — ${history.size} messages, tools=${ToolRegistry.all().map { it.name }}")
 
@@ -45,9 +49,10 @@ fun runAgentLoop(
 
         val match = TOOL_CALL_RE.find(response)
         if (match == null) {
-            // No tool call — this is the final clean answer; emit it now
+            // No tool call — final clean answer; emit text then any accumulated charts
             Log.d(TAG, "No <tool_call> found — emitting final response")
-            emit(response)
+            emit(AgentToken.Text(response))
+            pendingCharts.forEach { emit(it) }
             break
         }
 
@@ -58,7 +63,7 @@ fun runAgentLoop(
         val parsed = parseToolCall(raw)
         if (parsed == null) {
             Log.e(TAG, "Failed to parse tool call: $raw")
-            emit("Sorry, I couldn't parse the tool call.")
+            emit(AgentToken.Text("Sorry, I couldn't parse the tool call."))
             break
         }
 
@@ -68,15 +73,20 @@ fun runAgentLoop(
         val tool = ToolRegistry.find(toolName)
         if (tool == null) {
             Log.e(TAG, "Unknown tool: $toolName")
-            emit("Sorry, I tried to use an unknown tool: $toolName.")
+            emit(AgentToken.Text("Sorry, I tried to use an unknown tool: $toolName."))
             break
         }
 
-        val result = try {
-            tool.execute(toolArgs).also { Log.d(TAG, "Tool result: $it") }
+        val result: ToolResult = try {
+            tool.execute(toolArgs).also { Log.d(TAG, "Tool result: ${it.modelText()}") }
         } catch (e: Exception) {
             Log.e(TAG, "Tool execution error: ${e.message}")
-            "Error: ${e.message}"
+            ToolResult.Text("Error: ${e.message}")
+        }
+
+        // Collect any chart images — emit them after the final text
+        if (result is ToolResult.Image) {
+            pendingCharts += AgentToken.ChartImage(result.bytes, result.caption)
         }
 
         // Inject tool result into history and continue
@@ -86,7 +96,7 @@ fun runAgentLoop(
             text = "<tool_result>{\"name\":\"$toolName\",\"result\":${
                 kotlinx.serialization.json.Json.encodeToString(
                     kotlinx.serialization.json.JsonPrimitive.serializer(),
-                    kotlinx.serialization.json.JsonPrimitive(result)
+                    kotlinx.serialization.json.JsonPrimitive(result.modelText())
                 )
             }}</tool_result>",
         )
