@@ -20,10 +20,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.gemma4.aiserver</string>
+			<string>ai.ecoinference.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>aiserver</string>
+				<string>ecoinference</string>
 			</array>
 		</dict>
 	</array>
@@ -33,5 +33,11 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>EcoInference uses your location for the get_location and show_map tools.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>EcoInference uses the camera for torch/flashlight tools and photo attachments.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>EcoInference accesses your photo library to attach images to messages.</string>
 </dict>
 </plist>

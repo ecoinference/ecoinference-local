@@ -1,9 +1,9 @@
 name: AIiOS
 options:
-  bundleIdPrefix: com.gemma4
+  bundleIdPrefix: ai.ecoinference
   deploymentTarget:
     iOS: "17.0"
-  xcodeVersion: "15"
+  xcodeVersion: "16"
 
 # Local.xcconfig is gitignored — copy Local.xcconfig.sample → Local.xcconfig
 # and fill in HF_TOKEN before building. setup.sh creates an empty one automatically.
@@ -34,9 +34,9 @@ targets:
       properties:
         # URL scheme so AIClient can launch/stop this app via aiserver://start|stop
         CFBundleURLTypes:
-          - CFBundleURLName: com.gemma4.aiserver
+          - CFBundleURLName: ai.ecoinference.app
             CFBundleURLSchemes:
-              - aiserver
+              - ecoinference
         # Keep NWListener alive when backgrounded via silent AVAudioSession.
         # Without this iOS suspends the app and HTTP clients get no response.
         UIBackgroundModes:
@@ -47,10 +47,11 @@ targets:
 
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.gemma4.aiserver
-        PRODUCT_NAME: AIServer
+        PRODUCT_BUNDLE_IDENTIFIER: ai.ecoinference.app
+        PRODUCT_NAME: EcoInference
         INFOPLIST_FILE: AIiOS/Info.plist
         CODE_SIGN_ENTITLEMENTS: AIiOS/AIiOS.entitlements
+        DEVELOPMENT_TEAM: 487YFRCHU5
 
     sources:
       - path: AIiOS

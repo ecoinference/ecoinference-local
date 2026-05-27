@@ -243,8 +243,11 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					3B57DDEBD1296F4DD6772352 = {
+						DevelopmentTeam = 487YFRCHU5;
+					};
 				};
 			};
 			buildConfigurationList = 98457256D8125A1C875F8C23 /* Build configuration list for PBXProject "AIiOS" */;
@@ -379,6 +382,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 487YFRCHU5;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
@@ -389,8 +393,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
-				PRODUCT_NAME = AIServer;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -402,6 +406,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AIiOS/AIiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 487YFRCHU5;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
@@ -412,8 +417,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gemma4.aiserver;
-				PRODUCT_NAME = AIServer;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
