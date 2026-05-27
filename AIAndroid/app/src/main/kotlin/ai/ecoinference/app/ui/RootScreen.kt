@@ -1,5 +1,6 @@
 package ai.ecoinference.app.ui
 
+import android.Manifest
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
@@ -9,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.ui.chat.ChatScreen
@@ -17,10 +20,43 @@ import ai.ecoinference.app.ui.settings.SettingsScreen
 
 private enum class Tab { Chat, Models, Settings }
 
+/**
+ * Requests all dangerous permissions required by agentic tools on first launch.
+ *
+ * Permissions covered:
+ *   ACCESS_FINE_LOCATION   — get_location, show_map
+ *   ACCESS_COARSE_LOCATION — fallback location
+ *   CAMERA                 — toggle_torch, send_sos (flash)
+ *   SEND_SMS               — send_sms
+ *
+ * The system dialog fires automatically on first run. If the user denies,
+ * affected tools return a graceful {"error":"..."} JSON — the app itself
+ * continues to function normally.
+ */
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun ToolPermissionsEffect() {
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA,
+            Manifest.permission.SEND_SMS,
+        )
+    )
+    LaunchedEffect(Unit) {
+        permissionsState.launchMultiplePermissionRequest()
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun RootScreen(appState: AppState) {
     var selectedTab by remember { mutableStateOf(Tab.Models) }
     val deepLink    by appState.deepLink.collectAsStateWithLifecycle()
+
+    // Request dangerous permissions for agentic tools on first launch
+    ToolPermissionsEffect()
 
     // Handle deep links
     LaunchedEffect(deepLink) {

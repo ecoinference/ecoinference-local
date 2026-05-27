@@ -11,10 +11,15 @@
     <!-- Post notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-    <!-- Tools: torch, location -->
+    <!-- Tools: toggle_torch, send_sos (camera flash) -->
     <uses-permission android:name="android.permission.CAMERA"/>
+
+    <!-- Tools: get_location, show_map -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Tools: send_sms -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
 
     <uses-feature android:name="android.hardware.camera"     android:required="false"/>
     <uses-feature android:name="android.hardware.opengles.aep" android:required="false"/>
