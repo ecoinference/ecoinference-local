@@ -66,7 +66,7 @@ struct ChatView: View {
         ZStack(alignment: .top) {
             // Fill the entire NavigationStack frame (including behind Dynamic
             // Island and below home indicator) so no black window shows through.
-            Color(.systemBackground).ignoresSafeArea()
+            EcoColors.background.ignoresSafeArea()
 
         VStack(spacing: 0) {
 
@@ -75,7 +75,7 @@ struct ChatView: View {
             EcoWordmark(fontSize: 22)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 8)
-                .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
+                .background(EcoColors.background.ignoresSafeArea(edges: .top))
                 .overlay(alignment: .bottom) { Divider() }
 
             // ── No-model banner ───────────────────────────────────────────────
@@ -110,7 +110,7 @@ struct ChatView: View {
                 Divider()
                 inputBar
             }
-            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))
+            .background(EcoColors.background.ignoresSafeArea(edges: .bottom))
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)

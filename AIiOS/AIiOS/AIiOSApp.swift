@@ -108,15 +108,15 @@ struct EcoInferenceApp: App {
                 logViewHierarchy(window, prefix: "  ", label: label, maxDepth: 5)
 
                 // 1. Window itself
-                window.backgroundColor = .systemBackground
+                window.backgroundColor = EcoColors.backgroundUI
                 // 2. rootViewController view
-                window.rootViewController?.view.backgroundColor = .systemBackground
+                window.rootViewController?.view.backgroundColor = EcoColors.backgroundUI
                 // 3. Sentinel at z=0
                 if window.viewWithTag(tag) == nil {
                     fputs("[EcoBg:\(label)] inserting sentinel\n", stderr)
                     let bg = UIView(frame: window.bounds)
                     bg.tag = tag
-                    bg.backgroundColor = .systemBackground
+                    bg.backgroundColor = EcoColors.backgroundUI
                     bg.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                     window.insertSubview(bg, at: 0)
                 } else {

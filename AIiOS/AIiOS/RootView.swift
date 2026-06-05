@@ -18,7 +18,7 @@ struct RootView: View {
         // parent ZStack's drawing context; putting ignoresSafeArea on the
         // container avoids that entirely.
         ZStack {
-            Color(.systemBackground)
+            EcoColors.background
             TabView(selection: $selectedTab) {
 
                 ChatView()

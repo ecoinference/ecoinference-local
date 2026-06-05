@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - EcoColors
 //
@@ -32,6 +33,19 @@ enum EcoColors {
     static let lightOuter = Color(hex: 0xBBF7D0)
     /// Light mode card surface. #DCCFE7
     static let lightInner = Color(hex: 0xDCCFE7)
+
+    // ── Adaptive (light ↔ dark) ───────────────────────────────────────────────
+
+    /// Main page background: #BBF7D0 in light mode, #0A160E in dark mode.
+    /// Drop-in replacement for Color(.systemBackground) throughout the app.
+    static let background = Color(uiColor: backgroundUI)
+
+    /// UIKit version of `background` for window/UIView usage in AIiOSApp.
+    static let backgroundUI = UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0x0A/255, green: 0x16/255, blue: 0x0E/255, alpha: 1)
+            : UIColor(red: 0xBB/255, green: 0xF7/255, blue: 0xD0/255, alpha: 1)
+    }
 }
 
 // MARK: - Color(hex:) convenience
