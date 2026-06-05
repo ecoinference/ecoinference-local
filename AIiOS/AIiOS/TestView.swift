@@ -711,16 +711,20 @@ struct TestView: View {
             let response = try await Task.detached(priority: .userInitiated) {
                 try InferenceService.shared.chat(
                     messages: messages,
-                    maxTokens: 768,
+                    maxTokens: 1024,   // 768 was too short for matplotlib tool calls
                     temperature: 0.1
                 )
             }.value
 
+            print("[E2E] \(tc.id) raw response (\(response.count) chars): \(response.prefix(400))")
+
             if AgentLoop.hasToolCall(response) {
                 guard let toolCall = AgentLoop.parse(response) else {
+                    print("[E2E] \(tc.id) parse FAILED for response: \(response.prefix(300))")
                     finalText = response
                     break
                 }
+                print("[E2E] \(tc.id) tool=\(toolCall.toolName) args keys=\(toolCall.args.keys.sorted())")
                 if let tool = ToolRegistry.shared.find(toolCall.toolName) {
                     let toolResult = await tool.execute(toolCall.args)
                     lastToolResult = toolResult
@@ -789,6 +793,11 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
            detail.hasPrefix("Error:") {
             r.status = .failed
             r.detail = detail.prefix(400).description
+            // Print start (first 300) and end (last 300) so we see both the
+            // import chain AND the actual exception at the bottom of the traceback.
+            let start = detail.prefix(300)
+            let end   = detail.count > 300 ? "...\n" + detail.suffix(300) : ""
+            print("[TEST FAIL] \(tc.id):\n\(start)\(end)\n---")
             return
         }
 
@@ -803,6 +812,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
                 }
                 r.status = .failed
                 r.detail = "Expected \(expected), got \(kind).\n\(detail.prefix(200))"
+                print("[TEST FAIL] \(tc.id): Expected \(expected), got \(kind). detail=\(detail.prefix(300))")
                 return
             }
         }
@@ -813,6 +823,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
             if !lower.contains(kw.lowercased()) {
                 r.status = .failed
                 r.detail = "Expected \"\(kw)\" not found in:\n\(detail)"
+                print("[TEST FAIL] \(tc.id): keyword \"\(kw)\" not found. detail=\(detail.prefix(300))")
                 return
             }
         }
@@ -831,11 +842,13 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
            detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             r.status = .failed
             r.detail = "Model returned an empty response."
+            print("[TEST FAIL] \(tc.id): empty response")
             return
         }
 
         r.status = .passed
         r.detail = detail.count > 300 ? "\(detail.prefix(300))…" : detail
+        print("[TEST PASS] \(tc.id)")
     }
 
     // MARK: Test image (4-colour 64×64 grid)

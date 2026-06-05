@@ -94,7 +94,14 @@ enum AgentLoop {
               let obj   = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let name  = obj["name"] as? String, !name.isEmpty
         else { return nil }
-        let args = (obj["args"] as? [String: Any]) ?? (obj["arguments"] as? [String: Any]) ?? [:]
+        var args = (obj["args"] as? [String: Any]) ?? (obj["arguments"] as? [String: Any]) ?? [:]
+        // Some model outputs produce `"args": "<code string>"` (bare string) instead of
+        // `"args": {"code": "<code string>"}`.  Detected in practice for run_python.
+        // If args is still empty but obj["args"] is a non-empty string, treat that
+        // string as the "code" parameter — the only single-string-arg tool we have.
+        if args.isEmpty, let codeStr = obj["args"] as? String, !codeStr.isEmpty {
+            args = ["code": codeStr]
+        }
         return ParsedToolCall(textBefore: textBefore, toolName: name, args: args)
     }
 
