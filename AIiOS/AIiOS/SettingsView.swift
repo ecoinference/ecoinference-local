@@ -72,6 +72,8 @@ struct SettingsView: View {
                     LabeledContent("URL scheme", value: "ecoinference://")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(EcoColors.background)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
         }

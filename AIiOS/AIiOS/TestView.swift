@@ -502,6 +502,7 @@ struct TestView: View {
             }
         }
         .onAppear { buildResults() }
+        .background(EcoColors.background)
         } // NavigationStack
     }
 

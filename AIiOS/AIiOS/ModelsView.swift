@@ -13,6 +13,8 @@ struct ModelsView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(EcoColors.background)
             .navigationTitle("Models")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
