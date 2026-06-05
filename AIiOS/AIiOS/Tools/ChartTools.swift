@@ -79,15 +79,33 @@ enum ChartTools {
             parametersDoc: "title: string (optional), labels: array of strings, values: array of numbers, x_label: string (optional), y_label: string (optional)",
             argsExample:   "{\"title\":\"Category Breakdown\",\"labels\":[\"A\",\"B\",\"C\"],\"values\":[45,30,25],\"y_label\":\"Count\"}",
             execute: { args in
-                guard let labels = args.toolStringArray("labels") else {
-                    return .text(#"{"error":"'labels' required"}"#)
+                // The model sometimes omits `values` and puts the numbers in `labels`
+                // (e.g. labels:["10","20","30"] with no values key).
+                // Recover: if values is absent but every label parses as a Double,
+                // treat the labels as values and use sequential index labels.
+                var labels: [String]
+                var values: [Double]
+
+                if let v = args.toolDoubleArray("values"),
+                   let l = args.toolStringArray("labels"),
+                   l.count == v.count {
+                    labels = l
+                    values = v
+                } else if let v = args.toolDoubleArray("values") {
+                    // values present, labels missing — generate "1","2","3"…
+                    labels = (1...v.count).map { String($0) }
+                    values = v
+                } else if let l = args.toolStringArray("labels"),
+                          !l.isEmpty,
+                          let nums = Optional(l.compactMap { Double($0) }),
+                          nums.count == l.count {
+                    // labels are all numeric strings, no values key — use them as values
+                    values = nums
+                    labels = (1...nums.count).map { String($0) }
+                } else {
+                    return .text(#"{"error":"'values' required (array of numbers)"}"#)
                 }
-                guard let values = args.toolDoubleArray("values") else {
-                    return .text(#"{"error":"'values' required"}"#)
-                }
-                guard labels.count == values.count else {
-                    return .text(#"{"error":"labels and values must have the same length"}"#)
-                }
+
                 let title  = args.toolStr("title")   ?? ""
                 let xLabel = args.toolStr("x_label") ?? ""
                 let yLabel = args.toolStr("y_label") ?? ""

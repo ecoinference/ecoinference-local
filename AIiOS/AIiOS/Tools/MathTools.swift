@@ -316,13 +316,19 @@ extension Dictionary where Key == String, Value == Any {
         return nil
     }
     func toolDoubleArray(_ key: String) -> [Double]? {
-        guard let arr = self[key] as? [Any] else { return nil }
+        // JSONSerialization on iOS produces NSNumber — cast via .doubleValue to be safe.
+        // Also handle [String] in case the model quotes the numbers.
+        let raw = self[key]
+        print("[toolDoubleArray] key=\(key) raw type=\(type(of: raw)) value=\(String(describing: raw))")
+        guard let arr = raw as? [Any] else { return nil }
         let result = arr.compactMap { v -> Double? in
-            if let d = v as? Double { return d }
-            if let i = v as? Int    { return Double(i) }
-            if let s = v as? String { return Double(s) }   // model sometimes sends numbers as strings
+            if let n = v as? NSNumber { return n.doubleValue }   // NSNumber from JSONSerialization
+            if let d = v as? Double   { return d }
+            if let i = v as? Int      { return Double(i) }
+            if let s = v as? String   { return Double(s) }
             return nil
         }
+        print("[toolDoubleArray] key=\(key) result=\(result)")
         return result.isEmpty ? nil : result
     }
     func toolStringArray(_ key: String) -> [String]? {
@@ -331,6 +337,8 @@ extension Dictionary where Key == String, Value == Any {
         guard let arr = self[key] as? [Any] else { return nil }
         let result = arr.map { v -> String in
             if let s = v as? String { return s }
+            if let n = v as? NSNumber { return n.doubleValue == n.doubleValue.rounded()
+                                         ? String(n.intValue) : String(n.doubleValue) }
             if let i = v as? Int    { return String(i) }
             if let d = v as? Double { return d == d.rounded() ? String(Int(d)) : String(d) }
             return String(describing: v)
