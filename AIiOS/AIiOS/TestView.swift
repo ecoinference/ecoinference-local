@@ -730,8 +730,19 @@ struct TestView: View {
                     lastToolResult = toolResult
                     let resultText = toolResult.modelText
                     messages.append(InferenceMessage(role: "assistant", text: response))
-                    messages.append(AgentLoop.toolResultMessage(
-                        toolName: toolCall.toolName, result: resultText))
+                    // If the tool returned an error, invite the model to fix and
+                    // retry rather than blocking further tool calls.
+                    let isError = resultText.hasPrefix("{\"error\"")
+                    if isError {
+                        messages.append(InferenceMessage(
+                            role: "user",
+                            text: "[Tool result: \(toolCall.toolName)] \(resultText)\n" +
+                                  "The code produced an error. Please correct the code and call the tool again."
+                        ))
+                    } else {
+                        messages.append(AgentLoop.toolResultMessage(
+                            toolName: toolCall.toolName, result: resultText))
+                    }
                 } else {
                     finalText = response
                     break
