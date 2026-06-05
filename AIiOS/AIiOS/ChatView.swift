@@ -127,7 +127,8 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showImagePicker) {
             ImagePickerView(sourceType: pickerSource) { picked in
-                pendingImage    = resized(picked, maxDimension: 1024)
+                pendingImage              = resized(picked, maxDimension: 1024)
+                ImageStore.shared.currentImage = pendingImage   // make available to edit_image tool
                 showImagePicker = false
             } onCancel: { showImagePicker = false }
         }

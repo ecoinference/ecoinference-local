@@ -12,10 +12,11 @@ enum PythonTools {
             description: """
                 Executes Python code on-device and returns the output. \
                 Available libraries: numpy, pandas, matplotlib, plotly, \
-                astral, folium, requests. \
+                astral, folium, requests, Pillow (PIL). \
                 matplotlib figures are returned as PNG images. \
                 plotly figures are returned as interactive HTML. \
-                All other output must be assigned to a variable named `result`.
+                All other output must be assigned to a variable named `result`. \
+                To edit an attached image use the edit_image tool instead.
                 """,
             parametersDoc: "code: string — the Python source code to execute",
             argsExample: #"{"code":"import numpy as np\nresult = float(np.sqrt(2))"}"#,

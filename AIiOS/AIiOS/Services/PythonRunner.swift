@@ -25,6 +25,55 @@ enum PythonRunner {
         }.value
     }
 
+    // MARK: - Image edit
+
+    /// Executes Pillow image-editing code on a background thread.
+    /// `imageB64` is a base64-encoded JPEG/PNG string.
+    /// The code receives `img` (PIL Image) and must set `result_img`.
+    static func executeImageEdit(imageB64: String, code: String) async -> ToolResult {
+        await Task.detached(priority: .background) {
+            runImageEditSync(imageB64: imageB64, code: code)
+        }.value
+    }
+
+    private static func runImageEditSync(imageB64: String, code: String) -> ToolResult {
+        let gilState = PythonGIL.ensure()
+        defer { PythonGIL.release(gilState) }
+
+        do {
+            let runner = try Python.attemptImport("runner")
+            let result = runner.edit_image(imageB64, code)
+            let parts  = Array(result)
+            guard parts.count == 2 else {
+                return .text(#"{"error":"runner.edit_image returned unexpected result"}"#)
+            }
+            let type  = String(parts[0]) ?? "error"
+            let value = String(parts[1]) ?? ""
+
+            switch type {
+            case "image":
+                guard let data  = Data(base64Encoded: value),
+                      let image = UIImage(data: data) else {
+                    return .text(#"{"error":"failed to decode edited image PNG"}"#)
+                }
+                return .image(image, caption: "Edited image")
+            case "error":
+                let escaped = value
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                    .replacingOccurrences(of: "\n", with: "\\n")
+                    .replacingOccurrences(of: "\r", with: "\\r")
+                return .text(#"{"error":"\#(escaped)"}"#)
+            default:
+                return .text(value)
+            }
+        } catch {
+            let msg = error.localizedDescription
+                .replacingOccurrences(of: "\"", with: "'")
+            return .text(#"{"error":"\#(msg)"}"#)
+        }
+    }
+
     // MARK: - Synchronous runner (must not be called on main thread)
 
     private static func runSync(code: String) -> ToolResult {

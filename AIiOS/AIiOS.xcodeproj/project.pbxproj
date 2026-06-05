@@ -10,6 +10,7 @@
 		085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6006B64195BA7BEE44A142 /* SettingsView.swift */; };
 		08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABDAD50B9218431BBD5D0AD /* ChatView.swift */; };
 		0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */; };
 		1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4421B40D4D7723A6080397 /* PythonTools.swift */; };
 		2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7817202873F60215D64492 /* ApiModels.swift */; };
 		2655D9612602662244AD77E9 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317AD08BD60E54967FB94A71 /* SettingsService.swift */; };
@@ -26,6 +27,7 @@
 		6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */; };
 		6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5757F96D605803F0D991C8D /* DownloadService.swift */; };
 		73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACFB2917A419EA15F57507C3 /* RootView.swift */; };
+		76E26FB3203577D9FF59EBF9 /* ImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95FC43E646AD692045D6B0F /* ImageStore.swift */; };
 		7C247C21E439FD23B25561D0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC649D8C9041D42CFA1757A /* AgentLoop.swift */; };
 		806D779F3909DB5956C4C43E /* ModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */; };
 		8502C1F818D11ED52FED8EBC /* ToolDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */; };
@@ -70,6 +72,7 @@
 		00484D7D7A20D3FAC92E1567 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
 		0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
 		0C6006B64195BA7BEE44A142 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageEditTools.swift; sourceTree = "<group>"; };
 		1F450324EDA0CD88E1982110 /* PythonRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonRunner.swift; sourceTree = "<group>"; };
 		23521B3F2ED10C8615DAE214 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
@@ -97,6 +100,7 @@
 		ACFB2917A419EA15F57507C3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		ADC649D8C9041D42CFA1757A /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
 		B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstralTools.swift; sourceTree = "<group>"; };
+		B95FC43E646AD692045D6B0F /* ImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStore.swift; sourceTree = "<group>"; };
 		BABDAD50B9218431BBD5D0AD /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		C6352949B2B9DDDEDD4D897A /* ChartTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTools.swift; sourceTree = "<group>"; };
 		CDD5FAF636339EAFE648372D /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
@@ -130,6 +134,7 @@
 				B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */,
 				C6352949B2B9DDDEDD4D897A /* ChartTools.swift */,
 				7143B3527A6184E9D6833F63 /* HardwareTools.swift */,
+				0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */,
 				8C7FFBBADD4F233987049D14 /* MathTools.swift */,
 				DF4421B40D4D7723A6080397 /* PythonTools.swift */,
 				AC39CF38328F273C28DCECD0 /* ToolResult.swift */,
@@ -182,6 +187,7 @@
 				6F590FB8D3531E83DE497E7D /* DebugLogger.swift */,
 				F5757F96D605803F0D991C8D /* DownloadService.swift */,
 				8844BE75CE9F7CEB7E8DD17F /* EmbeddedPython.swift */,
+				B95FC43E646AD692045D6B0F /* ImageStore.swift */,
 				2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */,
 				23521B3F2ED10C8615DAE214 /* LocationService.swift */,
 				CDD5FAF636339EAFE648372D /* PythonCommand.swift */,
@@ -344,6 +350,8 @@
 				6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */,
 				64E3F7C8134673ACA7644190 /* EmbeddedPython.swift in Sources */,
 				9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */,
+				100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */,
+				76E26FB3203577D9FF59EBF9 /* ImageStore.swift in Sources */,
 				DDCEBB06E9E03F2B3C1A9E33 /* InferenceService.swift in Sources */,
 				86B71E28926B962999DA46A1 /* LiteRtLmEngine.swift in Sources */,
 				684F677333F44AAB60DE5903 /* LocationService.swift in Sources */,
