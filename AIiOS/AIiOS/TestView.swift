@@ -548,6 +548,8 @@ struct TestView: View {
             TestTile(result: r, isRunning: running && currentId == r.id)
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(EcoColors.background)
     }
 
     // MARK: Run all
