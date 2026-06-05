@@ -15,6 +15,7 @@
 		2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7817202873F60215D64492 /* ApiModels.swift */; };
 		2655D9612602662244AD77E9 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317AD08BD60E54967FB94A71 /* SettingsService.swift */; };
 		2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; };
+		29893BDA19C01ABE2B57ECA7 /* EcoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8182CC361FE092D2F8709D /* EcoTheme.swift */; };
 		2A1C6826AC6E35910349AFAA /* libStreamProxy.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		33DAF480D857839E6CAA6045 /* AIiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */; };
 		3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */; };
@@ -78,6 +79,7 @@
 		23521B3F2ED10C8615DAE214 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelInfo.swift; sourceTree = "<group>"; };
 		2939FAA11821E3293733391A /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		2B8182CC361FE092D2F8709D /* EcoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EcoTheme.swift; sourceTree = "<group>"; };
 		2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceService.swift; sourceTree = "<group>"; };
 		317AD08BD60E54967FB94A71 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIiOSApp.swift; sourceTree = "<group>"; };
@@ -152,6 +154,7 @@
 				6A5C3A369A04C20CF3DA3BF8 /* AppState.swift */,
 				82302E30D1D9900FA1613871 /* Assets.xcassets */,
 				BABDAD50B9218431BBD5D0AD /* ChatView.swift */,
+				2B8182CC361FE092D2F8709D /* EcoTheme.swift */,
 				58A8051299A89A6166861451 /* Info.plist */,
 				61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */,
 				0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */,
@@ -351,6 +354,7 @@
 				08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */,
 				4847408AAADA7756673A42D8 /* DebugLogger.swift in Sources */,
 				6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */,
+				29893BDA19C01ABE2B57ECA7 /* EcoTheme.swift in Sources */,
 				64E3F7C8134673ACA7644190 /* EmbeddedPython.swift in Sources */,
 				9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */,
 				100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */,

@@ -143,6 +143,7 @@ struct EcoInferenceApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
+                .tint(EcoColors.green)          // brand green for all tinted controls
                 .onOpenURL { url in
                     handleURL(url)
                 }

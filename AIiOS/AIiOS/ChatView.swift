@@ -72,8 +72,7 @@ struct ChatView: View {
 
             // ── Compact title bar ─────────────────────────────────────────────
             // Safe area separates text from Dynamic Island — no top padding needed.
-            Text("EcoChat")
-                .font(.title2.weight(.semibold))
+            EcoWordmark(fontSize: 22)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 8)
                 .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
@@ -230,7 +229,7 @@ struct ChatView: View {
                 Button(action: sendCurrentInput) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 30))
-                        .foregroundStyle(canSend ? .blue : .gray)
+                        .foregroundStyle(canSend ? EcoColors.green : Color.gray)
                 }
                 .disabled(!canSend)
                 .padding(.trailing, 12)
@@ -634,8 +633,8 @@ private struct MessageBubble: View {
                 if !message.text.trimmingCharacters(in: .whitespaces).isEmpty {
                     Text(message.text)
                         .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
+                        .background(EcoColors.green)
+                        .foregroundStyle(EcoColors.darkInner)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
             }
