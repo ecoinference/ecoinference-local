@@ -125,8 +125,17 @@ def edit_image(image_b64: str, code: str) -> list:
     finally:
         sys.stdout = old_stdout
 
-    # ── Extract result_img ────────────────────────────────────────────────────
+    # ── Extract result image ──────────────────────────────────────────────────
+    # Primary: look for the canonical `result_img` variable.
+    # Fallback: if the model used a different name (output, edited, new_img …)
+    # accept the last PIL Image assigned in the namespace that isn't `img`.
+    _injected_keys = {"img", "Image", "ImageEnhance", "ImageFilter", "ImageOps", "ImageDraw"}
     result_img = namespace.get("result_img")
+    if result_img is None:
+        for _key, _val in reversed(list(namespace.items())):
+            if _key not in _injected_keys and isinstance(_val, Image.Image):
+                result_img = _val
+                break
     if result_img is None:
         return [
             "error",

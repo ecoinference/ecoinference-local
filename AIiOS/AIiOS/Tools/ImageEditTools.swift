@@ -16,7 +16,8 @@ enum ImageEditTools {
             name: "edit_image",
             description: """
                 Edits the user's most recently attached image using Python Pillow. \
-                `img` is a PIL.Image.Image. Write code and assign the result to `result_img`. \
+                `img` is a PIL.Image.Image. Write code — the LAST line MUST assign to `result_img`. \
+                CRITICAL: every code path must end with `result_img = <something>`. \
                 Pre-imported: Image, ImageEnhance, ImageFilter, ImageOps, ImageDraw. \
                 CORRECT API PATTERNS — always use these exact forms: \
                 Rotate: result_img = img.rotate(90, expand=True) \
