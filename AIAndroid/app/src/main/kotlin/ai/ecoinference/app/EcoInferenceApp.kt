@@ -1,6 +1,8 @@
 package ai.ecoinference.app
 
 import android.app.Application
+import com.chaquo.python.android.AndroidPlatform
+import com.chaquo.python.Python
 import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.services.DownloadService
 import ai.ecoinference.app.services.SettingsService
@@ -14,6 +16,10 @@ import ai.ecoinference.app.tools.UrlTools
 class EcoInferenceApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        // Start Chaquopy (native CPython) — must happen before any Python call
+        if (!Python.isStarted()) {
+            Python.start(AndroidPlatform(this))
+        }
         // Pre-warm singletons
         SettingsService.getInstance(this)
         DownloadService.getInstance(this)
@@ -24,6 +30,6 @@ class EcoInferenceApp : Application() {
         MathTools.register()
         ChartTools.register()
         UrlTools.register(this)
-        PythonTools.register(this)
+        PythonTools.register()
     }
 }

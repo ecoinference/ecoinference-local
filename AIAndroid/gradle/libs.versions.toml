@@ -14,6 +14,7 @@ coil                 = "2.7.0"
 accompanistPermissions = "0.36.0"
 playServicesLocation = "21.3.0"
 commonsMath          = "3.6.1"
+chaquopy             = "17.0.0"
 
 [libraries]
 androidx-core-ktx                  = { group = "androidx.core",            name = "core-ktx",                       version.ref = "coreKtx"           }
@@ -39,7 +40,8 @@ play-services-location             = { group = "com.google.android.gms",    name
 commons-math                       = { group = "org.apache.commons",        name = "commons-math3",                  version.ref = "commonsMath"          }
 
 [plugins]
-android-application  = { id = "com.android.application",                    version.ref = "agp"    }
-kotlin-android       = { id = "org.jetbrains.kotlin.android",               version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin" }
-kotlin-compose       = { id = "org.jetbrains.kotlin.plugin.compose",        version.ref = "kotlin" }
+android-application  = { id = "com.android.application",                    version.ref = "agp"      }
+kotlin-android       = { id = "org.jetbrains.kotlin.android",               version.ref = "kotlin"   }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin"   }
+kotlin-compose       = { id = "org.jetbrains.kotlin.plugin.compose",        version.ref = "kotlin"   }
+chaquopy             = { id = "com.chaquo.python",                          version.ref = "chaquopy" }

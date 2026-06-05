@@ -2,7 +2,7 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()
+        gradlePluginPortal()   // Chaquopy 13+ is published here
     }
 }
 dependencyResolutionManagement {

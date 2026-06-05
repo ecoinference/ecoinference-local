@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.chaquopy)
 }
 
 android {
@@ -15,6 +16,11 @@ android {
         targetSdk     = 35
         versionCode   = 1
         versionName   = "1.0.0"
+
+        // Chaquopy requires explicit ABI list.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -89,4 +95,24 @@ dependencies {
 
     // Settings persistence
     implementation(libs.datastore.preferences)
+}
+
+// ── Chaquopy — on-device Python runtime ───────────────────────────────────────
+chaquopy {
+    defaultConfig {
+        version = "3.10"
+        pip {
+            // Scientific / numeric
+            install("numpy")
+            install("pandas")
+            install("scipy")
+            install("matplotlib")
+            // Data viz (pure Python — no native wheel needed)
+            install("plotly")
+            // Geo / astronomy (pure Python)
+            install("astral")
+            install("folium")
+            install("shapely")
+        }
+    }
 }
