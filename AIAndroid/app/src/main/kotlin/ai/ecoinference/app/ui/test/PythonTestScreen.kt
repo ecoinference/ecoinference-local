@@ -37,6 +37,7 @@ import ai.ecoinference.app.inference.InferenceMessage
 import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.tools.AgentToken
 import ai.ecoinference.app.tools.PythonRunner
+import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.ToolResult
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
@@ -410,7 +411,17 @@ internal class PythonTestViewModel : ViewModel() {
             )
         }
 
-        val messages = listOf(InferenceMessage(role = "user", text = tc.e2ePrompt!!))
+        val systemPrompt = buildString {
+            val userSys = appState.settings.systemPrompt()
+            if (userSys.isNotBlank()) appendLine(userSys)
+            appendLine(ToolRegistry.systemPromptBlock())
+        }.trim()
+
+        val messages = buildList {
+            if (systemPrompt.isNotBlank())
+                add(InferenceMessage(role = "system", text = systemPrompt))
+            add(InferenceMessage(role = "user", text = tc.e2ePrompt!!))
+        }
         val textBuf  = StringBuilder()
         var lastImage: ByteArray? = null
 
