@@ -23,6 +23,13 @@ enum PythonRunner {
     // MARK: - Synchronous runner (must not be called on main thread)
 
     private static func runSync(code: String) -> ToolResult {
+        // Acquire the GIL before any PythonKit / CPython C-API call.
+        // PythonGIL.enableMultiThreading() was called in EmbeddedPython.start(),
+        // releasing the GIL from the main thread.  Every background thread
+        // must re-acquire it here or we get SIGSEGV (signal 11).
+        let gilState = PythonGIL.ensure()
+        defer { PythonGIL.release(gilState) }
+
         do {
             let runner = try Python.attemptImport("runner")
             let result = runner.run_code(code)

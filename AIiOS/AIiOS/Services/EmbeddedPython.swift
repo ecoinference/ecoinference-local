@@ -46,5 +46,12 @@ enum EmbeddedPython {
         print("[EmbeddedPython] Python \(Python.version) started")
         print("[EmbeddedPython] PYTHONHOME  = \(pythonHome)")
         print("[EmbeddedPython] lib path[0] = \(app)")
+
+        // Release the GIL from the main thread so background threads can
+        // acquire it via PythonGIL.ensure()/release().  Must be called AFTER
+        // all main-thread Python setup is complete.  Every subsequent Python
+        // call (including in PythonRunner) must wrap with ensure()/release().
+        PythonGIL.enableMultiThreading()
+        print("[EmbeddedPython] GIL released — multi-threading enabled")
     }
 }

@@ -32,6 +32,7 @@
 		86227D373E99F448BEC1A26D /* ModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */; };
 		86B71E28926B962999DA46A1 /* LiteRtLmEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DDEC985502830F88444FB5F /* LiteRtLmEngine.swift */; };
 		89412D66FF901050DAC9D27D /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99CA1464318F49AFE4822511 /* PythonKit */; };
+		8C325EC104E33E1799071796 /* PythonGIL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C40CB6CA27A90F0DD2CA2A /* PythonGIL.swift */; };
 		9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2939FAA11821E3293733391A /* TestView.swift */; };
 		9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7143B3527A6184E9D6833F63 /* HardwareTools.swift */; };
 		9D96DE2A93A0E137824D4A68 /* PythonRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F450324EDA0CD88E1982110 /* PythonRunner.swift */; };
@@ -77,6 +78,7 @@
 		317AD08BD60E54967FB94A71 /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		3B4277F3BF566C0EC2CA34F1 /* AIiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIiOSApp.swift; sourceTree = "<group>"; };
 		50206C46F81F7553590E4A1A /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
+		55C40CB6CA27A90F0DD2CA2A /* PythonGIL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonGIL.swift; sourceTree = "<group>"; };
 		58A8051299A89A6166861451 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libGemmaModelConstraintProvider.xcframework; path = Frameworks/libGemmaModelConstraintProvider.xcframework; sourceTree = "<group>"; };
 		61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LiteRtLm-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 				2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */,
 				23521B3F2ED10C8615DAE214 /* LocationService.swift */,
 				CDD5FAF636339EAFE648372D /* PythonCommand.swift */,
+				55C40CB6CA27A90F0DD2CA2A /* PythonGIL.swift */,
 				1F450324EDA0CD88E1982110 /* PythonRunner.swift */,
 				317AD08BD60E54967FB94A71 /* SettingsService.swift */,
 			);
@@ -348,6 +351,7 @@
 				806D779F3909DB5956C4C43E /* ModelInfo.swift in Sources */,
 				86227D373E99F448BEC1A26D /* ModelsView.swift in Sources */,
 				DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */,
+				8C325EC104E33E1799071796 /* PythonGIL.swift in Sources */,
 				9D96DE2A93A0E137824D4A68 /* PythonRunner.swift in Sources */,
 				1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */,
 				73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */,

@@ -263,4 +263,5 @@ void litert_lm_set_min_log_level(int level);
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* LiteRtLm_Bridging_Header_h */
