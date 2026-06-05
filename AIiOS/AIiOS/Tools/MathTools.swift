@@ -320,12 +320,22 @@ extension Dictionary where Key == String, Value == Any {
         let result = arr.compactMap { v -> Double? in
             if let d = v as? Double { return d }
             if let i = v as? Int    { return Double(i) }
+            if let s = v as? String { return Double(s) }   // model sometimes sends numbers as strings
             return nil
         }
         return result.isEmpty ? nil : result
     }
     func toolStringArray(_ key: String) -> [String]? {
-        self[key] as? [String]
+        // Accept a plain [String] or coerce a mixed array (model may send numbers as labels)
+        if let arr = self[key] as? [String] { return arr }
+        guard let arr = self[key] as? [Any] else { return nil }
+        let result = arr.map { v -> String in
+            if let s = v as? String { return s }
+            if let i = v as? Int    { return String(i) }
+            if let d = v as? Double { return d == d.rounded() ? String(Int(d)) : String(d) }
+            return String(describing: v)
+        }
+        return result.isEmpty ? nil : result
     }
     func toolStr(_ key: String) -> String? { self[key] as? String }
 }
