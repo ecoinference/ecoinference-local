@@ -71,5 +71,7 @@
 	<string>EcoInference uses the camera to attach images to your messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>EcoInference reads photos you choose to attach to messages.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>EcoInference saves AI-generated images to your Photo Library.</string>
 </dict>
 </plist>

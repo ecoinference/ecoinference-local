@@ -660,10 +660,7 @@ private struct MessageBubble: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 if let chart = message.chartImage {
-                    Image(uiImage: chart)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    SaveableImageView(image: chart)
                 }
             }
             Spacer(minLength: 40)
@@ -734,5 +731,96 @@ private struct MessageBubble: View {
             )
             Spacer(minLength: 40)
         }
+    }
+}
+
+// MARK: - SaveableImageView
+
+/// Displays a generated image with a save-to-photos button.
+/// Tapping the image toggles the save button overlay; tapping "Save"
+/// writes the image to the Camera Roll and shows a brief status badge.
+private struct SaveableImageView: View {
+
+    let image: UIImage
+
+    @State private var showControls = false
+    @State private var saveState: SaveState = .idle
+
+    enum SaveState { case idle, saving, saved, denied, failed }
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { showControls.toggle() } }
+
+            if showControls || saveState != .idle {
+                saveButton
+                    .padding(8)
+                    .transition(.opacity.combined(with: .scale))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var saveButton: some View {
+        switch saveState {
+        case .idle, .saving:
+            Button {
+                Task { await performSave() }
+            } label: {
+                Label(
+                    saveState == .saving ? "Saving…" : "Save",
+                    systemImage: saveState == .saving ? "arrow.down.circle" : "square.and.arrow.down"
+                )
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+            }
+            .disabled(saveState == .saving)
+
+        case .saved:
+            Label("Saved", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+
+        case .denied:
+            Label("Access denied", systemImage: "lock.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.orange)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+
+        case .failed:
+            Label("Save failed", systemImage: "xmark.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+        }
+    }
+
+    private func performSave() async {
+        withAnimation { saveState = .saving }
+        let result = await PhotoSaver.save(image)
+        withAnimation {
+            switch result {
+            case .saved:                saveState = .saved
+            case .denied, .restricted:  saveState = .denied
+            case .failed:               saveState = .failed
+            }
+        }
+        // Auto-hide after 2.5 s (leave "denied" visible a bit longer)
+        let delay: UInt64 = saveState == .denied ? 4_000_000_000 : 2_500_000_000
+        try? await Task.sleep(nanoseconds: delay)
+        withAnimation { saveState = .idle; showControls = false }
     }
 }

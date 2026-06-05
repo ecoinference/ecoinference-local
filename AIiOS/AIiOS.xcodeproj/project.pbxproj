@@ -45,6 +45,7 @@
 		DDCEBB06E9E03F2B3C1A9E33 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */; };
 		DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD5FAF636339EAFE648372D /* PythonCommand.swift */; };
 		EA663200CFB9C922C636B592 /* ChartTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6352949B2B9DDDEDD4D897A /* ChartTools.swift */; };
+		EA7F2EEBEDF990AE8CEF6E97 /* PhotoSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1A2E1373D3FB835B02004B /* PhotoSaver.swift */; };
 		EBA520D8558A635F24094287 /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F156A24AF12C27D2DA0D314F /* AstralTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */; };
 		F38B25B916AB30E791F08022 /* MathTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C7FFBBADD4F233987049D14 /* MathTools.swift */; };
@@ -99,6 +100,7 @@
 		AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolDefinition.swift; sourceTree = "<group>"; };
 		ACFB2917A419EA15F57507C3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		ADC649D8C9041D42CFA1757A /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
+		AF1A2E1373D3FB835B02004B /* PhotoSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSaver.swift; sourceTree = "<group>"; };
 		B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstralTools.swift; sourceTree = "<group>"; };
 		B95FC43E646AD692045D6B0F /* ImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStore.swift; sourceTree = "<group>"; };
 		BABDAD50B9218431BBD5D0AD /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 				B95FC43E646AD692045D6B0F /* ImageStore.swift */,
 				2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */,
 				23521B3F2ED10C8615DAE214 /* LocationService.swift */,
+				AF1A2E1373D3FB835B02004B /* PhotoSaver.swift */,
 				CDD5FAF636339EAFE648372D /* PythonCommand.swift */,
 				55C40CB6CA27A90F0DD2CA2A /* PythonGIL.swift */,
 				1F450324EDA0CD88E1982110 /* PythonRunner.swift */,
@@ -358,6 +361,7 @@
 				F38B25B916AB30E791F08022 /* MathTools.swift in Sources */,
 				806D779F3909DB5956C4C43E /* ModelInfo.swift in Sources */,
 				86227D373E99F448BEC1A26D /* ModelsView.swift in Sources */,
+				EA7F2EEBEDF990AE8CEF6E97 /* PhotoSaver.swift in Sources */,
 				DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */,
 				8C325EC104E33E1799071796 /* PythonGIL.swift in Sources */,
 				9D96DE2A93A0E137824D4A68 /* PythonRunner.swift in Sources */,

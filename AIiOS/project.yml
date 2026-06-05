@@ -73,6 +73,7 @@ targets:
         NSLocationWhenInUseUsageDescription: "EcoInference uses your location to answer location-aware queries."
         NSCameraUsageDescription: "EcoInference uses the camera to attach images to your messages."
         NSPhotoLibraryUsageDescription: "EcoInference reads photos you choose to attach to messages."
+        NSPhotoLibraryAddUsageDescription: "EcoInference saves AI-generated images to your Photo Library."
 
     entitlements:
       path: AIiOS/AIiOS.entitlements
