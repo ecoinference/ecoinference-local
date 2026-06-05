@@ -65,10 +65,13 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         pendingImageUri = uri
         if (uri != null) {
             scope.launch {
-                pendingImageBytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                pendingImageBytes = bytes
+                ai.ecoinference.app.tools.ImageStore.currentImageBytes = bytes
             }
         } else {
             pendingImageBytes = null
+            ai.ecoinference.app.tools.ImageStore.currentImageBytes = null
         }
     }
 
@@ -311,7 +314,11 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 Text("📎 Image attached", color = EcoColors.DimGreen,
                     style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.width(8.dp))
-                TextButton(onClick = { pendingImageUri = null; pendingImageBytes = null }) {
+                TextButton(onClick = {
+                    pendingImageUri = null
+                    pendingImageBytes = null
+                    ai.ecoinference.app.tools.ImageStore.currentImageBytes = null
+                }) {
                     Text("Remove", color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall)
                 }

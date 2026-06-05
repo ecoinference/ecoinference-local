@@ -24,6 +24,36 @@ private const val TAG = "PythonRunner"
  */
 object PythonRunner {
 
+    suspend fun executeImageEdit(imageB64: String, code: String): ToolResult =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            runCatching {
+                val py     = Python.getInstance()
+                val runner = py.getModule("runner")
+                val result = runner.callAttr("edit_image", imageB64, code)
+
+                val parts = result.asList()
+                val type  = parts[0].toString()
+                val value = parts[1].toString()
+
+                Log.d(TAG, "edit_image → type=$type value=${value.take(80)}")
+
+                when (type) {
+                    "image" -> {
+                        val bytes = Base64.decode(value, Base64.DEFAULT)
+                        ToolResult.Image(bytes, "Edited image (${bytes.size / 1024} KB PNG)")
+                    }
+                    "error" -> ToolResult.Text("""{"error":"${
+                        value.replace("\\", "\\\\").replace("\"", "\\\"")
+                             .replace("\n", "\\n").replace("\r", "\\r")
+                    }"}""")
+                    else    -> ToolResult.Text(value)
+                }
+            }.getOrElse { e ->
+                Log.e(TAG, "executeImageEdit error", e)
+                ToolResult.Text("""{"error":"${e.message?.replace("\"", "'")}"}""")
+            }
+        }
+
     suspend fun execute(code: String): ToolResult =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             runCatching {

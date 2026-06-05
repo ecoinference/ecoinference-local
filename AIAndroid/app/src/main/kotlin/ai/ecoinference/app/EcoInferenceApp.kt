@@ -9,6 +9,7 @@ import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.tools.AstralTools
 import ai.ecoinference.app.tools.ChartTools
 import ai.ecoinference.app.tools.HardwareTools
+import ai.ecoinference.app.tools.ImageEditTools
 import ai.ecoinference.app.tools.MathTools
 import ai.ecoinference.app.tools.PythonTools
 import ai.ecoinference.app.tools.UrlTools
@@ -31,5 +32,6 @@ class EcoInferenceApp : Application() {
         ChartTools.register()
         UrlTools.register(this)
         PythonTools.register()
+        ImageEditTools.register()
     }
 }

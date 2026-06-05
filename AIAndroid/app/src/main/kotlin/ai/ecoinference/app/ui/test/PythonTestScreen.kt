@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,23 +60,36 @@ internal enum class ResultKind { Text, Image, Html }
 // ── Test case definition ──────────────────────────────────────────────────────
 
 internal data class TestCase(
-    val id:           String,
-    val name:         String,
-    val description:  String,
-    val directCode:   String?      = null,
-    val e2ePrompt:    String?      = null,
-    val expectedKind: ResultKind,
-    /** Optional second accepted result kind (e.g. Image OR Html both pass). */
-    val altKind:      ResultKind?  = null,
-    val mustContain:  List<String> = emptyList(),
+    val id:             String,
+    val name:           String,
+    val description:    String,
+    // Python code run directly via PythonRunner
+    val directCode:     String?             = null,
+    // Python E2E — routed through the full agent loop
+    val e2ePrompt:      String?             = null,
+    // Inference-only direct messages (no agent loop, no Python)
+    val directMessages: List<InferenceMessage>? = null,
+    val expectedKind:   ResultKind          = ResultKind.Text,
+    val altKind:        ResultKind?         = null,
+    val mustContain:    List<String>        = emptyList(),
+    val mustNotContain: List<String>        = emptyList(),
+    // If true, shown as Skipped rather than run
+    val isSkipped:      Boolean             = false,
+    val skipReason:     String              = "",
 ) {
-    val isE2E: Boolean get() = e2ePrompt != null
+    /** Python agent-loop E2E test */
+    val isPythonE2E:       Boolean get() = e2ePrompt != null
+    /** Inference-only E2E (direct model call, no tools) */
+    val isInferenceDirect: Boolean get() = directMessages != null
+    /** Model-state check (no code, no inference) */
+    val isModelState:      Boolean get() = directCode == null && e2ePrompt == null && directMessages == null && !isSkipped
+
     fun accepts(kind: ResultKind) = kind == expectedKind || kind == altKind
 }
 
 // ── Test run state ────────────────────────────────────────────────────────────
 
-internal enum class TestStatus { Pending, Running, Passed, Failed }
+internal enum class TestStatus { Pending, Running, Passed, Failed, Skipped }
 
 internal data class TestState(
     val testCase:  TestCase,
@@ -87,6 +101,69 @@ internal data class TestState(
 // ── Test registry ─────────────────────────────────────────────────────────────
 
 private val TEST_CASES = listOf(
+
+    // ── Model state ───────────────────────────────────────────────────────────
+    TestCase(
+        id          = "model_loaded",
+        name        = "Model — is loaded",
+        description = "AppState.modelLoaded == true",
+        expectedKind = ResultKind.Text,
+    ),
+    TestCase(
+        id          = "model_has_id",
+        name        = "Model — loadedModelId is set",
+        description = "loadedModelId is non-null and non-empty",
+        expectedKind = ResultKind.Text,
+    ),
+
+    // ── Inference E2E (direct model calls, no agent loop) ─────────────────────
+    TestCase(
+        id             = "e2e_math",
+        name           = "Inference — basic arithmetic",
+        description    = "\"12 × 12\" → response contains \"144\"",
+        directMessages = listOf(InferenceMessage(role = "user",
+            text = "What is 12 multiplied by 12? Reply with just the number.")),
+        expectedKind   = ResultKind.Text,
+        mustContain    = listOf("144"),
+    ),
+    TestCase(
+        id             = "e2e_capital",
+        name           = "Inference — factual recall",
+        description    = "\"Capital of France\" → response contains \"Paris\"",
+        directMessages = listOf(InferenceMessage(role = "user",
+            text = "What is the capital of France? Reply with just the city name.")),
+        expectedKind   = ResultKind.Text,
+        mustContain    = listOf("Paris"),
+    ),
+    TestCase(
+        id             = "e2e_no_end_token",
+        name           = "Inference — no stray end-of-turn token",
+        description    = "Response must not expose <end_of_turn>",
+        directMessages = listOf(InferenceMessage(role = "user",
+            text = "Say hello in three words.")),
+        expectedKind   = ResultKind.Text,
+        mustNotContain = listOf("<end_of_turn>", "<start_of_turn>"),
+    ),
+    TestCase(
+        id             = "e2e_non_empty",
+        name           = "Inference — response is non-empty",
+        description    = "Model produces at least 1 character of output",
+        directMessages = listOf(InferenceMessage(role = "user",
+            text = "Reply with the single word \"OK\".")),
+        expectedKind   = ResultKind.Text,
+    ),
+    TestCase(
+        id             = "e2e_multiturn",
+        name           = "Inference — multi-turn context",
+        description    = "Turn 1 establishes fact; turn 2 recalls it → \"42\"",
+        directMessages = listOf(
+            InferenceMessage(role = "user",    text = "My lucky number is 42. Remember it."),
+            InferenceMessage(role = "assistant", text = "Got it! Your lucky number is 42."),
+            InferenceMessage(role = "user",    text = "What is my lucky number? Reply with just the number."),
+        ),
+        expectedKind   = ResultKind.Text,
+        mustContain    = listOf("42"),
+    ),
 
     // ── Direct: NumPy ─────────────────────────────────────────────────────────
     TestCase(
@@ -295,40 +372,40 @@ result = (
 """.trimIndent(),
     ),
 
-    // ── E2E smoke: basic arithmetic ───────────────────────────────────────────
+    // ── Python E2E: basic arithmetic ──────────────────────────────────────────
     TestCase(
-        id = "e2e_math",
-        name = "E2E — basic arithmetic",
+        id = "py_e2e_math",
+        name = "Python E2E — basic arithmetic",
         description = "\"12 × 12\" → result contains 144",
         expectedKind = ResultKind.Text,
         mustContain  = listOf("144"),
         e2ePrompt    = "what is 12 multiplied by 12",
     ),
 
-    // ── E2E smoke: sine wave plot ─────────────────────────────────────────────
+    // ── Python E2E: sine wave plot ────────────────────────────────────────────
     TestCase(
-        id = "e2e_sine_plot",
-        name = "E2E — sine wave plot",
+        id = "py_e2e_sine_plot",
+        name = "Python E2E — sine wave plot",
         description = "\"plot a sine wave\" → PNG image or interactive HTML",
         expectedKind = ResultKind.Image,
         altKind      = ResultKind.Html,
         e2ePrompt    = "plot a sine wave from 0 to 2 pi",
     ),
 
-    // ── E2E smoke: interactive bar chart ──────────────────────────────────────
+    // ── Python E2E: interactive bar chart ─────────────────────────────────────
     TestCase(
-        id = "e2e_bar_chart",
-        name = "E2E — interactive bar chart",
+        id = "py_e2e_bar_chart",
+        name = "Python E2E — interactive bar chart",
         description = "\"bar chart of 10,20,30,40,50\" → PNG image or interactive HTML",
         expectedKind = ResultKind.Image,
         altKind      = ResultKind.Html,
         e2ePrompt    = "show an interactive bar chart of the values 10, 20, 30, 40, 50",
     ),
 
-    // ── E2E smoke: moon phase ─────────────────────────────────────────────────
+    // ── Python E2E: moon phase ────────────────────────────────────────────────
     TestCase(
-        id = "e2e_moon_phase",
-        name = "E2E — moon phase",
+        id = "py_e2e_moon_phase",
+        name = "Python E2E — moon phase",
         description = "\"moon phase today at my location\" → text",
         expectedKind = ResultKind.Text,
         e2ePrompt    = "what is the moon phase today at my location",
@@ -364,10 +441,17 @@ internal class PythonTestViewModel : ViewModel() {
 
                 val startMs = System.currentTimeMillis()
                 try {
-                    val newState = if (tc.isE2E)
-                        runE2E(tc, appState, inference, startMs)
-                    else
-                        runDirect(tc, preamble, startMs)
+                    val newState = when {
+                        tc.isSkipped        -> TestState(
+                            tc, TestStatus.Skipped,
+                            tc.skipReason.ifBlank { "Skipped" },
+                            System.currentTimeMillis() - startMs,
+                        )
+                        tc.isModelState     -> runModelState(tc, appState, startMs)
+                        tc.isInferenceDirect -> runInferenceDirect(tc, appState, inference, startMs)
+                        tc.isPythonE2E      -> runE2E(tc, appState, inference, startMs)
+                        else                -> runDirect(tc, preamble, startMs)
+                    }
                     updateState(index) { newState }
                 } catch (e: Exception) {
                     Log.e(TAG, "Test ${tc.id} threw: ${e.message}", e)
@@ -386,7 +470,53 @@ internal class PythonTestViewModel : ViewModel() {
         }
     }
 
-    // ── Direct ────────────────────────────────────────────────────────────────
+    // ── Model state ───────────────────────────────────────────────────────────
+
+    private fun runModelState(tc: TestCase, appState: AppState, startMs: Long): TestState {
+        val elapsed = System.currentTimeMillis() - startMs
+        return when (tc.id) {
+            "model_loaded" -> {
+                if (appState.modelLoaded.value)
+                    TestState(tc, TestStatus.Passed, "modelLoaded = true ✓", elapsed)
+                else
+                    TestState(tc, TestStatus.Failed, "No model loaded.", elapsed)
+            }
+            "model_has_id" -> {
+                val id = appState.loadedModelId.value
+                if (!id.isNullOrBlank())
+                    TestState(tc, TestStatus.Passed, "loadedModelId = \"$id\" ✓", elapsed)
+                else
+                    TestState(tc, TestStatus.Failed, "loadedModelId is null or empty.", elapsed)
+            }
+            else -> TestState(tc, TestStatus.Failed, "Unknown model-state test: ${tc.id}", elapsed)
+        }
+    }
+
+    // ── Inference direct (no agent loop) ──────────────────────────────────────
+
+    private suspend fun runInferenceDirect(
+        tc:        TestCase,
+        appState:  AppState,
+        inference: InferenceService,
+        startMs:   Long,
+    ): TestState {
+        if (!appState.modelLoaded.value) {
+            return TestState(
+                tc,
+                status    = TestStatus.Failed,
+                detail    = "Skipped — no model loaded",
+                elapsedMs = System.currentTimeMillis() - startMs,
+            )
+        }
+        val messages = tc.directMessages!!
+        val response = withContext(Dispatchers.Default) {
+            inference.chat(messages, maxTokens = 256, temperature = 0.1f)
+        }
+        val elapsed = System.currentTimeMillis() - startMs
+        return evaluate(tc, ToolResult.Text(response)).copy(elapsedMs = elapsed)
+    }
+
+    // ── Python direct ─────────────────────────────────────────────────────────
 
     private suspend fun runDirect(tc: TestCase, preamble: String, startMs: Long): TestState {
         val result  = PythonRunner.execute(preamble + tc.directCode!!)
@@ -394,7 +524,7 @@ internal class PythonTestViewModel : ViewModel() {
         return evaluate(tc, result).copy(elapsedMs = elapsed)
     }
 
-    // ── E2E ───────────────────────────────────────────────────────────────────
+    // ── Python E2E (agent loop) ───────────────────────────────────────────────
 
     private suspend fun runE2E(
         tc:        TestCase,
@@ -434,11 +564,10 @@ internal class PythonTestViewModel : ViewModel() {
 
         val elapsed = System.currentTimeMillis() - startMs
 
-        // Wrap agent output as a ToolResult for unified evaluation
-        val result: ToolResult = when {
-            lastImage != null -> ToolResult.Image(lastImage!!, "chart")
-            else              -> ToolResult.Text(textBuf.toString())
-        }
+        val result: ToolResult = if (lastImage != null)
+            ToolResult.Image(lastImage, "chart")
+        else
+            ToolResult.Text(textBuf.toString())
         return evaluate(tc, result).copy(elapsedMs = elapsed)
     }
 
@@ -471,6 +600,11 @@ internal class PythonTestViewModel : ViewModel() {
             return TestState(tc, TestStatus.Failed, content.take(400))
         }
 
+        // Non-empty for inference tests
+        if (tc.isInferenceDirect && content.isBlank()) {
+            return TestState(tc, TestStatus.Failed, "Model returned an empty response.")
+        }
+
         // Wrong result kind
         if (!tc.accepts(actualKind)) {
             val expected = if (tc.altKind != null)
@@ -483,12 +617,23 @@ internal class PythonTestViewModel : ViewModel() {
             )
         }
 
-        // mustContain checks
+        // mustContain checks (case-insensitive)
+        val lower = content.lowercase()
         for (kw in tc.mustContain) {
-            if (!content.contains(kw)) {
+            if (!lower.contains(kw.lowercase())) {
                 return TestState(
                     tc, TestStatus.Failed,
                     "Missing \"$kw\" in result.\n${content.take(200)}",
+                )
+            }
+        }
+
+        // mustNotContain checks
+        for (kw in tc.mustNotContain) {
+            if (lower.contains(kw.lowercase())) {
+                return TestState(
+                    tc, TestStatus.Failed,
+                    "Unexpected \"$kw\" found in result.\n${content.take(200)}",
                 )
             }
         }
@@ -552,8 +697,9 @@ internal fun PythonTestScreen(
     val running      by vm.running.collectAsState()
     val currentIndex by vm.currentIndex.collectAsState()
 
-    val passed = states.count { it.status == TestStatus.Passed }
-    val failed = states.count { it.status == TestStatus.Failed }
+    val passed  = states.count { it.status == TestStatus.Passed }
+    val failed  = states.count { it.status == TestStatus.Failed }
+    val skipped = states.count { it.status == TestStatus.Skipped }
 
     Scaffold(
         modifier            = modifier,
@@ -594,7 +740,7 @@ internal fun PythonTestScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            SummaryBar(passed = passed, failed = failed, total = states.size)
+            SummaryBar(passed = passed, failed = failed, skipped = skipped, total = states.size)
 
             LazyColumn(
                 modifier        = Modifier.fillMaxSize(),
@@ -614,7 +760,7 @@ internal fun PythonTestScreen(
 // ── Summary bar ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun SummaryBar(passed: Int, failed: Int, total: Int) {
+private fun SummaryBar(passed: Int, failed: Int, skipped: Int, total: Int) {
     Surface(
         color    = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth(),
@@ -629,6 +775,10 @@ private fun SummaryBar(passed: Int, failed: Int, total: Int) {
                 label = "$failed failed",
                 color = if (failed > 0) MaterialTheme.colorScheme.error else Color.Gray,
             )
+            if (skipped > 0) {
+                Spacer(Modifier.width(8.dp))
+                StatusBadge("$skipped skipped", Color(0xFFFFA000))
+            }
             Spacer(Modifier.width(8.dp))
             Text(
                 "of $total",
@@ -662,11 +812,20 @@ private fun StatusBadge(label: String, color: Color) {
 private fun TestTile(state: TestState, isRunning: Boolean) {
     val tc = state.testCase
 
+    // Category chip label / color
+    val (catLabel, catColor) = when {
+        tc.isModelState      -> "Model"     to Color(0xFF42A5F5)  // blue
+        tc.isInferenceDirect -> "Inference" to Color(0xFFAB47BC)  // purple
+        tc.isPythonE2E       -> "Python"    to EcoColors.Green
+        else                 -> "Python"    to EcoColors.Green
+    }
+
     val (icon, iconColor) = when (state.status) {
         TestStatus.Pending -> Icons.Default.RadioButtonUnchecked to Color.Gray
         TestStatus.Running -> Icons.Default.HourglassTop         to EcoColors.Green
         TestStatus.Passed  -> Icons.Default.CheckCircle          to Color(0xFF4CAF50)
         TestStatus.Failed  -> Icons.Default.Cancel               to MaterialTheme.colorScheme.error
+        TestStatus.Skipped -> Icons.Default.RemoveCircleOutline  to Color(0xFFFFA000)
     }
 
     val subtitleText = state.elapsedMs
@@ -707,7 +866,22 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (tc.isE2E) {
+                        // Category chip
+                        Surface(
+                            shape    = RoundedCornerShape(4.dp),
+                            color    = catColor.copy(alpha = 0.12f),
+                            modifier = Modifier.padding(end = 4.dp),
+                        ) {
+                            Text(
+                                catLabel,
+                                style    = MaterialTheme.typography.labelSmall,
+                                color    = catColor,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                            )
+                        }
+                        // E2E badge for Python agent-loop tests
+                        if (tc.isPythonE2E) {
                             Surface(
                                 shape    = RoundedCornerShape(4.dp),
                                 color    = MaterialTheme.colorScheme.secondaryContainer,
@@ -725,10 +899,11 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
                             tc.name,
                             style      = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color      = if (state.status == TestStatus.Failed)
-                                MaterialTheme.colorScheme.error
-                            else
-                                EcoColors.NearWhite,
+                            color      = when (state.status) {
+                                TestStatus.Failed  -> MaterialTheme.colorScheme.error
+                                TestStatus.Skipped -> Color(0xFFFFA000)
+                                else               -> EcoColors.NearWhite
+                            },
                         )
                     }
                     Text(
@@ -757,10 +932,11 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
                     style    = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace,
                     ),
-                    color    = if (state.status == TestStatus.Failed)
-                        MaterialTheme.colorScheme.error
-                    else
-                        EcoColors.NearWhite.copy(alpha = 0.7f),
+                    color    = when (state.status) {
+                        TestStatus.Failed  -> MaterialTheme.colorScheme.error
+                        TestStatus.Skipped -> Color(0xFFFFA000)
+                        else               -> EcoColors.NearWhite.copy(alpha = 0.7f)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 44.dp, end = 12.dp, bottom = 12.dp),

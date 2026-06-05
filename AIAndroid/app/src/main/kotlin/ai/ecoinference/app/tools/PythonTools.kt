@@ -22,8 +22,9 @@ object PythonTools {
             description   = "Executes Python 3 code on-device (native CPython via Chaquopy). " +
                             "Use for maths, data analysis, or plotting. " +
                             "Available libraries: numpy, pandas, scipy, matplotlib, plotly, " +
-                            "astral, folium, shapely. " +
-                            "Assign output to 'result' or use print() — figures are captured automatically.",
+                            "astral, folium, shapely, PIL (Pillow). " +
+                            "Assign output to 'result' or use print() — figures are captured automatically. " +
+                            "For editing a user-attached image, use the edit_image tool instead.",
             parametersDoc = "code: string — Python code to execute",
             argsExample   = """{"code":"import numpy as np\nresult = float(np.sqrt(144))"}""",
             execute       = { args ->
