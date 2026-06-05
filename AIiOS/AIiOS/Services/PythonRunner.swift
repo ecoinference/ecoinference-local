@@ -15,7 +15,12 @@ enum PythonRunner {
     ///
     /// - Returns: `.image` for matplotlib PNG output, `.text` for HTML/text/error.
     static func execute(code: String) async -> ToolResult {
-        await Task.detached(priority: .userInitiated) {
+        // Use .background priority so iOS's cpu_resource watchdog applies its
+        // more lenient limit (background tasks get more CPU slack than foreground
+        // userInitiated tasks).  Heavy Python package imports (numpy, matplotlib)
+        // can saturate the CPU for 30-60 s on first run; .userInitiated caused
+        // the 90%-for-100s watchdog kill at the 50%-over-180s limit.
+        await Task.detached(priority: .background) {
             runSync(code: code)
         }.value
     }

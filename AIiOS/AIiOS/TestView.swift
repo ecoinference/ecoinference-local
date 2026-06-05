@@ -564,6 +564,11 @@ struct TestView: View {
                 guard !Task.isCancelled else { break }
                 await MainActor.run { currentId = result.id }
                 await run(result)
+                // Yield 200 ms between tests so iOS's cpu_resource watchdog
+                // doesn't kill the app.  Heavy Python imports (numpy, matplotlib)
+                // saturate the CPU; brief pauses keep the 100-s rolling average
+                // below the 50%-over-180-s watchdog threshold.
+                try? await Task.sleep(nanoseconds: 200_000_000)
             }
             InferenceService.shared.resetConversation()
             await MainActor.run { running = false; currentId = nil }
