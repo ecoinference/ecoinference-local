@@ -476,6 +476,7 @@ struct TestView: View {
     }
 
     var body: some View {
+        NavigationStack {
         VStack(spacing: 0) {
             summaryBar
             testList
@@ -499,6 +500,7 @@ struct TestView: View {
             }
         }
         .onAppear { buildResults() }
+        } // NavigationStack
     }
 
     // MARK: Summary bar
