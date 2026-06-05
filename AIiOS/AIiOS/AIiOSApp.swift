@@ -8,6 +8,7 @@ struct EcoInferenceApp: App {
 
     init() {
         redirectNativeStderrToLog()
+        EmbeddedPython.start()
         SettingsService.shared.load()
         registerTools()
 
@@ -68,6 +69,7 @@ struct EcoInferenceApp: App {
         AstralTools.register()
         MathTools.register()
         ChartTools.register()
+        PythonTools.register()
     }
 
     // MARK: - Window background fix

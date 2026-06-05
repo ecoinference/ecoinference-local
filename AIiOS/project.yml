@@ -11,6 +11,11 @@ configFiles:
   Debug: Local.xcconfig
   Release: Local.xcconfig
 
+packages:
+  PythonKit:
+    url: https://github.com/pvieito/PythonKit
+    branch: master
+
 settings:
   base:
     SWIFT_VERSION: "5.10"
@@ -22,6 +27,9 @@ settings:
     OTHER_LDFLAGS:
       - "-rpath"
       - "@executable_path/Frameworks"
+    # Required for PythonKit / BeeWare embedded Python
+    ENABLE_BITCODE: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
 
 targets:
   AIiOS:
@@ -41,6 +49,30 @@ targets:
         # Without this iOS suspends the app and HTTP clients get no response.
         UIBackgroundModes:
           - audio
+        # ── PERMANENT FULL-SCREEN FIX (do not remove) ────────────────────────
+        # Without UIRequiresFullScreen + UILaunchScreen, iOS 26 runs the app in
+        # a 320×480 legacy compatibility window and upscales it, producing solid
+        # black bars at the Dynamic Island (top ~59pt) and home indicator
+        # (bottom ~34pt) on iPhone 15 Pro.  These two keys force full-screen mode.
+        UIRequiresFullScreen: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # App icon (actool excluded at build time; icon PNGs copied manually)
+        CFBundleIcons:
+          CFBundlePrimaryIcon:
+            CFBundleIconFiles:
+              - AppIcon
+            CFBundleIconName: AppIcon
+        "CFBundleIcons~ipad":
+          CFBundlePrimaryIcon:
+            CFBundleIconFiles:
+              - AppIcon
+            CFBundleIconName: AppIcon
+        # Privacy usage descriptions required by iOS
+        NSLocationWhenInUseUsageDescription: "EcoInference uses your location to answer location-aware queries."
+        NSCameraUsageDescription: "EcoInference uses the camera to attach images to your messages."
+        NSPhotoLibraryUsageDescription: "EcoInference reads photos you choose to attach to messages."
 
     entitlements:
       path: AIiOS/AIiOS.entitlements
@@ -69,3 +101,25 @@ targets:
         embed: true
       - framework: Frameworks/libStreamProxy.xcframework
         embed: true
+      # BeeWare Python.xcframework (CPython 3.12 for iOS)
+      - framework: Python.xcframework
+        embed: true
+      # PythonKit — Swift wrapper over the Python C API
+      - package: PythonKit
+
+    preBuildScripts:
+      - name: "Install Python stdlib + convert .so → .framework"
+        script: |
+          set -e
+          source "${PROJECT_DIR}/Python.xcframework/build/utils.sh"
+
+          # Sync app code and packages into the bundle
+          mkdir -p "${CODESIGNING_FOLDER_PATH}/app_packages"
+          rsync -au --delete "${PROJECT_DIR}/app_packages/" "${CODESIGNING_FOLDER_PATH}/app_packages/"
+          mkdir -p "${CODESIGNING_FOLDER_PATH}/app"
+          rsync -au "${PROJECT_DIR}/app/" "${CODESIGNING_FOLDER_PATH}/app/"
+
+          # Install stdlib and convert binary .so extensions → .framework
+          install_python Python.xcframework app_packages
+        runOnlyWhenInstalling: false
+        basedOnDependencyAnalysis: false
