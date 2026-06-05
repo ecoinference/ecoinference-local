@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
@@ -17,8 +18,9 @@ import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.ui.chat.ChatScreen
 import ai.ecoinference.app.ui.models.ModelsScreen
 import ai.ecoinference.app.ui.settings.SettingsScreen
+import ai.ecoinference.app.ui.test.PythonTestScreen
 
-private enum class Tab { Chat, Models, Settings }
+private enum class Tab { Chat, Models, Tests, Settings }
 
 /**
  * Requests all dangerous permissions required by agentic tools on first launch.
@@ -89,6 +91,12 @@ fun RootScreen(appState: AppState) {
                     label     = { Text("Models") },
                 )
                 NavigationBarItem(
+                    selected  = selectedTab == Tab.Tests,
+                    onClick   = { selectedTab = Tab.Tests },
+                    icon      = { Icon(Icons.Default.Science, contentDescription = "Tests") },
+                    label     = { Text("Tests") },
+                )
+                NavigationBarItem(
                     selected  = selectedTab == Tab.Settings,
                     onClick   = { selectedTab = Tab.Settings },
                     icon      = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
@@ -102,6 +110,7 @@ fun RootScreen(appState: AppState) {
         when (selectedTab) {
             Tab.Chat     -> ChatScreen(appState, Modifier.padding(innerPadding))
             Tab.Models   -> ModelsScreen(appState, Modifier.padding(innerPadding))
+            Tab.Tests    -> PythonTestScreen(appState, Modifier.padding(innerPadding))
             Tab.Settings -> SettingsScreen(appState, Modifier.padding(innerPadding))
         }
     }
