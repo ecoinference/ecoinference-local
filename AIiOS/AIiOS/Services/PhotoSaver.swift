@@ -15,6 +15,9 @@ enum PhotoSaver {
     }
 
     /// Requests photo-library add permission if needed, then saves `image`.
+    /// Must be called from @MainActor so the permission alert is presented
+    /// on the main thread (PHPhotoLibrary requires it).
+    @MainActor
     static func save(_ image: UIImage) async -> SaveResult {
         let status = await requestAddPermission()
         switch status {

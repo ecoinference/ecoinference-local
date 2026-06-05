@@ -808,19 +808,23 @@ private struct SaveableImageView: View {
         }
     }
 
+    // @MainActor ensures all @State mutations stay on the main thread.
+    // withAnimation is removed — SwiftUI animates @State changes implicitly.
+    // Without @MainActor the PHPhotoLibrary suspension can resume on a
+    // background thread, mutating @State off-main and blanking the view.
+    @MainActor
     private func performSave() async {
-        withAnimation { saveState = .saving }
+        saveState = .saving
         let result = await PhotoSaver.save(image)
-        withAnimation {
-            switch result {
-            case .saved:                saveState = .saved
-            case .denied, .restricted:  saveState = .denied
-            case .failed:               saveState = .failed
-            }
+        switch result {
+        case .saved:                saveState = .saved
+        case .denied, .restricted:  saveState = .denied
+        case .failed:               saveState = .failed
         }
-        // Auto-hide after 2.5 s (leave "denied" visible a bit longer)
+        // Auto-hide after 2.5 s (4 s for denied so user has time to read it)
         let delay: UInt64 = saveState == .denied ? 4_000_000_000 : 2_500_000_000
         try? await Task.sleep(nanoseconds: delay)
-        withAnimation { saveState = .idle; showControls = false }
+        saveState   = .idle
+        showControls = false
     }
 }
