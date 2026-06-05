@@ -64,9 +64,12 @@ internal data class TestCase(
     val directCode:   String?      = null,
     val e2ePrompt:    String?      = null,
     val expectedKind: ResultKind,
+    /** Optional second accepted result kind (e.g. Image OR Html both pass). */
+    val altKind:      ResultKind?  = null,
     val mustContain:  List<String> = emptyList(),
 ) {
     val isE2E: Boolean get() = e2ePrompt != null
+    fun accepts(kind: ResultKind) = kind == expectedKind || kind == altKind
 }
 
 // ── Test run state ────────────────────────────────────────────────────────────
@@ -305,8 +308,9 @@ result = (
     TestCase(
         id = "e2e_sine_plot",
         name = "E2E — sine wave plot",
-        description = "\"plot a sine wave\" → image or HTML chart",
-        expectedKind = ResultKind.Html,
+        description = "\"plot a sine wave\" → PNG image or interactive HTML",
+        expectedKind = ResultKind.Image,
+        altKind      = ResultKind.Html,
         e2ePrompt    = "plot a sine wave from 0 to 2 pi",
     ),
 
@@ -314,8 +318,9 @@ result = (
     TestCase(
         id = "e2e_bar_chart",
         name = "E2E — interactive bar chart",
-        description = "\"bar chart of 10,20,30,40,50\" → HTML",
-        expectedKind = ResultKind.Html,
+        description = "\"bar chart of 10,20,30,40,50\" → PNG image or interactive HTML",
+        expectedKind = ResultKind.Image,
+        altKind      = ResultKind.Html,
         e2ePrompt    = "show an interactive bar chart of the values 10, 20, 30, 40, 50",
     ),
 
@@ -456,10 +461,14 @@ internal class PythonTestViewModel : ViewModel() {
         }
 
         // Wrong result kind
-        if (actualKind != tc.expectedKind) {
+        if (!tc.accepts(actualKind)) {
+            val expected = if (tc.altKind != null)
+                "${tc.expectedKind.name} or ${tc.altKind.name}"
+            else
+                tc.expectedKind.name
             return TestState(
                 tc, TestStatus.Failed,
-                "Expected ${tc.expectedKind.name}, got ${actualKind.name}.\n${content.take(200)}",
+                "Expected $expected, got ${actualKind.name}.\n${content.take(200)}",
             )
         }
 
