@@ -102,8 +102,9 @@ fun runAgentLoop(
             ToolResult.Text("Error: ${e.message}")
         }
 
-        if (result is ToolResult.Image) {
-            pendingCharts += AgentToken.ChartImage(result.bytes, result.caption)
+        when (result) {
+            is ToolResult.Image -> pendingCharts += AgentToken.ChartImage(result.bytes, result.caption)
+            is ToolResult.Text  -> emit(AgentToken.ToolText(result.text))
         }
 
         history += InferenceMessage(role = "assistant", text = response)

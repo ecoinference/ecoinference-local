@@ -90,12 +90,31 @@ object ChartTools {
             parametersDoc = "title: string (optional), labels: array of strings, values: array of numbers, x_label: string (optional), y_label: string (optional)",
             argsExample   = """{"title":"Category Breakdown","labels":["A","B","C","D"],"values":[45,30,25,60],"y_label":"Count"}""",
             execute       = { args ->
-                val labels = parseStringArray(args, "labels")
-                    ?: return@ToolDefinition ToolResult.Text("""{"error":"'labels' required"}""")
-                val values = parseDoubleArray(args, "values")
-                    ?: return@ToolDefinition ToolResult.Text("""{"error":"'values' required"}""")
-                if (labels.size != values.size)
-                    return@ToolDefinition ToolResult.Text("""{"error":"labels and values must have the same length"}""")
+                val rawLabels = parseStringArray(args, "labels")
+                val rawValues = parseDoubleArray(args, "values")
+
+                // 3-way recovery (mirrors iOS ChartTools):
+                // 1. Both present → truncate to matching length (tolerates count mismatch)
+                // 2. Values only  → auto-generate sequential index labels
+                // 3. Numeric-string labels only → treat labels as values, use indices
+                val (labels, values) = when {
+                    rawLabels != null && rawValues != null -> {
+                        val n = minOf(rawLabels.size, rawValues.size)
+                        rawLabels.take(n) to rawValues.take(n)
+                    }
+                    rawValues != null -> {
+                        rawValues.indices.map { "${it + 1}" } to rawValues
+                    }
+                    rawLabels != null && rawLabels.all { it.toDoubleOrNull() != null } -> {
+                        val vals = rawLabels.mapNotNull { it.toDoubleOrNull() }
+                        rawLabels.indices.map { "${it + 1}" } to vals
+                    }
+                    else -> return@ToolDefinition ToolResult.Text(
+                        """{"error":"'values' required — provide actual numeric data, e.g. values:[10,20,30,40,50]"}"""
+                    )
+                }
+
+                if (values.isEmpty()) return@ToolDefinition ToolResult.Text("""{"error":"values array is empty"}""")
                 val title  = extractString(args, "title")   ?: ""
                 val xLabel = extractString(args, "x_label") ?: ""
                 val yLabel = extractString(args, "y_label") ?: ""

@@ -144,6 +144,10 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                             // Store first chart; additional charts overwrite (rare edge case)
                             pendingChart = token.bytes
                         }
+                        is AgentToken.ToolText -> {
+                            // Raw tool output — not shown in the chat bubble.
+                            // The test runner uses this token; the UI ignores it.
+                        }
                     }
                 }
 
