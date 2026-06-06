@@ -12,6 +12,7 @@ import ai.ecoinference.app.tools.HardwareTools
 import ai.ecoinference.app.tools.ImageEditTools
 import ai.ecoinference.app.tools.MathTools
 import ai.ecoinference.app.tools.PythonTools
+import ai.ecoinference.app.tools.QrCodeTools
 import ai.ecoinference.app.tools.UrlTools
 
 class EcoInferenceApp : Application() {
@@ -33,5 +34,6 @@ class EcoInferenceApp : Application() {
         UrlTools.register(this)
         PythonTools.register()
         ImageEditTools.register()
+        QrCodeTools.register()
     }
 }

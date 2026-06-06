@@ -12,6 +12,7 @@
 		0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */; };
 		1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4421B40D4D7723A6080397 /* PythonTools.swift */; };
+		FDB6F613C3ED4E6A85E6AFB9 /* QrCodeTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7367025489435C90892709 /* QrCodeTools.swift */; };
 		2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7817202873F60215D64492 /* ApiModels.swift */; };
 		2655D9612602662244AD77E9 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317AD08BD60E54967FB94A71 /* SettingsService.swift */; };
 		2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; };
@@ -109,6 +110,7 @@
 		C6352949B2B9DDDEDD4D897A /* ChartTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTools.swift; sourceTree = "<group>"; };
 		CDD5FAF636339EAFE648372D /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
 		DF4421B40D4D7723A6080397 /* PythonTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonTools.swift; sourceTree = "<group>"; };
+		0C7367025489435C90892709 /* QrCodeTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QrCodeTools.swift; sourceTree = "<group>"; };
 		F5757F96D605803F0D991C8D /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
 		F8F30C2E93722C6645941BA9 /* AIiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AIiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 				0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */,
 				8C7FFBBADD4F233987049D14 /* MathTools.swift */,
 				DF4421B40D4D7723A6080397 /* PythonTools.swift */,
+				0C7367025489435C90892709 /* QrCodeTools.swift */,
 				AC39CF38328F273C28DCECD0 /* ToolResult.swift */,
 			);
 			path = Tools;
@@ -370,6 +373,7 @@
 				8C325EC104E33E1799071796 /* PythonGIL.swift in Sources */,
 				9D96DE2A93A0E137824D4A68 /* PythonRunner.swift in Sources */,
 				1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */,
+				FDB6F613C3ED4E6A85E6AFB9 /* QrCodeTools.swift in Sources */,
 				73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */,
 				2655D9612602662244AD77E9 /* SettingsService.swift in Sources */,
 				085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */,

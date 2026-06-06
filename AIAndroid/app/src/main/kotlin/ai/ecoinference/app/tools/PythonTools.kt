@@ -20,10 +20,11 @@ object PythonTools {
         ToolRegistry.register(ToolDefinition(
             name          = "run_python",
             description   = "Executes Python 3 code on-device (native CPython via Chaquopy). " +
-                            "Use for maths, data analysis, or plotting. " +
+                            "Use for maths, data analysis, plotting, or symbolic computation. " +
                             "Available libraries: numpy, pandas, scipy, matplotlib, plotly, " +
-                            "astral, folium, shapely, PIL (Pillow). " +
+                            "astral, folium, shapely, PIL (Pillow), sympy. " +
                             "Assign output to 'result' or use print() — figures are captured automatically. " +
+                            "Sympy example: from sympy import symbols, solve; x = symbols('x'); result = str(solve(x**2 - 4, x)). " +
                             "For editing a user-attached image, use the edit_image tool instead.",
             parametersDoc = "code: string — Python code to execute",
             argsExample   = """{"code":"import numpy as np\nresult = float(np.sqrt(144))"}""",

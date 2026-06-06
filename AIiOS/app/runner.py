@@ -83,6 +83,36 @@ def run_code(code: str) -> list:
     ]
 
 
+def generate_qr(text: str, box_size: int = 10, border: int = 4) -> list:
+    """
+    Generate a QR code PNG from any text, URL, or structured data.
+
+    Returns [type, value] with type="image" and value=base64 PNG.
+    The image uses EcoInference brand colours (green on dark).
+    """
+    import qrcode  # noqa: PLC0415
+    from PIL import Image as _Image  # noqa: PLC0415
+
+    if not text or not text.strip():
+        return ["error", "text must not be empty"]
+
+    qr = qrcode.QRCode(
+        version=None,           # auto-pick smallest version that fits
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=max(1, min(box_size, 20)),
+        border=max(0, min(border, 10)),
+    )
+    qr.add_data(text)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="#22C55E", back_color="#0F2415")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return ["image", base64.b64encode(buf.read()).decode("ascii")]
+
+
 def edit_image(image_b64: str, code: str) -> list:
     """
     Edit an image using Pillow and return the result as a PNG.

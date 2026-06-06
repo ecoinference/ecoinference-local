@@ -113,6 +113,10 @@ chaquopy {
             install("astral")
             install("folium")
             install("shapely")
+            // QR code generation (pure Python, uses Pillow)
+            install("qrcode")
+            // Symbolic mathematics (pure Python)
+            install("sympy")
         }
     }
 }

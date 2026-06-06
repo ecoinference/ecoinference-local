@@ -414,6 +414,58 @@ result = (
         expectedKind = ResultKind.Text,
         e2ePrompt    = "what is the moon phase today at my location",
     ),
+
+    // ── Direct: QR code ───────────────────────────────────────────────────────
+    TestCase(
+        id = "qr_direct",
+        name = "QR Code — generate PNG",
+        description = "generate_qr(\"https://ecoinference.ai\") → valid PNG metadata",
+        expectedKind = ResultKind.Text,
+        mustContain  = listOf("QR:"),
+        directCode   = """
+import base64, io, runner
+from PIL import Image as _PIL
+res = runner.generate_qr("https://ecoinference.ai")
+assert res[0] == "image", f"Expected image, got {res[0]}: {res[1]}"
+img_data = base64.b64decode(res[1])
+img = _PIL.open(io.BytesIO(img_data))
+result = f"QR: {img.size[0]}x{img.size[1]} {img.mode} PNG, {len(img_data)} bytes"
+""".trimIndent(),
+    ),
+
+    // ── Direct: SymPy ─────────────────────────────────────────────────────────
+    TestCase(
+        id = "sympy_direct",
+        name = "SymPy — solve x²−5x+6=0",
+        description = "sympy.solve(x²−5x+6) → roots [2, 3]",
+        expectedKind = ResultKind.Text,
+        mustContain  = listOf("2", "3"),
+        directCode   = """
+from sympy import symbols, solve
+x = symbols('x')
+roots = sorted(solve(x**2 - 5*x + 6, x))
+result = f"Roots of x²-5x+6=0: {roots}"
+""".trimIndent(),
+    ),
+
+    // ── Python E2E: QR code via agent tool ────────────────────────────────────
+    TestCase(
+        id = "py_e2e_qr",
+        name = "Python E2E — QR code",
+        description = "\"generate QR code for URL\" → PNG image",
+        expectedKind = ResultKind.Image,
+        e2ePrompt    = "generate a QR code for https://ecoinference.ai",
+    ),
+
+    // ── Python E2E: SymPy via run_python ──────────────────────────────────────
+    TestCase(
+        id = "py_e2e_sympy",
+        name = "Python E2E — SymPy solve",
+        description = "\"solve x²−5x+6=0 with sympy\" → text with roots 2 and 3",
+        expectedKind = ResultKind.Text,
+        mustContain  = listOf("2", "3"),
+        e2ePrompt    = "use run_python with sympy to solve the equation x squared minus 5x plus 6 equals zero and print the roots",
+    ),
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -545,10 +597,13 @@ internal class PythonTestViewModel : ViewModel() {
             )
         }
 
+        // Use a minimal 2-tool system prompt (run_python + generate_qr only).
+        // The full registry (~900+ tokens) risks exhausting E4B's 4096-token
+        // context window and can confuse the model into wrong tool choices.
         val systemPrompt = buildString {
             val userSys = appState.settings.systemPrompt()
             if (userSys.isNotBlank()) appendLine(userSys)
-            appendLine(ToolRegistry.systemPromptBlock())
+            appendLine(buildE2ESystemPrompt())
         }.trim()
 
         val messages = buildList {
@@ -560,7 +615,10 @@ internal class PythonTestViewModel : ViewModel() {
         var lastImage:    ByteArray? = null
         var lastToolText: String?    = null
 
-        runAgentLoop(messages = messages, inference = inference).collect { token ->
+        // Use temperature 0.1f (same as iOS test runner) for deterministic
+        // tool calling — 0.8f (the agent-loop default) causes E4B to
+        // occasionally hallucinate its summary text rather than calling tools.
+        runAgentLoop(messages = messages, inference = inference, temperature = 0.1f).collect { token ->
             when (token) {
                 is AgentToken.Text       -> textBuf.append(token.chunk)
                 is AgentToken.ChartImage -> lastImage = token.bytes
@@ -580,6 +638,35 @@ internal class PythonTestViewModel : ViewModel() {
             else                 -> ToolResult.Text(textBuf.toString())
         }
         return evaluate(tc, result).copy(elapsedMs = elapsed)
+    }
+
+    // ── Minimal E2E system prompt ─────────────────────────────────────────────
+
+    /**
+     * Builds a system-prompt block that exposes only [run_python] and
+     * [generate_qr] — the two tools used by the E2E test suite.
+     *
+     * Using the full registry (~900+ tokens) risks hitting E4B's 4096-token
+     * context limit and can cause the model to pick the wrong tool when many
+     * are listed.  Mirrors [buildE2ESystemPrompt()] in iOS TestView.swift.
+     */
+    private fun buildE2ESystemPrompt(): String {
+        val toolNames = listOf("run_python", "generate_qr")
+        val tools     = toolNames.mapNotNull { ToolRegistry.find(it) }
+        if (tools.isEmpty()) return ToolRegistry.systemPromptBlock()
+        return buildString {
+            appendLine("You have access to device tools.")
+            appendLine("To call a tool you MUST use this EXACT format — valid JSON only, no other syntax:")
+            appendLine("<tool_call>{\"name\":\"tool_name\",\"args\":{\"param\":\"value\"}}</tool_call>")
+            appendLine("After calling a tool, wait for <tool_result> before writing your final answer.")
+            appendLine()
+            appendLine("Available tools:")
+            for (t in tools) {
+                appendLine("- ${t.name}: ${t.description}")
+                if (t.parametersDoc.isNotBlank()) appendLine("  Parameters: ${t.parametersDoc}")
+                appendLine("  Call example: <tool_call>{\"name\":\"${t.name}\",\"args\":${t.argsExample}}</tool_call>")
+            }
+        }.trim()
     }
 
     // ── Evaluate ──────────────────────────────────────────────────────────────

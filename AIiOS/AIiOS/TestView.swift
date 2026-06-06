@@ -436,6 +436,70 @@ result = (
             e2ePrompt:    "what is the moon phase today at my location",
             expectedKind: .text
         ),
+
+        // ── Python: QR code direct ─────────────────────────────────────────────
+        TestCase(
+            id:           "qr_direct",
+            name:         "QR Code — generate PNG",
+            description:  "generate_qr(\"https://ecoinference.ai\") → valid PNG metadata",
+            category:     .python,
+            messages:     nil,
+            pythonCode:   """
+import base64, io, runner
+from PIL import Image as _PIL
+res = runner.generate_qr("https://ecoinference.ai")
+assert res[0] == "image", f"Expected image, got {res[0]}: {res[1]}"
+img_data = base64.b64decode(res[1])
+img = _PIL.open(io.BytesIO(img_data))
+result = f"QR: {img.size[0]}x{img.size[1]} {img.mode} PNG, {len(img_data)} bytes"
+""",
+            e2ePrompt:    nil,
+            expectedKind: .text,
+            mustContain:  ["QR:"]
+        ),
+
+        // ── Python: SymPy symbolic solver ──────────────────────────────────────
+        TestCase(
+            id:           "sympy_direct",
+            name:         "SymPy — solve x²−5x+6=0",
+            description:  "sympy.solve(x²−5x+6) → roots [2, 3]",
+            category:     .python,
+            messages:     nil,
+            pythonCode:   """
+from sympy import symbols, solve
+x = symbols('x')
+roots = sorted(solve(x**2 - 5*x + 6, x))
+result = f"Roots of x²-5x+6=0: {roots}"
+""",
+            e2ePrompt:    nil,
+            expectedKind: .text,
+            mustContain:  ["2", "3"]
+        ),
+
+        // ── Python E2E: QR code via agent tool ────────────────────────────────
+        TestCase(
+            id:           "py_e2e_qr",
+            name:         "Python E2E — QR code",
+            description:  "\"generate QR code for URL\" → PNG image",
+            category:     .python,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    "generate a QR code for https://ecoinference.ai",
+            expectedKind: .image
+        ),
+
+        // ── Python E2E: SymPy via run_python ──────────────────────────────────
+        TestCase(
+            id:           "py_e2e_sympy",
+            name:         "Python E2E — SymPy solve",
+            description:  "\"solve x²−5x+6=0 with sympy\" → text with roots 2 and 3",
+            category:     .python,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    "use run_python with sympy to solve the equation x squared minus 5x plus 6 equals zero and print the roots",
+            expectedKind: .text,
+            mustContain:  ["2", "3"]
+        ),
     ]
 
     // ── Vision (multimodal only) ─────────────────────────────────────────────
@@ -692,6 +756,33 @@ struct TestView: View {
 
     // MARK: Python E2E (agent loop)
 
+    // MARK: Focused system prompt for E2E tests
+    //
+    // buildSystemPromptBlock() includes all ~15 tools which bloats the prefill
+    // context beyond the model's compiled buffer limit, causing a TFLite Slice
+    // op crash (memmove into an invalid address) or a SentencePiece SampleEncode
+    // heap corruption.  E2E tests only ever call run_python or generate_qr, so we
+    // build a minimal prompt with just those two tools.
+    private func buildE2ESystemPrompt() -> String {
+        let names = ["run_python", "generate_qr"]
+        let tools = names.compactMap { ToolRegistry.shared.find($0) }
+        guard !tools.isEmpty else { return ToolRegistry.shared.buildSystemPromptBlock() }
+
+        var buf = """
+You have access to device tools. \
+When you need to use a tool, output EXACTLY one line in this format and nothing else — then wait for the result:
+<tool_call>{"name":"TOOL_NAME","args":{...}}</tool_call>
+The entire tool_call must be valid JSON on a single line. Do NOT use newlines inside the tags.
+
+Available tools:
+"""
+        for t in tools {
+            buf += "\n• \(t.name)(\(t.parametersDoc)): \(t.description)"
+            buf += "\n  e.g. <tool_call>{\"name\":\"\(t.name)\",\"args\":\(t.argsExample)}</tool_call>"
+        }
+        return buf
+    }
+
     private func executePythonE2E(_ tc: TestCase) async throws -> (ResultKind, String) {
         guard let prompt = tc.e2ePrompt else {
             throw RunError.unknownDirectTest(tc.id)
@@ -700,7 +791,7 @@ struct TestView: View {
             return (.text, "Skipped — no model loaded")
         }
 
-        let sysBlock = ToolRegistry.shared.buildSystemPromptBlock()
+        let sysBlock = buildE2ESystemPrompt()
         var messages: [InferenceMessage] = []
         if !sysBlock.isEmpty {
             messages.append(InferenceMessage(role: "system", text: sysBlock))
@@ -716,7 +807,7 @@ struct TestView: View {
             let response = try await Task.detached(priority: .userInitiated) {
                 try InferenceService.shared.chat(
                     messages: messages,
-                    maxTokens: 1024,   // 768 was too short for matplotlib tool calls
+                    maxTokens: 1024,
                     temperature: 0.1
                 )
             }.value
@@ -733,21 +824,37 @@ struct TestView: View {
                 if let tool = ToolRegistry.shared.find(toolCall.toolName) {
                     let toolResult = await tool.execute(toolCall.args)
                     lastToolResult = toolResult
-                    let resultText = toolResult.modelText
-                    messages.append(InferenceMessage(role: "assistant", text: response))
-                    // If the tool returned an error, invite the model to fix and
-                    // retry rather than blocking further tool calls.
-                    let isError = resultText.hasPrefix("{\"error\"")
-                    if isError {
-                        messages.append(InferenceMessage(
-                            role: "user",
-                            text: "[Tool result: \(toolCall.toolName)] \(resultText)\n" +
-                                  "The code produced an error. Please correct the code and call the tool again."
-                        ))
-                    } else {
-                        messages.append(AgentLoop.toolResultMessage(
-                            toolName: toolCall.toolName, result: resultText))
+
+                    // If the tool produced an image or HTML, we have everything
+                    // needed for evaluation — don't add the bulky result to the
+                    // context and don't ask the model to summarise it.  A full
+                    // plotly HTML export can be 2000+ tokens and pushing it into
+                    // the next turn exceeds the model's 4096-token context limit.
+                    switch toolResult {
+                    case .image:
+                        break  // stop the loop; evaluation uses lastToolResult
+                    case .text(let resultText):
+                        let trimmed = resultText.trimmingCharacters(in: .whitespaces)
+                        let isHtml  = trimmed.uppercased().hasPrefix("<!DOCTYPE") ||
+                                      trimmed.lowercased().hasPrefix("<html")
+                        if isHtml {
+                            break  // HTML result — stop; evaluation uses lastToolResult
+                        }
+                        messages.append(InferenceMessage(role: "assistant", text: response))
+                        let isError = resultText.hasPrefix("{\"error\"")
+                        if isError {
+                            messages.append(InferenceMessage(
+                                role: "user",
+                                text: "[Tool result: \(toolCall.toolName)] \(resultText)\n" +
+                                      "The code produced an error. Please correct the code and call the tool again."
+                            ))
+                        } else {
+                            messages.append(AgentLoop.toolResultMessage(
+                                toolName: toolCall.toolName, result: resultText))
+                        }
+                        continue
                     }
+                    break  // image or HTML — exit the for loop
                 } else {
                     finalText = response
                     break

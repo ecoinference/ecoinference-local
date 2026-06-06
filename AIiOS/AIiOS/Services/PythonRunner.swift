@@ -74,6 +74,54 @@ enum PythonRunner {
         }
     }
 
+    // MARK: - QR code generation
+
+    /// Generates a QR code PNG using the `qrcode` Python library.
+    /// Returns `.image` on success or `.text` with an error JSON on failure.
+    static func executeGenerateQr(text: String, boxSize: Int, border: Int) async -> ToolResult {
+        await Task.detached(priority: .background) {
+            runGenerateQrSync(text: text, boxSize: boxSize, border: border)
+        }.value
+    }
+
+    private static func runGenerateQrSync(text: String, boxSize: Int, border: Int) -> ToolResult {
+        let gilState = PythonGIL.ensure()
+        defer { PythonGIL.release(gilState) }
+
+        do {
+            let runner = try Python.attemptImport("runner")
+            let result = runner.generate_qr(text, boxSize, border)
+            let parts  = Array(result)
+            guard parts.count == 2 else {
+                return .text(#"{"error":"runner.generate_qr returned unexpected result"}"#)
+            }
+            let type  = String(parts[0]) ?? "error"
+            let value = String(parts[1]) ?? ""
+
+            switch type {
+            case "image":
+                guard let data  = Data(base64Encoded: value),
+                      let image = UIImage(data: data) else {
+                    return .text(#"{"error":"failed to decode QR code PNG"}"#)
+                }
+                return .image(image, caption: "QR code for: \(text.prefix(60))")
+            case "error":
+                let escaped = value
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                    .replacingOccurrences(of: "\n", with: "\\n")
+                    .replacingOccurrences(of: "\r", with: "\\r")
+                return .text(#"{"error":"\#(escaped)"}"#)
+            default:
+                return .text(value)
+            }
+        } catch {
+            let msg = error.localizedDescription
+                .replacingOccurrences(of: "\"", with: "'")
+            return .text(#"{"error":"\#(msg)"}"#)
+        }
+    }
+
     // MARK: - Synchronous runner (must not be called on main thread)
 
     private static func runSync(code: String) -> ToolResult {

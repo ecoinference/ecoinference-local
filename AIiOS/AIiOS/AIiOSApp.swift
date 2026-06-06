@@ -71,6 +71,7 @@ struct EcoInferenceApp: App {
         ChartTools.register()
         PythonTools.register()
         ImageEditTools.register()
+        QrCodeTools.register()
     }
 
     // MARK: - Window background fix
