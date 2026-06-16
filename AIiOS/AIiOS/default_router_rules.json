@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "defaultDecision": "local",
+  "rules": [
+    {
+      "id": "current_events",
+      "conditions": { "fact": "mentionsCurrentEvents", "operator": "equal", "value": true },
+      "decision": "cloud",
+      "reason": "Requires up-to-date information beyond the on-device model's training data."
+    },
+    {
+      "id": "sensitive_domain",
+      "conditions": { "fact": "mentionsSensitiveDomain", "operator": "equal", "value": true },
+      "decision": "cloud",
+      "reason": "Legal/medical/financial topics benefit from the larger cloud model's broader training."
+    },
+    {
+      "id": "image_unsupported_locally",
+      "conditions": {
+        "all": [
+          { "fact": "hasImage", "operator": "equal", "value": true },
+          { "fact": "localSupportsImage", "operator": "equal", "value": false }
+        ]
+      },
+      "decision": "cloud",
+      "reason": "An image was attached but the loaded local model doesn't support image input."
+    },
+    {
+      "id": "long_complex_prompt",
+      "conditions": {
+        "all": [
+          { "fact": "promptLength", "operator": "greaterThan", "value": 600 },
+          { "fact": "requestsDeepReasoning", "operator": "equal", "value": true }
+        ]
+      },
+      "decision": "cloud",
+      "reason": "Long prompt requesting deep analysis exceeds the on-device model's comfortable range."
+    },
+    {
+      "id": "creative_writing_long",
+      "conditions": {
+        "all": [
+          { "fact": "requestsCreativeWriting", "operator": "equal", "value": true },
+          { "fact": "promptLength", "operator": "greaterThan", "value": 200 }
+        ]
+      },
+      "decision": "cloud",
+      "reason": "Long-form creative writing tends to read better from the larger cloud model."
+    }
+  ]
+}

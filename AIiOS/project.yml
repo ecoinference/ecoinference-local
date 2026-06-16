@@ -6,7 +6,7 @@ options:
   xcodeVersion: "16"
 
 # Local.xcconfig is gitignored — copy Local.xcconfig.sample → Local.xcconfig
-# and fill in HF_TOKEN before building. setup.sh creates an empty one automatically.
+# for any local, machine-specific build settings. setup.sh creates it automatically.
 configFiles:
   Debug: Local.xcconfig
   Release: Local.xcconfig

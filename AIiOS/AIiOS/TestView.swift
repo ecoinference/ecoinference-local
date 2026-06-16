@@ -4,7 +4,7 @@ import UIKit
 // MARK: - Test model
 
 private enum TestStatus { case pending, running, passed, failed, skipped }
-private enum TestCategory { case model, inference, vision, python }
+private enum TestCategory { case model, inference, vision, python, cloud, router }
 
 /// Expected result kind for Python and E2E tests.
 private enum ResultKind { case text, image, html }
@@ -27,6 +27,15 @@ private struct TestCase: Identifiable {
     /// User prompt for the full agent loop (Python E2E).
     let e2ePrompt:   String?
 
+    // ── Cloud direct ──────────────────────────────────────────────────────────
+    /// If non-nil, sent to GeminiService.chat() directly (cloud tier, no local model).
+    var cloudPrompt: String? = nil
+
+    // ── Router direct ─────────────────────────────────────────────────────────
+    /// If non-nil, run through RouterService.decide() — checks the rule engine's
+    /// tier choice without performing any actual inference.
+    var routerPrompt: String? = nil
+
     // ── Evaluation ────────────────────────────────────────────────────────────
     var expectedKind:   ResultKind = .text
     var altKind:        ResultKind? = nil
@@ -48,6 +57,8 @@ private struct TestCase: Identifiable {
     var isInferenceE2E: Bool { messages != nil }
     var isPythonDirect: Bool { pythonCode != nil && e2ePrompt == nil }
     var isPythonE2E:    Bool { e2ePrompt  != nil }
+    var isCloudDirect:  Bool { cloudPrompt != nil }
+    var isRouterDirect: Bool { routerPrompt != nil }
 
     func accepts(_ kind: ResultKind) -> Bool {
         kind == expectedKind || (altKind != nil && kind == altKind!)
@@ -500,6 +511,92 @@ result = f"Roots of x²-5x+6=0: {roots}"
             expectedKind: .text,
             mustContain:  ["2", "3"]
         ),
+
+        // ── Cloud: Gemini direct ──────────────────────────────────────────────
+        TestCase(
+            id:           "gemini_direct",
+            name:         "Gemini — basic arithmetic",
+            description:  "\"12 × 12\" → response contains \"144\" (cloud tier, requires API key)",
+            category:     .cloud,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            cloudPrompt:  "What is 12 multiplied by 12? Reply with just the number.",
+            expectedKind: .text,
+            mustContain:  ["144"],
+            isSkipped:    SettingsService.shared.geminiApiKey.isEmpty,
+            skipReason:   "No Gemini API key set (Settings → Cloud AI)"
+        ),
+
+        // ── Router: simple prompt → local ────────────────────────────────────
+        TestCase(
+            id:           "router_simple_local",
+            name:         "Router — simple prompt routes local",
+            description:  "\"What's 2+2?\" → tier=local",
+            category:     .router,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            routerPrompt: "What's 2+2?",
+            expectedKind: .text,
+            mustContain:  ["tier=local"]
+        ),
+
+        // ── Router: current events → cloud ───────────────────────────────────
+        TestCase(
+            id:           "router_current_events_cloud",
+            name:         "Router — current events routes cloud",
+            description:  "\"What's the latest news today?\" → tier=cloud",
+            category:     .router,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            routerPrompt: "What's the latest news today?",
+            expectedKind: .text,
+            mustContain:  ["tier=cloud", "current_events"]
+        ),
+
+        // ── Router: sensitive domain → cloud ─────────────────────────────────
+        TestCase(
+            id:           "router_sensitive_domain_cloud",
+            name:         "Router — sensitive domain routes cloud",
+            description:  "\"Can you diagnose my symptoms?\" → tier=cloud",
+            category:     .router,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            routerPrompt: "Can you diagnose my symptoms?",
+            expectedKind: .text,
+            mustContain:  ["tier=cloud", "sensitive_domain"]
+        ),
+
+        // ── Router: short creative writing → local ───────────────────────────
+        TestCase(
+            id:           "router_short_creative_local",
+            name:         "Router — short creative writing routes local",
+            description:  "\"Write a poem about cats.\" → tier=local",
+            category:     .router,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            routerPrompt: "Write a poem about cats.",
+            expectedKind: .text,
+            mustContain:  ["tier=local"]
+        ),
+
+        // ── Router: long creative writing → cloud ────────────────────────────
+        TestCase(
+            id:           "router_long_creative_cloud",
+            name:         "Router — long creative writing routes cloud",
+            description:  "Long \"write a poem\" prompt (>200 chars) → tier=cloud",
+            category:     .router,
+            messages:     nil,
+            pythonCode:   nil,
+            e2ePrompt:    nil,
+            routerPrompt: "Write a poem about the ocean and the way waves crash against rocks at sunset while seagulls fly overhead and the salty breeze fills the air with a sense of nostalgia and peace, capturing summer evenings spent by the shore.",
+            expectedKind: .text,
+            mustContain:  ["tier=cloud", "creative_writing_long"]
+        ),
     ]
 
     // ── Vision (multimodal only) ─────────────────────────────────────────────
@@ -621,6 +718,7 @@ struct TestView: View {
     private func runAll() {
         guard !running, appState.modelLoaded else { return }
 
+        resetFailureLog()
         for r in results {
             r.status  = .pending
             r.detail  = ""
@@ -666,14 +764,32 @@ struct TestView: View {
             r.elapsed = Date().timeIntervalSince(start)
             r.status  = .failed
             r.detail  = "Exception: \(error.localizedDescription)"
+            logFailure(r.testCase, reason: "Exception: \(error.localizedDescription)")
         }
     }
 
     // MARK: Execute one test
 
     private func execute(_ tc: TestCase) async throws -> (ResultKind, String) {
+        // -1. Router direct (pure Swift decision, no inference at all)
+        if tc.isRouterDirect {
+            let decision = RouterService.shared.decide(prompt: tc.routerPrompt!)
+            let detail = "tier=\(decision.tier.rawValue) rule=\(decision.ruleId ?? "default") — \(decision.reason)"
+            return (.text, detail)
+        }
+
+        // 0. Cloud direct (Gemini, no local model involved)
+        if tc.isCloudDirect {
+            let response = try await GeminiService.shared.chat(
+                messages:    [InferenceMessage(role: "user", text: tc.cloudPrompt!)],
+                maxTokens:   256,
+                temperature: 0.1
+            )
+            return (.text, response)
+        }
+
         // 1. Direct model-state tests
-        if !tc.isPythonDirect && !tc.isPythonE2E && !tc.isInferenceE2E {
+        if !tc.isPythonDirect && !tc.isPythonE2E && !tc.isInferenceE2E && !tc.isCloudDirect && !tc.isRouterDirect {
             let detail = try executeDirect(tc)
             return (.text, detail)
         }
@@ -921,6 +1037,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
             let start = detail.prefix(300)
             let end   = detail.count > 300 ? "...\n" + detail.suffix(300) : ""
             print("[TEST FAIL] \(tc.id):\n\(start)\(end)\n---")
+            logFailure(tc, reason: "Error marker in response:\n\(detail)")
             return
         }
 
@@ -936,6 +1053,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
                 r.status = .failed
                 r.detail = "Expected \(expected), got \(kind).\n\(detail.prefix(200))"
                 print("[TEST FAIL] \(tc.id): Expected \(expected), got \(kind). detail=\(detail.prefix(300))")
+                logFailure(tc, reason: "Expected \(expected), got \(kind).\nFull response:\n\(detail)")
                 return
             }
         }
@@ -947,6 +1065,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
                 r.status = .failed
                 r.detail = "Expected \"\(kw)\" not found in:\n\(detail)"
                 print("[TEST FAIL] \(tc.id): keyword \"\(kw)\" not found. detail=\(detail.prefix(300))")
+                logFailure(tc, reason: "Expected \"\(kw)\" not found.\nFull response:\n\(detail)")
                 return
             }
         }
@@ -956,6 +1075,8 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
             if lower.contains(kw.lowercased()) {
                 r.status = .failed
                 r.detail = "Unexpected \"\(kw)\" found in:\n\(detail)"
+                print("[TEST FAIL] \(tc.id): unexpected \"\(kw)\" found. detail=\(detail.prefix(300))")
+                logFailure(tc, reason: "Unexpected \"\(kw)\" found.\nFull response:\n\(detail)")
                 return
             }
         }
@@ -966,6 +1087,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
             r.status = .failed
             r.detail = "Model returned an empty response."
             print("[TEST FAIL] \(tc.id): empty response")
+            logFailure(tc, reason: "Model returned an empty response.")
             return
         }
 
@@ -973,6 +1095,37 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         r.detail = detail.count > 300 ? "\(detail.prefix(300))…" : detail
         print("[TEST PASS] \(tc.id)")
     }
+
+    // MARK: Failure log (Documents/test_failures.log)
+    //
+    // r.detail shown in the UI is truncated for readability. This writes the
+    // full, untruncated failure reason + response to a file we can pull from
+    // the device afterward (alongside native_stderr.log) — avoids needing the
+    // user to manually copy/paste failure text.
+
+    private func resetFailureLog() {
+        let url = Self.failureLogURL
+        try? "".write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func logFailure(_ tc: TestCase, reason: String) {
+        let url = Self.failureLogURL
+        let entry = """
+        ── \(tc.id) ────────────────────────────────────────
+        \(reason)
+
+        """
+        if let existing = try? String(contentsOf: url, encoding: .utf8) {
+            try? (existing + entry).write(to: url, atomically: true, encoding: .utf8)
+        } else {
+            try? entry.write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+
+    private static let failureLogURL: URL = {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return docs.appendingPathComponent("test_failures.log")
+    }()
 
     // MARK: Test image (4-colour 64×64 grid)
 
@@ -1095,6 +1248,8 @@ private struct TestTile: View {
         case .inference: ("Inference", .purple)
         case .vision:    ("Vision",    .teal)
         case .python:    ("Python",    .green)
+        case .cloud:     ("Cloud",     .indigo)
+        case .router:    ("Router",    .pink)
         }
         return Text(label)
             .font(.caption2.weight(.semibold))

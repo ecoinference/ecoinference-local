@@ -78,11 +78,18 @@ enum AgentLoop {
             }
         }
 
-        // 3-attempt JSON parse
+        // Multi-attempt JSON parse, each step progressively more aggressive at repair.
         if let result = tryParse(jsonStr, textBefore: textBefore)                { return result }
         let escaped = escapeControlCharsInStrings(jsonStr)
         if let result = tryParse(escaped, textBefore: textBefore)                { return result }
-        let closed  = autoCloseJSON(escaped)
+        // Drops stray non-JSON tokens outside string literals — e.g. the model
+        // occasionally emits a trailing `/>` (blending in XML/HTML tag syntax)
+        // right after closing a string value instead of `}}</tool_call>`.
+        // No-op on well-formed JSON, since valid JSON has nothing outside
+        // strings besides structural/whitespace/value characters anyway.
+        let sanitized = sanitizeStructuralGarbage(escaped)
+        if let result = tryParse(sanitized, textBefore: textBefore)              { return result }
+        let closed  = autoCloseJSON(sanitized)
         if let result = tryParse(closed,  textBefore: textBefore)                { return result }
         return nil
     }
@@ -122,6 +129,26 @@ enum AgentLoop {
             let colon = m.range(at: 3)
             let replacement = ns.substring(with: pre) + "\"" + ns.substring(with: key) + "\"" + ns.substring(with: colon)
             result = (result as NSString).replacingCharacters(in: full, with: replacement)
+        }
+        return result
+    }
+
+    /// Strips characters outside string literals that aren't valid JSON
+    /// structural/whitespace/value characters (e.g. a stray `/` or `>`).
+    /// Brace/bracket characters are preserved untouched so autoCloseJSON's
+    /// balance tracking afterward still works correctly.
+    private static func sanitizeStructuralGarbage(_ s: String) -> String {
+        let allowedOutsideString = Set("{}[]:,\"-+.eE0123456789truefalsenull \t\n\r")
+        var result   = ""
+        var inString = false
+        var escaped  = false
+        for ch in s {
+            if escaped { result.append(ch); escaped = false; continue }
+            if ch == "\\" && inString { result.append(ch); escaped = true; continue }
+            if ch == "\"" { inString.toggle(); result.append(ch); continue }
+            if inString { result.append(ch); continue }
+            if allowedOutsideString.contains(ch) { result.append(ch) }
+            // else: drop — not valid outside a JSON string literal.
         }
         return result
     }

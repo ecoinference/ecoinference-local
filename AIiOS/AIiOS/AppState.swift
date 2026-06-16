@@ -75,7 +75,10 @@ final class AppState: ObservableObject {
 
     // MARK: - Download
 
-    func startDownload(modelId: String, hfToken: String? = nil) {
+    /// [authToken] is currently unused — model files are served unauthenticated from
+    /// our own server. Kept so a future auth-locked server can pass a token through
+    /// without changing this call site.
+    func startDownload(modelId: String, authToken: String? = nil) {
         guard let info = ModelCatalog.find(id: modelId) else { return }
         guard !downloadActive else { return }
 
@@ -86,11 +89,10 @@ final class AppState: ObservableObject {
         downloadErrorModelId  = nil
 
         let downloadSvc = download
-        let token       = hfToken ?? (settings.hfToken.isEmpty ? nil : settings.hfToken)
 
         Task {
             do {
-                try await downloadSvc.download(model: info, hfToken: token) { [weak self] progress in
+                try await downloadSvc.download(model: info, authToken: authToken) { [weak self] progress in
                     Task { @MainActor [weak self] in
                         self?.downloadProgress = progress * 100
                     }

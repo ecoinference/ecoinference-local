@@ -6,9 +6,10 @@ import SwiftUI
 struct RootView: View {
 
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var authService: AuthService
     @State private var selectedTab: Tab = .models
 
-    enum Tab { case chat, models, tests, settings }
+    enum Tab { case chat, models, profile, settings }
 
     var body: some View {
         // .ignoresSafeArea() on the ZStack makes its LAYOUT frame = full screen
@@ -29,9 +30,10 @@ struct RootView: View {
                     .tabItem { Label("Models", systemImage: "cpu") }
                     .tag(Tab.models)
 
-                TestView()
-                    .tabItem { Label("Tests", systemImage: "flask") }
-                    .tag(Tab.tests)
+                ProfileView()
+                    .environmentObject(authService)
+                    .tabItem { Label("Profile", systemImage: "person.circle") }
+                    .tag(Tab.profile)
 
                 SettingsView()
                     .tabItem { Label("Settings", systemImage: "gearshape") }

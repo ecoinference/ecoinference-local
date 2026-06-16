@@ -44,15 +44,18 @@ struct SettingsView: View {
                     Text("Optional. Applied to every conversation. Leave blank to use the model default.")
                 }
 
-                // ── HuggingFace ───────────────────────────────────────────────
+                // ── Cloud AI (router) ────────────────────────────────────────
                 Section {
-                    SecureField("HuggingFace token", text: $settings.hfToken)
+                    SecureField("Gemini API key", text: $settings.geminiApiKey)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                    Link("Get a free API key at aistudio.google.com",
+                         destination: URL(string: "https://aistudio.google.com/apikey")!)
+                        .font(.caption)
                 } header: {
-                    Text("HuggingFace")
+                    Text("Cloud AI")
                 } footer: {
-                    Text("Required only for gated models. Leave blank for public models.")
+                    Text("Used by the router for requests that need a more capable cloud model. Local on-device inference always works without this key.")
                 }
 
                 // ── Tests ────────────────────────────────────────────────────

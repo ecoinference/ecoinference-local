@@ -14,9 +14,33 @@ import sys
 import io
 import traceback
 import base64
+import webbrowser
 
 # Force Agg (non-interactive) backend before matplotlib is imported anywhere.
 os.environ["MPLBACKEND"] = "Agg"
+
+# Prevent any plotting library from popping a browser/local server over the app.
+# plotly's fig.show() defaults to the "browser" renderer in some environments,
+# which starts a local HTTP server (127.0.0.1) and calls webbrowser.open() —
+# on Android that can surface as an actual browser Intent firing on top of the
+# app. We always want HTML returned via to_html() (see Priority 2 below), never
+# shown directly, so disable browser-opening at the source — covers any
+# model-generated code that calls .show() instead of leaving the figure for
+# us to detect in the namespace.
+webbrowser.open         = lambda *a, **k: False
+webbrowser.open_new      = lambda *a, **k: False
+webbrowser.open_new_tab  = lambda *a, **k: False
+
+try:
+    import plotly.io as pio  # noqa: PLC0415
+    # All of plotly's built-in renderers (json, notebook, browser, …) either
+    # open something or require IPython's display machinery, which raises
+    # ValueError outside a notebook. fig.show() is never useful in this
+    # sandboxed exec() — we always pull the figure from the namespace and
+    # call to_html() ourselves (see Priority 2 below) — so make it a true no-op.
+    pio.show = lambda *a, **k: None
+except ImportError:
+    pass
 
 
 def run_code(code: str) -> list:

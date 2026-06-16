@@ -1,12 +1,15 @@
 import SwiftUI
 import Foundation
+import FirebaseCore
 
 @main
 struct EcoInferenceApp: App {
 
-    @StateObject private var appState = AppState.shared
+    @StateObject private var appState    = AppState.shared
+    @StateObject private var authService = AuthService.shared
 
     init() {
+        FirebaseApp.configure()
         redirectNativeStderrToLog()
         EmbeddedPython.start()
         SettingsService.shared.load()
@@ -142,9 +145,10 @@ struct EcoInferenceApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AuthGateView()
                 .environmentObject(appState)
-                .tint(EcoColors.green)          // brand green for all tinted controls
+                .environmentObject(authService)
+                .tint(EcoColors.green)
                 .onOpenURL { url in
                     handleURL(url)
                 }

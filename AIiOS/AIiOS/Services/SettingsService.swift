@@ -11,17 +11,17 @@ final class SettingsService: ObservableObject {
     private let defaults = UserDefaults.standard
 
     private enum Key {
-        static let hfToken        = "hf_token"
+        static let geminiApiKey    = "gemini_api_key"
         static let selectedModelId = "selected_model_id"
         static let useGpu          = "use_gpu"
         static let maxNumTokens    = "max_num_tokens"
         static let systemPrompt    = "system_prompt"
     }
 
-    // ── HuggingFace token ─────────────────────────────────────────────────────
+    // ── Gemini API key (cloud tier of the LLM router) ───────────────────────────
 
-    @Published var hfToken: String = "" {
-        didSet { defaults.set(hfToken, forKey: Key.hfToken) }
+    @Published var geminiApiKey: String = "" {
+        didSet { defaults.set(geminiApiKey, forKey: Key.geminiApiKey) }
     }
 
     // ── Model settings ────────────────────────────────────────────────────────
@@ -51,14 +51,7 @@ final class SettingsService: ObservableObject {
     // ── Initialise from persisted values ──────────────────────────────────────
 
     func load() {
-        // HF token — prefer UserDefaults, fall back to build-time xcconfig value.
-        if let stored = defaults.string(forKey: Key.hfToken), !stored.isEmpty {
-            hfToken = stored
-        } else {
-            let buildDefault = Bundle.main.object(forInfoDictionaryKey: "HFTokenDefault")
-                as? String ?? ""
-            hfToken = buildDefault.hasPrefix("hf_") ? buildDefault : ""
-        }
+        geminiApiKey    = defaults.string(forKey: Key.geminiApiKey) ?? ""
 
         selectedModelId = defaults.string(forKey: Key.selectedModelId)
         useGpu          = defaults.bool(forKey: Key.useGpu)

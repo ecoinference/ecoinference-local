@@ -12,7 +12,6 @@
 		0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */; };
 		1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4421B40D4D7723A6080397 /* PythonTools.swift */; };
-		FDB6F613C3ED4E6A85E6AFB9 /* QrCodeTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7367025489435C90892709 /* QrCodeTools.swift */; };
 		2377A3B52FF093E730435A1C /* ApiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7817202873F60215D64492 /* ApiModels.swift */; };
 		2655D9612602662244AD77E9 /* SettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317AD08BD60E54967FB94A71 /* SettingsService.swift */; };
 		2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; };
@@ -23,6 +22,9 @@
 		43FEDF55368F0B3667480B79 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00484D7D7A20D3FAC92E1567 /* Python.xcframework */; };
 		4718B5169B2B8741B7010B70 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 82302E30D1D9900FA1613871 /* Assets.xcassets */; };
 		4847408AAADA7756673A42D8 /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F590FB8D3531E83DE497E7D /* DebugLogger.swift */; };
+		4D8E90EE2FE0A9EA00C8594A /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90ED2FE0A9EA00C8594A /* FirebaseAuth */; };
+		4D8E90F02FE0A9F900C8594A /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90EF2FE0A9F900C8594A /* FirebaseFirestore */; };
+		4D8E90F22FE0AA0C00C8594A /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90F12FE0AA0C00C8594A /* FirebaseStorage */; };
 		64E3F7C8134673ACA7644190 /* EmbeddedPython.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8844BE75CE9F7CEB7E8DD17F /* EmbeddedPython.swift */; };
 		684F677333F44AAB60DE5903 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23521B3F2ED10C8615DAE214 /* LocationService.swift */; };
 		6D42D6A98C3C923E74E8650E /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 00484D7D7A20D3FAC92E1567 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -43,6 +45,7 @@
 		A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC39CF38328F273C28DCECD0 /* ToolResult.swift */; };
 		A93B2AFBB1007B0C4857C8DA /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AFD97C1F00ABA0454B76B043 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5C3A369A04C20CF3DA3BF8 /* AppState.swift */; };
+		BB891A2300001111AABBCCDD /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC891A2300001111AABBCCDD /* GoogleService-Info.plist */; };
 		C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; };
 		DDCEBB06E9E03F2B3C1A9E33 /* InferenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */; };
 		DF530C2E8777598327F8FA90 /* PythonCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD5FAF636339EAFE648372D /* PythonCommand.swift */; };
@@ -51,6 +54,24 @@
 		EBA520D8558A635F24094287 /* libGemmaModelConstraintProvider.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9CD06AFBE1150EE283F162 /* libGemmaModelConstraintProvider.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F156A24AF12C27D2DA0D314F /* AstralTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75AE0BAE9B9E03FD8C8113E /* AstralTools.swift */; };
 		F38B25B916AB30E791F08022 /* MathTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C7FFBBADD4F233987049D14 /* MathTools.swift */; };
+		FDB6F613C3ED4E6A85E6AFB9 /* QrCodeTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7367025489435C90892709 /* QrCodeTools.swift */; };
+		A2010000000000000000AA01 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1010000000000000000AA01 /* AuthService.swift */; };
+		A2020000000000000000AA01 /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1020000000000000000AA01 /* UserProfileService.swift */; };
+		A2030000000000000000AA01 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1030000000000000000AA01 /* StorageService.swift */; };
+		A2040000000000000000AA01 /* UsernameValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1040000000000000000AA01 /* UsernameValidator.swift */; };
+		A2050000000000000000AA01 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1050000000000000000AA01 /* UserProfile.swift */; };
+		A2060000000000000000AA01 /* AuthGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1060000000000000000AA01 /* AuthGateView.swift */; };
+		A2070000000000000000AA01 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1070000000000000000AA01 /* SignInView.swift */; };
+		A2080000000000000000AA01 /* CreateAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1080000000000000000AA01 /* CreateAccountView.swift */; };
+		A2090000000000000000AA01 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1090000000000000000AA01 /* ForgotPasswordView.swift */; };
+		A2100000000000000000AA01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1100000000000000000AA01 /* ProfileView.swift */; };
+		A2110000000000000000AA01 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1110000000000000000AA01 /* EditProfileView.swift */; };
+		A2120000000000000000AA01 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1120000000000000000AA01 /* GeminiService.swift */; };
+		A2130000000000000000AA01 /* RouterModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1130000000000000000AA01 /* RouterModels.swift */; };
+		A2140000000000000000AA01 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1140000000000000000AA01 /* RuleEngine.swift */; };
+		A2150000000000000000AA01 /* RouterFactExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1150000000000000000AA01 /* RouterFactExtractor.swift */; };
+		A2160000000000000000AA01 /* RouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1160000000000000000AA01 /* RouterService.swift */; };
+		A2170000000000000000AA01 /* default_router_rules.json in Resources */ = {isa = PBXBuildFile; fileRef = A1170000000000000000AA01 /* default_router_rules.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -75,6 +96,24 @@
 		00484D7D7A20D3FAC92E1567 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
 		0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsView.swift; sourceTree = "<group>"; };
 		0C6006B64195BA7BEE44A142 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0C7367025489435C90892709 /* QrCodeTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QrCodeTools.swift; sourceTree = "<group>"; };
+		A1010000000000000000AA01 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		A1020000000000000000AA01 /* UserProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
+		A1030000000000000000AA01 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
+		A1040000000000000000AA01 /* UsernameValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsernameValidator.swift; sourceTree = "<group>"; };
+		A1050000000000000000AA01 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		A1060000000000000000AA01 /* AuthGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthGateView.swift; sourceTree = "<group>"; };
+		A1070000000000000000AA01 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		A1080000000000000000AA01 /* CreateAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAccountView.swift; sourceTree = "<group>"; };
+		A1090000000000000000AA01 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
+		A1100000000000000000AA01 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A1110000000000000000AA01 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
+		A1120000000000000000AA01 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+		A1130000000000000000AA01 /* RouterModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterModels.swift; sourceTree = "<group>"; };
+		A1140000000000000000AA01 /* RuleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEngine.swift; sourceTree = "<group>"; };
+		A1150000000000000000AA01 /* RouterFactExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterFactExtractor.swift; sourceTree = "<group>"; };
+		A1160000000000000000AA01 /* RouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterService.swift; sourceTree = "<group>"; };
+		A1170000000000000000AA01 /* default_router_rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_router_rules.json; sourceTree = "<group>"; };
 		0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageEditTools.swift; sourceTree = "<group>"; };
 		1F450324EDA0CD88E1982110 /* PythonRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonRunner.swift; sourceTree = "<group>"; };
 		23521B3F2ED10C8615DAE214 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
@@ -108,11 +147,11 @@
 		B95FC43E646AD692045D6B0F /* ImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStore.swift; sourceTree = "<group>"; };
 		BABDAD50B9218431BBD5D0AD /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		C6352949B2B9DDDEDD4D897A /* ChartTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTools.swift; sourceTree = "<group>"; };
+		CC891A2300001111AABBCCDD /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CDD5FAF636339EAFE648372D /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
 		DF4421B40D4D7723A6080397 /* PythonTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonTools.swift; sourceTree = "<group>"; };
-		0C7367025489435C90892709 /* QrCodeTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QrCodeTools.swift; sourceTree = "<group>"; };
 		F5757F96D605803F0D991C8D /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
-		F8F30C2E93722C6645941BA9 /* AIiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AIiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8F30C2E93722C6645941BA9 /* EcoInference.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EcoInference.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
 		FDA0060B41B5BC1A612164CF /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -124,9 +163,12 @@
 			files = (
 				2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */,
 				3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
+				4D8E90F22FE0AA0C00C8594A /* FirebaseStorage in Frameworks */,
 				C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
 				6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */,
 				43FEDF55368F0B3667480B79 /* Python.xcframework in Frameworks */,
+				4D8E90F02FE0A9F900C8594A /* FirebaseFirestore in Frameworks */,
+				4D8E90EE2FE0A9EA00C8594A /* FirebaseAuth in Frameworks */,
 				89412D66FF901050DAC9D27D /* PythonKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -159,11 +201,19 @@
 				BABDAD50B9218431BBD5D0AD /* ChatView.swift */,
 				2B8182CC361FE092D2F8709D /* EcoTheme.swift */,
 				58A8051299A89A6166861451 /* Info.plist */,
+				CC891A2300001111AABBCCDD /* GoogleService-Info.plist */,
+				A1170000000000000000AA01 /* default_router_rules.json */,
 				61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */,
 				0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */,
 				ACFB2917A419EA15F57507C3 /* RootView.swift */,
 				0C6006B64195BA7BEE44A142 /* SettingsView.swift */,
 				2939FAA11821E3293733391A /* TestView.swift */,
+				A1060000000000000000AA01 /* AuthGateView.swift */,
+				A1070000000000000000AA01 /* SignInView.swift */,
+				A1080000000000000000AA01 /* CreateAccountView.swift */,
+				A1090000000000000000AA01 /* ForgotPasswordView.swift */,
+				A1100000000000000000AA01 /* ProfileView.swift */,
+				A1110000000000000000AA01 /* EditProfileView.swift */,
 				7D459ADB81CE7883AF943388 /* Inference */,
 				6EF6B9015A1BB4870277F334 /* Models */,
 				6B5F45C348400A26EBD4B47D /* Services */,
@@ -184,7 +234,7 @@
 		519339993754C1F257EC9139 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F8F30C2E93722C6645941BA9 /* AIiOS.app */,
+				F8F30C2E93722C6645941BA9 /* EcoInference.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,6 +253,14 @@
 				55C40CB6CA27A90F0DD2CA2A /* PythonGIL.swift */,
 				1F450324EDA0CD88E1982110 /* PythonRunner.swift */,
 				317AD08BD60E54967FB94A71 /* SettingsService.swift */,
+				A1010000000000000000AA01 /* AuthService.swift */,
+				A1020000000000000000AA01 /* UserProfileService.swift */,
+				A1030000000000000000AA01 /* StorageService.swift */,
+				A1040000000000000000AA01 /* UsernameValidator.swift */,
+				A1120000000000000000AA01 /* GeminiService.swift */,
+				A1140000000000000000AA01 /* RuleEngine.swift */,
+				A1150000000000000000AA01 /* RouterFactExtractor.swift */,
+				A1160000000000000000AA01 /* RouterService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -212,6 +270,8 @@
 			children = (
 				6A7817202873F60215D64492 /* ApiModels.swift */,
 				25BDB991EA36C2E40FEEFAC0 /* ModelInfo.swift */,
+				A1050000000000000000AA01 /* UserProfile.swift */,
+				A1130000000000000000AA01 /* RouterModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -268,9 +328,12 @@
 			name = AIiOS;
 			packageProductDependencies = (
 				99CA1464318F49AFE4822511 /* PythonKit */,
+				4D8E90ED2FE0A9EA00C8594A /* FirebaseAuth */,
+				4D8E90EF2FE0A9F900C8594A /* FirebaseFirestore */,
+				4D8E90F12FE0AA0C00C8594A /* FirebaseStorage */,
 			);
 			productName = AIiOS;
-			productReference = F8F30C2E93722C6645941BA9 /* AIiOS.app */;
+			productReference = F8F30C2E93722C6645941BA9 /* EcoInference.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -299,6 +362,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				C39D802600DE8E29FF6479F6 /* XCRemoteSwiftPackageReference "PythonKit" */,
+				4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 519339993754C1F257EC9139 /* Products */;
@@ -316,6 +380,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4718B5169B2B8741B7010B70 /* Assets.xcassets in Resources */,
+				BB891A2300001111AABBCCDD /* GoogleService-Info.plist in Resources */,
+				A2170000000000000000AA01 /* default_router_rules.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -375,6 +441,22 @@
 				1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */,
 				FDB6F613C3ED4E6A85E6AFB9 /* QrCodeTools.swift in Sources */,
 				73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */,
+				A2010000000000000000AA01 /* AuthService.swift in Sources */,
+				A2020000000000000000AA01 /* UserProfileService.swift in Sources */,
+				A2030000000000000000AA01 /* StorageService.swift in Sources */,
+				A2040000000000000000AA01 /* UsernameValidator.swift in Sources */,
+				A2050000000000000000AA01 /* UserProfile.swift in Sources */,
+				A2060000000000000000AA01 /* AuthGateView.swift in Sources */,
+				A2070000000000000000AA01 /* SignInView.swift in Sources */,
+				A2080000000000000000AA01 /* CreateAccountView.swift in Sources */,
+				A2090000000000000000AA01 /* ForgotPasswordView.swift in Sources */,
+				A2100000000000000000AA01 /* ProfileView.swift in Sources */,
+				A2110000000000000000AA01 /* EditProfileView.swift in Sources */,
+				A2120000000000000000AA01 /* GeminiService.swift in Sources */,
+				A2130000000000000000AA01 /* RouterModels.swift in Sources */,
+				A2140000000000000000AA01 /* RuleEngine.swift in Sources */,
+				A2150000000000000000AA01 /* RouterFactExtractor.swift in Sources */,
+				A2160000000000000000AA01 /* RouterService.swift in Sources */,
 				2655D9612602662244AD77E9 /* SettingsService.swift in Sources */,
 				085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */,
 				9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */,
@@ -469,7 +551,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.eiapp;
 				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -495,7 +577,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.app;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.ecoinference.eiapp;
 				PRODUCT_NAME = EcoInference;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -597,6 +679,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.14.0;
+			};
+		};
 		C39D802600DE8E29FF6479F6 /* XCRemoteSwiftPackageReference "PythonKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pvieito/PythonKit";
@@ -608,6 +698,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4D8E90ED2FE0A9EA00C8594A /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		4D8E90EF2FE0A9F900C8594A /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		4D8E90F12FE0AA0C00C8594A /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
 		99CA1464318F49AFE4822511 /* PythonKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C39D802600DE8E29FF6479F6 /* XCRemoteSwiftPackageReference "PythonKit" */;

@@ -8,7 +8,7 @@ enum DownloadError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .httpError(let code):         return "HTTP \(code) — check your HuggingFace token."
+        case .httpError(let code):         return "HTTP \(code) — check your access credentials."
         case .licenseRequired(let url):    return "license_required: accept licence at \(url) then retry."
         case .fileMoveError(let msg):      return "Failed to save file: \(msg)"
         case .alreadyDownloading:          return "A download is already in progress."
@@ -16,7 +16,7 @@ enum DownloadError: LocalizedError {
     }
 }
 
-/// Downloads model files from HuggingFace using URLSession.
+/// Downloads model files (currently always hosted on our own server) using URLSession.
 /// Progress is reported via a closure (0.0–1.0).
 ///
 /// Thread-safety: `isDownloading` and `cancellationRequested` are guarded by
@@ -78,9 +78,13 @@ final class DownloadService {
 
     /// Download [model] to the Documents directory, calling [onProgress] (0.0–1.0) as data arrives.
     /// Throws DownloadError on network or auth failure.
+    ///
+    /// [authToken] is currently unused — our model files are served unauthenticated
+    /// from our own server. The parameter is kept so we can add a Bearer token here
+    /// without touching call sites if we ever lock down model hosting behind auth.
     func download(
         model: ModelInfo,
-        hfToken: String?,
+        authToken: String? = nil,
         onProgress: @escaping (Double) -> Void
     ) async throws {
         // Atomically check-and-set isDownloading to avoid races between
@@ -94,7 +98,7 @@ final class DownloadService {
 
         var request = URLRequest(url: URL(string: model.downloadUrl)!)
         request.timeoutInterval = 30
-        if let token = hfToken, !token.isEmpty {
+        if let token = authToken, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
