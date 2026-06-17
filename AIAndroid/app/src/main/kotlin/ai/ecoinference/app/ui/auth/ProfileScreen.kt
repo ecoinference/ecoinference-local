@@ -51,7 +51,7 @@ fun ProfileScreen() {
                 },
                 supportingContent = {
                     Text("@${profile?.username ?: ""}",
-                        color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
                 leadingContent = {
                     AvatarImage(urlString = profile?.avatarURL, size = 56.dp)
@@ -73,7 +73,7 @@ fun ProfileScreen() {
                 headlineContent  = { Text("Email") },
                 trailingContent  = {
                     Text(AuthService.email ?: "",
-                        color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
             )
 
@@ -83,7 +83,7 @@ fun ProfileScreen() {
                     headlineContent = { Text("Phone") },
                     trailingContent = {
                         Text(profile!!.phoneNumber!!,
-                            color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     },
                 )
             }

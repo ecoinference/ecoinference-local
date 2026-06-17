@@ -67,7 +67,7 @@ fun CreateAccountSheet(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Create Account", style = MaterialTheme.typography.titleLarge,
-                color = EcoColors.NearWhite)
+                color = MaterialTheme.colorScheme.onSurface)
 
             OutlinedTextField(
                 value         = displayName,
@@ -111,7 +111,7 @@ fun CreateAccountSheet(onDismiss: () -> Unit) {
                     is UsernameStatus.Taken     -> Text("Username is already taken",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     is UsernameStatus.Checking  -> Text("Checking…",
-                        style = MaterialTheme.typography.bodySmall, color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     is UsernameStatus.Invalid   -> Text(s.msg,
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     else -> {}
@@ -142,7 +142,7 @@ fun CreateAccountSheet(onDismiss: () -> Unit) {
                         Icon(
                             if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (showPassword) "Hide password" else "Show password",
-                            tint = EcoColors.NearWhite.copy(alpha = 0.6f),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
@@ -164,7 +164,7 @@ fun CreateAccountSheet(onDismiss: () -> Unit) {
                             Icon(
                                 if (showConfirm) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (showConfirm) "Hide password" else "Show password",
-                                tint = EcoColors.NearWhite.copy(alpha = 0.6f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     },

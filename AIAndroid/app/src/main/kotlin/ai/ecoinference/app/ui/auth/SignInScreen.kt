@@ -1,5 +1,6 @@
 package ai.ecoinference.app.ui.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ fun SignInScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 28.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -50,7 +52,7 @@ fun SignInScreen() {
                 Text(
                     "On-device AI",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = EcoColors.NearWhite.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 )
             }
 

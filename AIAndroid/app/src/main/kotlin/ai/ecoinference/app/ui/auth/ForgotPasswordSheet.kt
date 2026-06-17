@@ -37,16 +37,16 @@ fun ForgotPasswordSheet(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("Reset Password", style = MaterialTheme.typography.titleLarge,
-                color = EcoColors.NearWhite)
+                color = MaterialTheme.colorScheme.onSurface)
 
             if (sent) {
                 Icon(Icons.Default.MarkEmailRead, contentDescription = null,
                     tint = EcoColors.Green, modifier = Modifier.size(56.dp))
                 Text("Check your email", style = MaterialTheme.typography.titleMedium,
-                    color = EcoColors.NearWhite)
+                    color = MaterialTheme.colorScheme.onSurface)
                 Text("A reset link was sent to $email.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = EcoColors.NearWhite.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center)
                 Button(
                     onClick = onDismiss,
@@ -60,7 +60,7 @@ fun ForgotPasswordSheet(onDismiss: () -> Unit) {
                 Text(
                     "Enter your email address and we'll send a password reset link.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = EcoColors.NearWhite.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 OutlinedTextField(
