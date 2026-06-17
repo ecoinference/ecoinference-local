@@ -2,7 +2,11 @@ import SwiftUI
 
 struct SettingsView: View {
 
-    @ObservedObject private var settings = SettingsService.shared
+    @ObservedObject private var settings  = SettingsService.shared
+    @ObservedObject private var router    = RouterService.shared
+
+    @State private var refreshing         = false
+    @State private var refreshMsg: String = ""
 
     var body: some View {
         NavigationStack {
@@ -58,15 +62,57 @@ struct SettingsView: View {
                     Text("Used by the router for requests that need a more capable cloud model. Local on-device inference always works without this key.")
                 }
 
-                // ── Tests ────────────────────────────────────────────────────
+                // ── Developer ────────────────────────────────────────────────
                 Section {
                     NavigationLink(destination: TestView()) {
-                        Label("Inference Tests", systemImage: "checkmark.seal")
+                        Label("Inference Tests", systemImage: "flask")
                     }
+
+                    // Router Rules refresh
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("Router Rules", systemImage: "cloud")
+                            .font(.body)
+                        Text("Active rule set version: \(router.ruleSet.version)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if !refreshMsg.isEmpty {
+                            Text(refreshMsg)
+                                .font(.caption)
+                                .foregroundStyle(refreshMsg.hasPrefix("Updated") ? EcoColors.green : .secondary)
+                        }
+                        Button {
+                            Task {
+                                refreshing = true
+                                refreshMsg = ""
+                                let result = await RouterService.shared.refreshFromRemote()
+                                switch result {
+                                case .updated(let v):       refreshMsg = "Updated to version \(v)"
+                                case .alreadyCurrent(let v): refreshMsg = "Already current (v\(v))"
+                                case .noRemoteValue:        refreshMsg = "No rules published in Remote Config yet"
+                                case .error(let msg):       refreshMsg = "Error: \(msg)"
+                                }
+                                refreshing = false
+                            }
+                        } label: {
+                            if refreshing {
+                                HStack(spacing: 6) {
+                                    ProgressView().scaleEffect(0.8)
+                                    Text("Refreshing…")
+                                }
+                            } else {
+                                Label("Refresh from Remote Config", systemImage: "arrow.clockwise")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(EcoColors.green)
+                        .disabled(refreshing)
+                        .padding(.top, 2)
+                    }
+                    .padding(.vertical, 4)
                 } header: {
                     Text("Developer")
                 } footer: {
-                    Text("Run smoke tests against the loaded model to verify inference, multi-turn context, and vision.")
+                    Text("Inference Tests run smoke tests against the loaded model. Router Rules pulls the latest routing config from Firebase Remote Config.")
                 }
 
                 // ── About ─────────────────────────────────────────────────────

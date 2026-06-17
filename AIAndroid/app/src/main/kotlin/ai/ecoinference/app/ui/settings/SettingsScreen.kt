@@ -8,6 +8,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -15,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.AppState
+import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.ui.theme.EcoColors
 import kotlinx.coroutines.launch
@@ -199,20 +203,25 @@ fun SettingsScreen(
             if (onOpenTests != null) {
                 Divider(color = EcoColors.CardBorder)
                 SectionLabel("Developer")
+
+                val context = LocalContext.current
+                val routerService = remember { RouterService.getInstance(context) }
+                var ruleVersion by remember { mutableIntStateOf(routerService.ruleSet.version) }
+                var refreshing  by remember { mutableStateOf(false) }
+                var refreshMsg  by remember { mutableStateOf("") }
+
+                // ── Inference Tests row ───────────────────────────────────────
                 Surface(
-                    onClick      = onOpenTests,
-                    modifier     = Modifier.fillMaxWidth(),
-                    shape        = MaterialTheme.shapes.medium,
-                    color        = MaterialTheme.colorScheme.surfaceVariant,
+                    onClick        = onOpenTests,
+                    modifier       = Modifier.fillMaxWidth(),
+                    shape          = MaterialTheme.shapes.medium,
+                    color          = MaterialTheme.colorScheme.surfaceVariant,
                     tonalElevation = 2.dp,
                 ) {
                     ListItem(
-                        leadingContent = {
-                            Icon(
-                                Icons.Default.Science,
-                                contentDescription = null,
-                                tint = EcoColors.Green,
-                            )
+                        leadingContent  = {
+                            Icon(Icons.Default.Science, contentDescription = null,
+                                tint = EcoColors.Green)
                         },
                         headlineContent = {
                             Text("Inference Tests",
@@ -220,20 +229,88 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurface)
                         },
                         supportingContent = {
-                            Text(
-                                "Smoke tests — inference, Python, cloud, router.",
+                            Text("Smoke tests — inference, Python, cloud, router.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            )
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                         },
                         trailingContent = {
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         },
                         colors = ListItemDefaults.colors(
-                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        ),
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent),
                     )
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                // ── Router Remote Config refresh ──────────────────────────────
+                Surface(
+                    modifier       = Modifier.fillMaxWidth(),
+                    shape          = MaterialTheme.shapes.medium,
+                    color          = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 2.dp,
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(Icons.Default.Cloud, contentDescription = null,
+                                tint = EcoColors.Green, modifier = Modifier.size(20.dp))
+                            Text("Router Rules",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Text("Active rule set version: $ruleVersion",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        if (refreshMsg.isNotEmpty()) {
+                            Text(refreshMsg,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (refreshMsg.startsWith("Updated"))
+                                    EcoColors.Green
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        }
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    refreshing  = true
+                                    refreshMsg  = ""
+                                    val result  = routerService.refreshFromRemote()
+                                    ruleVersion = routerService.ruleSet.version
+                                    refreshMsg  = when (result) {
+                                        is RouterService.RefreshResult.Updated ->
+                                            "Updated to version ${result.newVersion}"
+                                        is RouterService.RefreshResult.AlreadyCurrent ->
+                                            "Already current (v${result.version})"
+                                        is RouterService.RefreshResult.NoRemoteValue ->
+                                            "No rules published in Remote Config yet"
+                                        is RouterService.RefreshResult.Error ->
+                                            "Error: ${result.message}"
+                                    }
+                                    refreshing = false
+                                }
+                            },
+                            enabled = !refreshing,
+                            colors  = ButtonDefaults.buttonColors(
+                                containerColor = EcoColors.Green,
+                                contentColor   = EcoColors.DarkInner),
+                        ) {
+                            if (refreshing) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp,
+                                    color = EcoColors.DarkInner)
+                                Spacer(Modifier.width(8.dp))
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = null,
+                                    modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text("Refresh from Remote Config")
+                        }
+                    }
                 }
             }
 

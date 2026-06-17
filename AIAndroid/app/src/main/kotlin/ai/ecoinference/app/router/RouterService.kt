@@ -1,6 +1,7 @@
 package ai.ecoinference.app.router
 
 import android.content.Context
+import ai.ecoinference.app.BuildConfig  // generated from namespace in build.gradle.kts
 import ai.ecoinference.app.inference.InferenceMessage
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
@@ -35,8 +36,9 @@ class RouterService private constructor(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true }
     private val remoteConfig = FirebaseRemoteConfig.getInstance().also { rc ->
+        val interval = if (BuildConfig.DEBUG) 0L else 3600L
         val settings = FirebaseRemoteConfigSettings.Builder()
-            .setMinimumFetchIntervalInSeconds(3600)  // 1 hour — mirrors iOS
+            .setMinimumFetchIntervalInSeconds(interval)
             .build()
         rc.setConfigSettingsAsync(settings)
     }
@@ -59,26 +61,35 @@ class RouterService private constructor(private val context: Context) {
         return RouterDecision(tier, outcome.reason, outcome.ruleId, facts)
     }
 
+    sealed class RefreshResult {
+        data class Updated(val newVersion: Int) : RefreshResult()
+        data class AlreadyCurrent(val version: Int) : RefreshResult()
+        object NoRemoteValue : RefreshResult()
+        data class Error(val message: String) : RefreshResult()
+    }
+
     /**
      * Checks Firebase Remote Config for a newer rule set and swaps it in if found.
-     * Call once at app launch — failures are silent and leave the current rule set
-     * in place, so this is safe to call offline or before anything is published.
+     * Returns a [RefreshResult] describing what happened — useful for manual test
+     * triggers in dev builds. Failures leave the current rule set in place.
      * Mirrors iOS RouterService.refreshFromRemote().
      */
-    suspend fun refreshFromRemote() {
-        try {
-            val activated = remoteConfig.fetchAndActivate().await()
-            if (!activated) return
+    suspend fun refreshFromRemote(): RefreshResult {
+        return try {
+            remoteConfig.fetchAndActivate().await()
 
             val raw = remoteConfig.getString(REMOTE_CONFIG_KEY)
-            if (raw.isEmpty()) return
+            if (raw.isEmpty()) return RefreshResult.NoRemoteValue
 
             val remote = json.decodeFromString(RouterRuleSet.serializer(), raw)
             if (remote.version > ruleSet.version) {
                 ruleSet = remote
+                RefreshResult.Updated(remote.version)
+            } else {
+                RefreshResult.AlreadyCurrent(ruleSet.version)
             }
-        } catch (_: Exception) {
-            // Network error or malformed remote JSON — keep the current rule set.
+        } catch (e: Exception) {
+            RefreshResult.Error(e.message ?: "Unknown error")
         }
     }
 
