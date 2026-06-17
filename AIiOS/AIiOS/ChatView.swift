@@ -7,11 +7,13 @@ private let chatLog = Logger(subsystem: "ai.ecoinference.app", category: "ChatVi
 // MARK: - Message model
 
 private struct Message: Identifiable {
-    let id         = UUID()
-    let role       : Role
-    var text       : String
-    var image      : UIImage? = nil   // user messages: attached thumbnail for display
-    var chartImage : UIImage? = nil   // assistant messages: tool-generated chart
+    let id           = UUID()
+    let role         : Role
+    var text         : String
+    var image        : UIImage? = nil   // user messages: attached thumbnail for display
+    var chartImage   : UIImage? = nil   // assistant messages: tool-generated chart
+    var tier         : RouterService.Tier? = nil   // which tier produced this (assistant only)
+    var sourcePrompt : String? = nil   // user prompt that produced this response (assistant only)
 
     enum Role {
         case user
@@ -89,8 +91,13 @@ struct ChatView: View {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(messages) { msg in
                             MessageBubble(
-                                message:     msg,
-                                isStreaming: msg.id == streamingId
+                                message:          msg,
+                                isStreaming:      msg.id == streamingId,
+                                onRetryWithCloud: (msg.tier == .local && !isGenerating
+                                                   && msg.id != streamingId
+                                                   && msg.sourcePrompt != nil)
+                                                  ? { retryWithCloud(sourceMsg: msg) }
+                                                  : nil
                             )
                             .id(msg.id)
                         }
@@ -360,15 +367,39 @@ struct ChatView: View {
         chatLog.info("▶︎ send() turn=\(turnIndex) chars=\(text.count) hasImage=\(image != nil)")
         dlog("send() turn=\(turnIndex) text=\(text.prefix(60)) hasImage=\(image != nil)")
 
+        // ── Router decision (before mutating messages/history) ─────────────────
+        let decision = RouterService.shared.decide(
+            prompt:             text,
+            history:            inferenceHistory,
+            hasImage:           image != nil,
+            localSupportsImage: appState.imageInputEnabled
+        )
+        chatLog.info("  router tier=\(decision.tier.rawValue) rule=\(decision.ruleId ?? "default")")
+        dlog("send() router tier=\(decision.tier.rawValue) reason=\(decision.reason)")
+
+        // Snapshot prior visible turns for the cloud path — built BEFORE the new
+        // user/assistant bubbles are appended below, and independent of
+        // inferenceHistory (which only tracks what's actually been fed to the
+        // local engine's KV-cache, so cloud turns must never touch it — mixing
+        // them in would desync committedMessageCount on the next local turn).
+        let cloudHistory = cloudHistoryMessages()
+
         // ── User bubble ───────────────────────────────────────────────────────
         messages.append(Message(role: .user, text: text, image: image))
 
         // ── Assistant placeholder ─────────────────────────────────────────────
-        let assistantMsg = Message(role: .assistant, text: "")
+        let assistantMsg = Message(role: .assistant, text: "", tier: decision.tier,
+                                   sourcePrompt: decision.tier == .local ? text : nil)
         messages.append(assistantMsg)
         streamingId  = assistantMsg.id
         isGenerating = true
         scrollToBottom()
+
+        if decision.tier == .cloud {
+            sendToCloud(text: text, image: image, priorHistory: cloudHistory,
+                       targetId: assistantMsg.id, systemOverride: systemOverride)
+            return
+        }
 
         // ── Build inferenceHistory for this turn ──────────────────────────────
         if inferenceHistory.isEmpty {
@@ -468,12 +499,14 @@ struct ChatView: View {
                 taskHistory.append(InferenceMessage(role: "assistant", text: response))
                 guard !Task.isCancelled else { return }
                 let chartToAttach = pendingChart
+                let capturedSourcePrompt = text
                 await MainActor.run {
                     // Update whichever assistant bubble is current (streamingId)
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
-                        messages[idx].text       = response
-                        messages[idx].chartImage = chartToAttach
+                        messages[idx].text        = response
+                        messages[idx].chartImage  = chartToAttach
+                        messages[idx].sourcePrompt = capturedSourcePrompt
                     }
                     inferenceHistory = taskHistory
                     scrollToBottom()
@@ -500,6 +533,92 @@ struct ChatView: View {
                 isGenerating = false; streamingId = nil; inferTask = nil
             }
         }
+    }
+
+    // MARK: - Cloud send (Gemini, router-selected)
+
+    /// Visible prior turns converted for the cloud call. Deliberately separate
+    /// from `inferenceHistory` — that array only tracks what's actually been
+    /// fed to the local engine, and a cloud turn must never be spliced into it
+    /// (see the comment in `send()`).
+    private func cloudHistoryMessages() -> [InferenceMessage] {
+        messages.compactMap { m -> InferenceMessage? in
+            switch m.role {
+            case .user:
+                return InferenceMessage(role: "user", text: m.text)
+            case .assistant:
+                return m.text.isEmpty ? nil : InferenceMessage(role: "assistant", text: m.text)
+            default:
+                return nil   // skip tool/code/error bubbles — not meaningful cloud context
+            }
+        }
+    }
+
+    private func sendToCloud(
+        text: String,
+        image: UIImage?,
+        priorHistory: [InferenceMessage],
+        targetId: UUID,
+        systemOverride: String?
+    ) {
+        let imageData      = image?.jpegData(compressionQuality: 0.85)
+        var cloudMessages  = priorHistory
+        cloudMessages.append(InferenceMessage(role: "user", text: text.isEmpty ? " " : text, imageData: imageData))
+        let systemPrompt   = systemOverride ?? SettingsService.shared.systemPrompt
+
+        inferTask = Task.detached(priority: .userInitiated) {
+            do {
+                let response = try await GeminiService.shared.chat(
+                    messages:     cloudMessages,
+                    systemPrompt: systemPrompt
+                )
+                chatLog.info("  cloud chat() chars=\(response.count)")
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if let idx = messages.firstIndex(where: { $0.id == targetId }) {
+                        messages[idx].text = response
+                    }
+                    scrollToBottom()
+                }
+            } catch {
+                let nsError = error as NSError
+                let detail  = "domain=\(nsError.domain) code=\(nsError.code) desc=\(error.localizedDescription)"
+                chatLog.error("  cloud chat() error: \(detail)")
+                print("[GeminiService] error: \(detail)")
+                await MainActor.run {
+                    if let idx = messages.firstIndex(where: { $0.id == targetId }) {
+                        messages[idx] = Message(role: .error, text: "⚠️ \(error.localizedDescription)", tier: .cloud)
+                    }
+                }
+            }
+            await MainActor.run {
+                isGenerating = false; streamingId = nil; inferTask = nil
+            }
+        }
+    }
+
+    private func retryWithCloud(sourceMsg: Message) {
+        guard let prompt = sourceMsg.sourcePrompt, !isGenerating else { return }
+
+        // Build history up to (but not including) the message being retried
+        let priorHistory: [InferenceMessage] = messages
+            .prefix(while: { $0.id != sourceMsg.id })
+            .compactMap { m -> InferenceMessage? in
+                switch m.role {
+                case .user:      return InferenceMessage(role: "user", text: m.text)
+                case .assistant: return m.text.isEmpty ? nil : InferenceMessage(role: "assistant", text: m.text)
+                default:         return nil
+                }
+            }
+
+        let placeholder = Message(role: .assistant, text: "", tier: .cloud)
+        messages.append(placeholder)
+        streamingId  = placeholder.id
+        isGenerating = true
+        scrollToBottom()
+
+        sendToCloud(text: prompt, image: nil, priorHistory: priorHistory,
+                    targetId: placeholder.id, systemOverride: nil)
     }
 
     private func stopGeneration() {
@@ -601,8 +720,9 @@ private struct ThinkingDots: View {
 // MARK: - MessageBubble
 
 private struct MessageBubble: View {
-    let message:     Message
-    let isStreaming: Bool
+    let message:          Message
+    let isStreaming:      Bool
+    var onRetryWithCloud: (() -> Void)? = nil
 
     var body: some View {
         switch message.role {
@@ -644,26 +764,53 @@ private struct MessageBubble: View {
     // ── Assistant bubble ──────────────────────────────────────────────────────
     private var assistantBubble: some View {
         HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 8) {
-                Group {
-                    if isStreaming && message.text.isEmpty {
-                        ThinkingDots()
-                            .padding(.horizontal, 16).padding(.vertical, 12)
-                    } else {
-                        Text(message.text)
-                            .padding(.horizontal, 12).padding(.vertical, 8)
+            VStack(alignment: .leading, spacing: 4) {
+                if let tier = message.tier {
+                    tierBadge(tier)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Group {
+                        if isStreaming && message.text.isEmpty {
+                            ThinkingDots()
+                                .padding(.horizontal, 16).padding(.vertical, 12)
+                        } else {
+                            Text(message.text)
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                        }
+                    }
+                    .background(Color(.secondarySystemBackground))
+                    .foregroundStyle(.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    if let chart = message.chartImage {
+                        SaveableImageView(image: chart)
                     }
                 }
-                .background(Color(.secondarySystemBackground))
-                .foregroundStyle(.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                if let chart = message.chartImage {
-                    SaveableImageView(image: chart)
+                if let retry = onRetryWithCloud {
+                    Button(action: retry) {
+                        Label("Try with Cloud", systemImage: "cloud.fill")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color(red: 0x5E/255, green: 0x5C/255, blue: 0xE6/255))
+                    }
+                    .padding(.top, 2)
                 }
             }
             Spacer(minLength: 40)
         }
+    }
+
+    // ── Tier badge (Local / Cloud) ──────────────────────────────────────────────
+    private func tierBadge(_ tier: RouterService.Tier) -> some View {
+        let (label, icon, color): (String, String, Color) = tier == .cloud
+            ? ("Cloud", "cloud.fill", .indigo)
+            : ("Local", "cpu",        EcoColors.green)
+        return Label(label, systemImage: icon)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(color.opacity(0.12))
+            .clipShape(Capsule())
     }
 
     // ── Error bubble ──────────────────────────────────────────────────────────
