@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -164,11 +165,12 @@ fun SettingsScreen(
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text("GPU Acceleration", color = EcoColors.NearWhite,
-                        style = MaterialTheme.typography.bodyLarge)
+                    Text("GPU Acceleration",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface)
                     Text("Takes effect on next model load",
                         style = MaterialTheme.typography.bodySmall,
-                        color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 }
                 Switch(
                     checked         = useGpu,
@@ -197,25 +199,41 @@ fun SettingsScreen(
             if (onOpenTests != null) {
                 Divider(color = EcoColors.CardBorder)
                 SectionLabel("Developer")
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onOpenTests)
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically,
+                Surface(
+                    onClick      = onOpenTests,
+                    modifier     = Modifier.fillMaxWidth(),
+                    shape        = MaterialTheme.shapes.medium,
+                    color        = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 2.dp,
                 ) {
-                    Column {
-                        Text("Inference Tests", color = EcoColors.NearWhite,
-                            style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "Run smoke tests against the loaded model — inference, Python tools, cloud, router.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = EcoColors.NearWhite.copy(alpha = 0.5f),
-                        )
-                    }
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
-                        tint = EcoColors.NearWhite.copy(alpha = 0.4f))
+                    ListItem(
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Science,
+                                contentDescription = null,
+                                tint = EcoColors.Green,
+                            )
+                        },
+                        headlineContent = {
+                            Text("Inference Tests",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface)
+                        },
+                        supportingContent = {
+                            Text(
+                                "Smoke tests — inference, Python, cloud, router.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            )
+                        },
+                        trailingContent = {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        ),
+                    )
                 }
             }
 
