@@ -107,6 +107,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.config)
 }
 
 // ── Chaquopy — on-device Python runtime ───────────────────────────────────────

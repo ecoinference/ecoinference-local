@@ -4,6 +4,7 @@ import android.app.Application
 import com.chaquo.python.android.AndroidPlatform
 import com.chaquo.python.Python
 import ai.ecoinference.app.inference.InferenceService
+import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.services.DownloadService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.tools.AstralTools
@@ -14,6 +15,9 @@ import ai.ecoinference.app.tools.MathTools
 import ai.ecoinference.app.tools.PythonTools
 import ai.ecoinference.app.tools.QrCodeTools
 import ai.ecoinference.app.tools.UrlTools
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class EcoInferenceApp : Application() {
     override fun onCreate() {
@@ -35,5 +39,10 @@ class EcoInferenceApp : Application() {
         PythonTools.register()
         ImageEditTools.register()
         QrCodeTools.register()
+        // Check for an updated router rule set once per launch — no-op if offline
+        // or nothing newer is published. Mirrors iOS AIiOSApp.swift .task { }.
+        CoroutineScope(Dispatchers.IO).launch {
+            RouterService.getInstance(this@EcoInferenceApp).refreshFromRemote()
+        }
     }
 }
