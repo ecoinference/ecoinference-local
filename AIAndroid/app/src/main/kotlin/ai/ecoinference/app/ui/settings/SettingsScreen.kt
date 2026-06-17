@@ -1,17 +1,20 @@
 package ai.ecoinference.app.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -24,21 +27,25 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    appState: AppState,
+    modifier: Modifier = Modifier,
+    onOpenTests: (() -> Unit)? = null,
+) {
     val settings          = appState.settings
     val modelLoaded       by appState.modelLoaded.collectAsStateWithLifecycle()
     val loadedModelId     by appState.loadedModelId.collectAsStateWithLifecycle()
     val scope             = rememberCoroutineScope()
 
     // Settings state — seed from DataStore flows
-    val hfToken           by settings.hfTokenFlow.collectAsState(initial = "")
+    val geminiApiKey      by settings.geminiApiKeyFlow.collectAsState(initial = "")
     val systemPrompt      by settings.systemPromptFlow.collectAsState(initial = "")
     val maxTokens         by settings.maxTokensFlow.collectAsState(initial = SettingsService.DEFAULT_MAX_TOKENS)
     val temperature       by settings.temperatureFlow.collectAsState(initial = SettingsService.DEFAULT_TEMPERATURE)
     val useGpu            by settings.useGpuFlow.collectAsState(initial = false)
 
-    var showToken         by remember { mutableStateOf(false) }
-    var localHfToken      by remember(hfToken) { mutableStateOf(hfToken) }
+    var showGeminiKey     by remember { mutableStateOf(false) }
+    var localGeminiKey    by remember(geminiApiKey) { mutableStateOf(geminiApiKey) }
     var localSystemPrompt by remember(systemPrompt) { mutableStateOf(systemPrompt) }
 
     Scaffold(
@@ -63,21 +70,21 @@ fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
         ) {
             Spacer(Modifier.height(4.dp))
 
-            // ── HuggingFace Token ─────────────────────────────────────────────
-            SectionLabel("HuggingFace Token")
+            // ── Cloud AI (router) ────────────────────────────────────────────
+            SectionLabel("Cloud AI")
             OutlinedTextField(
-                value         = localHfToken,
-                onValueChange = { localHfToken = it },
+                value         = localGeminiKey,
+                onValueChange = { localGeminiKey = it },
                 modifier      = Modifier.fillMaxWidth(),
-                label         = { Text("HF Token (for gated models)") },
+                label         = { Text("Gemini API key") },
                 singleLine    = true,
-                visualTransformation = if (showToken) VisualTransformation.None
+                visualTransformation = if (showGeminiKey) VisualTransformation.None
                                        else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon  = {
-                    IconButton(onClick = { showToken = !showToken }) {
-                        Icon(if (showToken) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (showToken) "Hide token" else "Show token")
+                    IconButton(onClick = { showGeminiKey = !showGeminiKey }) {
+                        Icon(if (showGeminiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (showGeminiKey) "Hide key" else "Show key")
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -85,11 +92,23 @@ fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
                     unfocusedBorderColor = EcoColors.CardBorder,
                 ),
             )
-            Button(
-                onClick = { scope.launch { settings.setHfToken(localHfToken) } },
-                colors  = ButtonDefaults.buttonColors(containerColor = EcoColors.Green,
-                    contentColor = EcoColors.DarkInner),
-            ) { Text("Save Token") }
+            Text(
+                "Used by the router for requests that need a more capable cloud model. " +
+                    "Local on-device inference always works without this key.",
+                style = MaterialTheme.typography.bodySmall,
+                color = EcoColors.NearWhite.copy(alpha = 0.5f),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = { scope.launch { settings.setGeminiApiKey(localGeminiKey) } },
+                    colors  = ButtonDefaults.buttonColors(containerColor = EcoColors.Green,
+                        contentColor = EcoColors.DarkInner),
+                ) { Text("Save Key") }
+                val uriHandler = LocalUriHandler.current
+                TextButton(onClick = { uriHandler.openUri("https://aistudio.google.com/apikey") }) {
+                    Text("Get a free key")
+                }
+            }
 
             Divider(color = EcoColors.CardBorder)
 
@@ -174,6 +193,32 @@ fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
                 ) { Text("Unload Model") }
             }
 
+            // ── Developer ────────────────────────────────────────────────────
+            if (onOpenTests != null) {
+                Divider(color = EcoColors.CardBorder)
+                SectionLabel("Developer")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenTests)
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("Inference Tests", color = EcoColors.NearWhite,
+                            style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Run smoke tests against the loaded model — inference, Python tools, cloud, router.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = EcoColors.NearWhite.copy(alpha = 0.5f),
+                        )
+                    }
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
+                        tint = EcoColors.NearWhite.copy(alpha = 0.4f))
+                }
+            }
+
             // ── Footer ────────────────────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
             Text("EcoInference v1.0.0",
@@ -183,6 +228,7 @@ fun SettingsScreen(appState: AppState, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(16.dp))
         }
     }
+
 }
 
 @Composable

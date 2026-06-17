@@ -15,10 +15,13 @@ accompanistPermissions = "0.36.0"
 playServicesLocation = "21.3.0"
 commonsMath          = "3.6.1"
 chaquopy             = "17.0.0"
+googleServices       = "4.4.2"
+firebaseBom          = "33.7.0"
 
 [libraries]
 androidx-core-ktx                  = { group = "androidx.core",            name = "core-ktx",                       version.ref = "coreKtx"           }
 kotlinx-coroutines-android         = { group = "org.jetbrains.kotlinx",    name = "kotlinx-coroutines-android",     version.ref = "coroutines"        }
+kotlinx-coroutines-play-services   = { group = "org.jetbrains.kotlinx",    name = "kotlinx-coroutines-play-services", version.ref = "coroutines"        }
 kotlinx-serialization-json         = { group = "org.jetbrains.kotlinx",    name = "kotlinx-serialization-json",     version.ref = "serialization"     }
 okhttp                             = { group = "com.squareup.okhttp3",      name = "okhttp",                         version.ref = "okhttp"            }
 litertlm-android                   = { group = "com.google.ai.edge.litertlm", name = "litertlm-android",            version.ref = "litertlm"          }
@@ -38,6 +41,10 @@ coil-compose                       = { group = "io.coil-kt",                name
 accompanist-permissions            = { group = "com.google.accompanist",    name = "accompanist-permissions",        version.ref = "accompanistPermissions" }
 play-services-location             = { group = "com.google.android.gms",    name = "play-services-location",         version.ref = "playServicesLocation" }
 commons-math                       = { group = "org.apache.commons",        name = "commons-math3",                  version.ref = "commonsMath"          }
+firebase-bom                       = { group = "com.google.firebase",       name = "firebase-bom",                   version.ref = "firebaseBom"          }
+firebase-auth                      = { group = "com.google.firebase",       name = "firebase-auth"                                                       }
+firebase-firestore                 = { group = "com.google.firebase",       name = "firebase-firestore"                                                  }
+firebase-storage                   = { group = "com.google.firebase",       name = "firebase-storage"                                                    }
 
 [plugins]
 android-application  = { id = "com.android.application",                    version.ref = "agp"      }
@@ -45,3 +52,4 @@ kotlin-android       = { id = "org.jetbrains.kotlin.android",               vers
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin"   }
 kotlin-compose       = { id = "org.jetbrains.kotlin.plugin.compose",        version.ref = "kotlin"   }
 chaquopy             = { id = "com.chaquo.python",                          version.ref = "chaquopy" }
+google-services      = { id = "com.google.gms.google-services",            version.ref = "googleServices" }

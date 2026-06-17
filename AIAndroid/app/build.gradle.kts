@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -11,7 +12,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "ai.ecoinference.app"
+        // Matches iOS bundle ID (ai.ecoinference.eiapp) so both platforms share
+        // one identifier. namespace stays "ai.ecoinference.app" deliberately —
+        // it only affects generated R/BuildConfig class packages, not the
+        // installed app ID, so no Kotlin source files need to change.
+        applicationId = "ai.ecoinference.eiapp"
         minSdk        = 26        // LiteRT-LM requires API 26+
         targetSdk     = 35
         versionCode   = 1
@@ -58,6 +63,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.kotlinx.serialization.json)
 
     // Compose
@@ -95,6 +101,12 @@ dependencies {
 
     // Settings persistence
     implementation(libs.datastore.preferences)
+
+    // Firebase — Auth, Firestore, Storage (mirrors iOS GoogleService-Info.plist setup)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
 }
 
 // ── Chaquopy — on-device Python runtime ───────────────────────────────────────

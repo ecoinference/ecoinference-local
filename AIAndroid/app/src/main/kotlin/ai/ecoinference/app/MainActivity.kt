@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import ai.ecoinference.app.ui.RootScreen
+import ai.ecoinference.app.ui.auth.AuthGateScreen
 import ai.ecoinference.app.ui.theme.EcoInferenceTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
         setContent {
             EcoInferenceTheme {
-                RootScreen(appState)
+                AuthGateScreen(appState)
             }
         }
     }
