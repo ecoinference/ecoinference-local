@@ -12,8 +12,9 @@ private struct Message: Identifiable {
     var text         : String
     var image        : UIImage? = nil   // user messages: attached thumbnail for display
     var chartImage   : UIImage? = nil   // assistant messages: tool-generated chart
-    var tier         : RouterService.Tier? = nil   // which tier produced this (assistant only)
-    var sourcePrompt : String? = nil   // user prompt that produced this response (assistant only)
+    var tier          : RouterService.Tier? = nil   // which tier produced this (assistant only)
+    var sourcePrompt  : String? = nil   // user prompt that produced this response (assistant only)
+    var routingReason : String? = nil   // why the router chose this tier (assistant only)
 
     enum Role {
         case user
@@ -54,8 +55,11 @@ struct ChatView: View {
     @State private var inputText = ""
     @FocusState private var inputFocused: Bool
 
-    private var modelReady:   Bool { appState.modelLoaded && !appState.isLoading }
-    private var isMultimodal: Bool { InferenceService.shared.isMultimodal }
+    private var modelReady:        Bool { appState.modelLoaded && !appState.isLoading }
+    private var isMultimodal:      Bool { InferenceService.shared.isMultimodal }
+    private var sessionCloudCount: Int  {
+        messages.filter { if case .assistant = $0.role { return $0.tier == .cloud && !$0.text.isEmpty } else { return false } }.count
+    }
 
     // ── Regex: `use tool <request>` ───────────────────────────────────────────
     private static let toolCmdRe = try! NSRegularExpression(
@@ -181,6 +185,12 @@ struct ChatView: View {
                             dlog("Clear — messages + inferenceHistory reset")
                         }
                         .font(.footnote).disabled(isGenerating)
+                    }
+                    Spacer()
+                    if sessionCloudCount > 0 {
+                        Label("\(sessionCloudCount) cloud", systemImage: "cloud.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Color(red: 0x5E/255, green: 0x5C/255, blue: 0xE6/255))
                     }
                     Spacer()
                     if isGenerating {
@@ -389,7 +399,8 @@ struct ChatView: View {
 
         // ── Assistant placeholder ─────────────────────────────────────────────
         let assistantMsg = Message(role: .assistant, text: "", tier: decision.tier,
-                                   sourcePrompt: decision.tier == .local ? text : nil)
+                                   sourcePrompt: decision.tier == .local ? text : nil,
+                                   routingReason: decision.reason)
         messages.append(assistantMsg)
         streamingId  = assistantMsg.id
         isGenerating = true
@@ -611,7 +622,8 @@ struct ChatView: View {
                 }
             }
 
-        let placeholder = Message(role: .assistant, text: "", tier: .cloud)
+        let placeholder = Message(role: .assistant, text: "", tier: .cloud,
+                                  routingReason: "Retried with cloud at your request.")
         messages.append(placeholder)
         streamingId  = placeholder.id
         isGenerating = true
@@ -724,6 +736,8 @@ private struct MessageBubble: View {
     let isStreaming:      Bool
     var onRetryWithCloud: (() -> Void)? = nil
 
+    @State private var showRoutingReason = false
+
     var body: some View {
         switch message.role {
         case .user:
@@ -766,7 +780,24 @@ private struct MessageBubble: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 4) {
                 if let tier = message.tier {
-                    tierBadge(tier)
+                    VStack(alignment: .leading, spacing: 4) {
+                        tierBadge(tier)
+                            .onTapGesture {
+                                guard message.routingReason != nil else { return }
+                                withAnimation(.easeInOut(duration: 0.18)) {
+                                    showRoutingReason.toggle()
+                                }
+                            }
+                        if showRoutingReason, let reason = message.routingReason {
+                            Text(reason)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8).padding(.vertical, 5)
+                                .background(Color(.tertiarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     Group {

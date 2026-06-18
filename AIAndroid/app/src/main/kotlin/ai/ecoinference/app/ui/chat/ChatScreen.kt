@@ -6,6 +6,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 // imePadding() intentionally NOT used — adjustResize in the manifest handles
 // keyboard avoidance at the window level; adding imePadding() would
 // double-count the keyboard height and push the TextField off-screen.
@@ -14,12 +15,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.inference.InferenceMessage
 import ai.ecoinference.app.inference.InferenceService
+import ai.ecoinference.app.router.RouterService
+import ai.ecoinference.app.router.RouterTier
+import ai.ecoinference.app.services.GeminiService
 import ai.ecoinference.app.tools.AgentToken
 import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.runAgentLoop
@@ -89,12 +96,60 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
             return
         }
         val imageBytes = pendingImageBytes
+
+        // ── Router decision (before mutating messages) ─────────────────────
+        val decision = RouterService.getInstance(context).decide(
+            prompt             = text,
+            history             = messages.map { InferenceMessage(role = it.role, text = it.text) },
+            hasImage            = imageBytes != null,
+            localSupportsImage  = imageInputEnabled,
+        )
+
         messages = messages + ChatMessage(role = "user", text = text, imageBytes = imageBytes)
-        messages = messages + ChatMessage(role = "assistant", text = "", isStreaming = true)
+        messages = messages + ChatMessage(role = "assistant", text = "", isStreaming = true,
+            tier = decision.tier, sourcePrompt = text, routingReason = decision.reason)
         inputText         = ""
         pendingImageUri   = null
         pendingImageBytes = null
         isGenerating      = true
+
+        if (decision.tier == RouterTier.CLOUD) {
+            generatingJob = scope.launch {
+                try {
+                    val apiKey       = appState.settings.geminiApiKey()
+                    val systemPrompt = appState.settings.systemPrompt().ifBlank { null }
+
+                    // Prior visible turns, independent of the local engine's context —
+                    // cloud turns never touch local KV-cache state.
+                    val cloudHistory = messages.dropLast(2).mapNotNull { msg ->
+                        when {
+                            msg.role == "user"                        -> InferenceMessage("user", msg.text)
+                            msg.role == "assistant" && msg.text.isNotBlank() -> InferenceMessage("assistant", msg.text)
+                            else                                      -> null
+                        }
+                    }
+                    val cloudMessages = cloudHistory + InferenceMessage(
+                        role       = "user",
+                        text       = text,
+                        imageBytes = imageBytes,
+                    )
+
+                    val response = GeminiService.chat(
+                        messages     = cloudMessages,
+                        systemPrompt = systemPrompt,
+                        apiKey       = apiKey,
+                    )
+                    messages = messages.dropLast(1) +
+                        ChatMessage(role = "assistant", text = response, tier = RouterTier.CLOUD)
+                } catch (e: Exception) {
+                    messages = messages.dropLast(1) +
+                        ChatMessage(role = "assistant", text = "Error: ${e.message}", tier = RouterTier.CLOUD)
+                } finally {
+                    isGenerating = false
+                }
+            }
+            return
+        }
 
         generatingJob = scope.launch {
             try {
@@ -138,7 +193,8 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         is AgentToken.Text -> {
                             sb.append(token.chunk)
                             messages = messages.dropLast(1) +
-                                ChatMessage(role = "assistant", text = sb.toString(), isStreaming = true)
+                                ChatMessage(role = "assistant", text = sb.toString(),
+                                    isStreaming = true, tier = RouterTier.LOCAL)
                         }
                         is AgentToken.ChartImage -> {
                             // Store first chart; additional charts overwrite (rare edge case)
@@ -153,14 +209,64 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
 
                 messages = messages.dropLast(1) +
                     ChatMessage(
-                        role       = "assistant",
-                        text       = sb.toString(),
-                        chartBytes = pendingChart,
-                        isStreaming = false,
+                        role          = "assistant",
+                        text          = sb.toString(),
+                        chartBytes    = pendingChart,
+                        isStreaming   = false,
+                        tier          = RouterTier.LOCAL,
+                        sourcePrompt  = text,
+                        routingReason = decision.reason,
                     )
             } catch (e: Exception) {
                 messages = messages.dropLast(1) +
-                    ChatMessage(role = "assistant", text = "Error: ${e.message}")
+                    ChatMessage(role = "assistant", text = "Error: ${e.message}", tier = RouterTier.LOCAL)
+            } finally {
+                isGenerating = false
+            }
+        }
+    }
+
+    fun retryWithCloud(sourceMsg: ChatMessage) {
+        val prompt = sourceMsg.sourcePrompt ?: return
+        if (isGenerating) return
+
+        // History up to (but not including) the message being retried
+        val msgIndex     = messages.indexOf(sourceMsg)
+        val priorHistory = messages.take(msgIndex).mapNotNull { msg ->
+            when {
+                msg.role == "user"                             -> InferenceMessage("user", msg.text)
+                msg.role == "assistant" && msg.text.isNotBlank() -> InferenceMessage("assistant", msg.text)
+                else                                           -> null
+            }
+        }
+        val cloudMessages = priorHistory + InferenceMessage(
+            role       = "user",
+            text       = prompt,
+            imageBytes = sourceMsg.imageBytes,   // re-attach image if there was one
+        )
+
+        val placeholder = ChatMessage(role = "assistant", text = "", isStreaming = true,
+            tier = RouterTier.CLOUD, sourcePrompt = prompt,
+            routingReason = "Retried with cloud at your request.")
+        messages     = messages + placeholder
+        isGenerating = true
+
+        generatingJob = scope.launch {
+            try {
+                val apiKey       = appState.settings.geminiApiKey()
+                val systemPrompt = appState.settings.systemPrompt().ifBlank { null }
+                val response     = GeminiService.chat(
+                    messages     = cloudMessages,
+                    systemPrompt = systemPrompt,
+                    apiKey       = apiKey,
+                )
+                messages = messages.dropLast(1) +
+                    ChatMessage(role = "assistant", text = response,
+                        tier = RouterTier.CLOUD, sourcePrompt = prompt)
+            } catch (e: Exception) {
+                messages = messages.dropLast(1) +
+                    ChatMessage(role = "assistant", text = "Error: ${e.message}",
+                        tier = RouterTier.CLOUD, sourcePrompt = prompt)
             } finally {
                 isGenerating = false
             }
@@ -207,6 +313,23 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         ) {
             EcoWordmark(fontSize = 18.sp, showDotAi = true)
             Spacer(Modifier.weight(1f))
+            // Session cloud request counter — shown when at least one cloud response exists
+            val sessionCloudCount = messages.count { it.role == "assistant" && it.tier == RouterTier.CLOUD && it.text.isNotBlank() }
+            if (sessionCloudCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF5E5CE6).copy(alpha = 0.12f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(Icons.Default.Cloud, contentDescription = null,
+                        tint = Color(0xFF5E5CE6), modifier = Modifier.size(12.dp))
+                    Text("$sessionCloudCount", color = Color(0xFF5E5CE6), fontSize = 11.sp)
+                }
+            }
             // Clear chat button — only visible when there are messages
             if (messages.isNotEmpty() && !isGenerating) {
                 IconButton(onClick = { showClearDialog = true }) {
@@ -272,7 +395,14 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
             modifier       = Modifier.weight(1f),
             contentPadding = PaddingValues(vertical = 8.dp),
         ) {
-            items(messages) { msg -> MessageBubble(message = msg) }
+            items(messages) { msg ->
+                MessageBubble(
+                    message          = msg,
+                    onRetryWithCloud = if (msg.tier == RouterTier.LOCAL
+                        && !msg.isStreaming && msg.sourcePrompt != null && !isGenerating)
+                        { { retryWithCloud(msg) } } else null,
+                )
+            }
         }
 
         // ── Model not ready banner ────────────────────────────────────────────
