@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject private var authService: AuthService
     @ObservedObject private var profileService = UserProfileService.shared
+    @ObservedObject private var settings       = SettingsService.shared
     @State private var showEdit = false
     @State private var showSignOutAlert = false
 
@@ -37,6 +38,35 @@ struct ProfileView: View {
                     if let phone = profileService.profile?.phoneNumber, !phone.isEmpty {
                         LabeledContent("Phone") {
                             Text(phone).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                let total    = settings.lifetimeLocalCount + settings.lifetimeCloudCount
+                let pct      = total > 0 ? Int(Double(settings.lifetimeLocalCount) / Double(total) * 100) : 0
+                let shareText = """
+                    🌿 \(settings.lifetimeLocalCount) of \(total) questions answered on-device (\(pct)%)
+                    via EcoInference — local-first AI
+                    """
+
+                Section("Impact") {
+                    LabeledContent("On-device responses") {
+                        Text("\(settings.lifetimeLocalCount)")
+                            .foregroundStyle(EcoColors.green)
+                            .fontWeight(.semibold)
+                    }
+                    LabeledContent("Cloud responses") {
+                        Text("\(settings.lifetimeCloudCount)")
+                            .foregroundStyle(.secondary)
+                    }
+                    if total > 0 {
+                        LabeledContent("On-device rate") {
+                            Text("\(pct)%")
+                                .foregroundStyle(pct >= 80 ? EcoColors.green : .primary)
+                                .fontWeight(.semibold)
+                        }
+                        ShareLink(item: shareText) {
+                            Label("Share my stats", systemImage: "square.and.arrow.up")
                         }
                     }
                 }

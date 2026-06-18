@@ -152,6 +152,12 @@ struct EcoInferenceApp: App {
                 .onOpenURL { url in
                     handleURL(url)
                 }
+                .task {
+                    // Check for an updated router rule set once per launch.
+                    // No-op if offline or nothing newer is published — the
+                    // bundled default always works.
+                    await RouterService.shared.refreshFromRemote()
+                }
         }
     }
 

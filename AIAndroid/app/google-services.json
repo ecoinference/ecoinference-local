@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "970154223697",
+    "project_id": "eiapp-e16aa",
+    "storage_bucket": "eiapp-e16aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970154223697:android:0b2a880d1176e6efe3f070",
+        "android_client_info": {
+          "package_name": "ai.ecoinference.eiapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "970154223697-ff2dhh15oof76l91aih3ptl191eo4oir.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3gG02RRn3iei0n-4sWdR2xsaV319Iglk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "970154223697-ff2dhh15oof76l91aih3ptl191eo4oir.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

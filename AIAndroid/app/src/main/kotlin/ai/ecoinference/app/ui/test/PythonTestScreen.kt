@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassTop
@@ -789,6 +790,7 @@ internal fun PythonTestScreen(
     appState: AppState,
     modifier: Modifier = Modifier,
     vm: PythonTestViewModel = viewModel(),
+    onBack: (() -> Unit)? = null,
 ) {
     val context      = LocalContext.current
     val states       by vm.states.collectAsState()
@@ -805,6 +807,13 @@ internal fun PythonTestScreen(
         topBar = {
             TopAppBar(
                 title  = { Text("Python Tool Tests") },
+                navigationIcon = {
+                    onBack?.let {
+                        IconButton(onClick = it) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),

@@ -103,7 +103,12 @@ class AppState(private val appContext: Context) : ViewModel() {
 
     // ── Download ──────────────────────────────────────────────────────────────
 
-    fun startDownload(modelId: String, hfToken: String? = null) {
+    /**
+     * [authToken] is currently unused — model files are served unauthenticated
+     * from our own server. Kept so a future auth-locked server can pass a
+     * token through without changing this call site.
+     */
+    fun startDownload(modelId: String, authToken: String? = null) {
         val info = ModelCatalog.findById(modelId) ?: return
         if (_downloadActive.value) return
 
@@ -115,9 +120,7 @@ class AppState(private val appContext: Context) : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val token = hfToken?.takeIf { it.isNotBlank() }
-                    ?: settings.hfToken().takeIf { it.isNotBlank() }
-                download.download(model = info, hfToken = token) { progress ->
+                download.download(model = info, authToken = authToken) { progress ->
                     _downloadProgress.value = (progress * 100).toFloat()
                 }
                 _downloadActive.value     = false

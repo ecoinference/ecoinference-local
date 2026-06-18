@@ -66,7 +66,11 @@ fun ModelCard(
             confirmButton    = {
                 TextButton(onClick = {
                     showHfDialog = false
-                    onDownload()   // caller reads token from SettingsService
+                    onDownload()
+                    // Note: no current catalog entry sets requiresHfToken, so this
+                    // dialog/path is currently unreachable. Settings no longer has
+                    // an HF token field — wire [hfToken] through onDownload if this
+                    // ever needs to become reachable again.
                 }) { Text("Download") }
             },
             dismissButton    = {

@@ -44,8 +44,10 @@ class DownloadService private constructor(private val context: Context) {
     /**
      * Downloads [model] from its catalog URL, reporting progress via [onProgress] (0.0–1.0).
      *
-     * Pass [hfToken] when the model is gated on HuggingFace. If the download
-     * returns HTTP 401/403 and no token was supplied, the error message contains
+     * [authToken] is currently unused — model files are served unauthenticated
+     * from our own server. Kept so a future auth-locked server can pass a
+     * token through without changing this call site. If the download returns
+     * HTTP 401/403 and no token was supplied, the error message contains
      * "license_required" so the caller can prompt the user.
      *
      * Supports coroutine cancellation — cancels the download and cleans up the
@@ -53,7 +55,7 @@ class DownloadService private constructor(private val context: Context) {
      */
     suspend fun download(
         model:      ModelInfo,
-        hfToken:    String? = null,
+        authToken:  String? = null,
         onProgress: (Double) -> Unit = {},
     ) = withContext(Dispatchers.IO) {
         val destFile = filePath(model)
@@ -61,8 +63,8 @@ class DownloadService private constructor(private val context: Context) {
 
         try {
             val requestBuilder = Request.Builder().url(model.downloadUrl)
-            if (!hfToken.isNullOrBlank()) {
-                requestBuilder.addHeader("Authorization", "Bearer $hfToken")
+            if (!authToken.isNullOrBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer $authToken")
             }
 
             client.newCall(requestBuilder.build()).execute().use { response ->

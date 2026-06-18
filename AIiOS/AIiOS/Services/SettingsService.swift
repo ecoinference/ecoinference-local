@@ -11,11 +11,13 @@ final class SettingsService: ObservableObject {
     private let defaults = UserDefaults.standard
 
     private enum Key {
-        static let geminiApiKey    = "gemini_api_key"
-        static let selectedModelId = "selected_model_id"
-        static let useGpu          = "use_gpu"
-        static let maxNumTokens    = "max_num_tokens"
-        static let systemPrompt    = "system_prompt"
+        static let geminiApiKey       = "gemini_api_key"
+        static let selectedModelId    = "selected_model_id"
+        static let useGpu             = "use_gpu"
+        static let maxNumTokens       = "max_num_tokens"
+        static let systemPrompt       = "system_prompt"
+        static let lifetimeLocalCount = "lifetime_local_count"
+        static let lifetimeCloudCount = "lifetime_cloud_count"
     }
 
     // ── Gemini API key (cloud tier of the LLM router) ───────────────────────────
@@ -48,15 +50,26 @@ final class SettingsService: ObservableObject {
         didSet { defaults.set(systemPrompt, forKey: Key.systemPrompt) }
     }
 
+    // ── Lifetime usage counters ───────────────────────────────────────────────
+
+    @Published var lifetimeLocalCount: Int = 0 {
+        didSet { defaults.set(lifetimeLocalCount, forKey: Key.lifetimeLocalCount) }
+    }
+    @Published var lifetimeCloudCount: Int = 0 {
+        didSet { defaults.set(lifetimeCloudCount, forKey: Key.lifetimeCloudCount) }
+    }
+
     // ── Initialise from persisted values ──────────────────────────────────────
 
     func load() {
         geminiApiKey    = defaults.string(forKey: Key.geminiApiKey) ?? ""
 
-        selectedModelId = defaults.string(forKey: Key.selectedModelId)
-        useGpu          = defaults.bool(forKey: Key.useGpu)
-        let stored      = defaults.integer(forKey: Key.maxNumTokens)
-        maxNumTokens    = stored > 0 ? stored : 8192
-        systemPrompt    = defaults.string(forKey: Key.systemPrompt)
+        selectedModelId    = defaults.string(forKey: Key.selectedModelId)
+        useGpu             = defaults.bool(forKey: Key.useGpu)
+        let stored         = defaults.integer(forKey: Key.maxNumTokens)
+        maxNumTokens       = stored > 0 ? stored : 8192
+        systemPrompt       = defaults.string(forKey: Key.systemPrompt)
+        lifetimeLocalCount = defaults.integer(forKey: Key.lifetimeLocalCount)
+        lifetimeCloudCount = defaults.integer(forKey: Key.lifetimeCloudCount)
     }
 }

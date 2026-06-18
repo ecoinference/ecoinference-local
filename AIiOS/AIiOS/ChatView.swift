@@ -515,11 +515,12 @@ struct ChatView: View {
                     // Update whichever assistant bubble is current (streamingId)
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
-                        messages[idx].text        = response
-                        messages[idx].chartImage  = chartToAttach
+                        messages[idx].text         = response
+                        messages[idx].chartImage   = chartToAttach
                         messages[idx].sourcePrompt = capturedSourcePrompt
                     }
                     inferenceHistory = taskHistory
+                    SettingsService.shared.lifetimeLocalCount += 1
                     scrollToBottom()
                 }
             } catch {
@@ -589,6 +590,7 @@ struct ChatView: View {
                     if let idx = messages.firstIndex(where: { $0.id == targetId }) {
                         messages[idx].text = response
                     }
+                    SettingsService.shared.lifetimeCloudCount += 1
                     scrollToBottom()
                 }
             } catch {

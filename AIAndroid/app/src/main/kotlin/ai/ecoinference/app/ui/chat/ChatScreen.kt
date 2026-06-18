@@ -140,7 +140,9 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         apiKey       = apiKey,
                     )
                     messages = messages.dropLast(1) +
-                        ChatMessage(role = "assistant", text = response, tier = RouterTier.CLOUD)
+                        ChatMessage(role = "assistant", text = response, tier = RouterTier.CLOUD,
+                            routingReason = decision.reason)
+                    appState.settings.incrementLifetimeCloud()
                 } catch (e: Exception) {
                     messages = messages.dropLast(1) +
                         ChatMessage(role = "assistant", text = "Error: ${e.message}", tier = RouterTier.CLOUD)
@@ -217,6 +219,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         sourcePrompt  = text,
                         routingReason = decision.reason,
                     )
+                scope.launch { appState.settings.incrementLifetimeLocal() }
             } catch (e: Exception) {
                 messages = messages.dropLast(1) +
                     ChatMessage(role = "assistant", text = "Error: ${e.message}", tier = RouterTier.LOCAL)
@@ -262,7 +265,9 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 )
                 messages = messages.dropLast(1) +
                     ChatMessage(role = "assistant", text = response,
-                        tier = RouterTier.CLOUD, sourcePrompt = prompt)
+                        tier = RouterTier.CLOUD, sourcePrompt = prompt,
+                        routingReason = "Retried with cloud at your request.")
+                appState.settings.incrementLifetimeCloud()
             } catch (e: Exception) {
                 messages = messages.dropLast(1) +
                     ChatMessage(role = "assistant", text = "Error: ${e.message}",

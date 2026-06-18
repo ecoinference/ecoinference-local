@@ -25,6 +25,7 @@
 		4D8E90EE2FE0A9EA00C8594A /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90ED2FE0A9EA00C8594A /* FirebaseAuth */; };
 		4D8E90F02FE0A9F900C8594A /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90EF2FE0A9F900C8594A /* FirebaseFirestore */; };
 		4D8E90F22FE0AA0C00C8594A /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4D8E90F12FE0AA0C00C8594A /* FirebaseStorage */; };
+		A2180000000000000000AA01 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = A1180000000000000000AA01 /* FirebaseRemoteConfig */; };
 		64E3F7C8134673ACA7644190 /* EmbeddedPython.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8844BE75CE9F7CEB7E8DD17F /* EmbeddedPython.swift */; };
 		684F677333F44AAB60DE5903 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23521B3F2ED10C8615DAE214 /* LocationService.swift */; };
 		6D42D6A98C3C923E74E8650E /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 00484D7D7A20D3FAC92E1567 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -164,6 +165,7 @@
 				2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */,
 				3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
 				4D8E90F22FE0AA0C00C8594A /* FirebaseStorage in Frameworks */,
+				A2180000000000000000AA01 /* FirebaseRemoteConfig in Frameworks */,
 				C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
 				6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */,
 				43FEDF55368F0B3667480B79 /* Python.xcframework in Frameworks */,
@@ -331,6 +333,7 @@
 				4D8E90ED2FE0A9EA00C8594A /* FirebaseAuth */,
 				4D8E90EF2FE0A9F900C8594A /* FirebaseFirestore */,
 				4D8E90F12FE0AA0C00C8594A /* FirebaseStorage */,
+				A1180000000000000000AA01 /* FirebaseRemoteConfig */,
 			);
 			productName = AIiOS;
 			productReference = F8F30C2E93722C6645941BA9 /* EcoInference.app */;
@@ -712,6 +715,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		A1180000000000000000AA01 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D8E90EC2FE0A8AC00C8594A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
 		};
 		99CA1464318F49AFE4822511 /* PythonKit */ = {
 			isa = XCSwiftPackageProductDependency;

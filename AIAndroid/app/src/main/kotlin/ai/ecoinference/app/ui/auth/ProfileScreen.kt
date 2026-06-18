@@ -1,5 +1,6 @@
 package ai.ecoinference.app.ui.auth
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -13,14 +14,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import android.content.Intent
+import androidx.compose.material.icons.filled.Share
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.services.AuthService
+import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.services.UserProfileService
 import ai.ecoinference.app.ui.theme.EcoColors
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
+    val context        = LocalContext.current
+    val settings       = remember { SettingsService.getInstance(context) }
     val profile        by UserProfileService.profile.collectAsState()
+    val localCount     by settings.lifetimeLocalCountFlow.collectAsStateWithLifecycle(0)
+    val cloudCount     by settings.lifetimeCloudCountFlow.collectAsStateWithLifecycle(0)
     var showEdit       by remember { mutableStateOf(false) }
     var showSignOut    by remember { mutableStateOf(false) }
 
@@ -85,6 +95,53 @@ fun ProfileScreen() {
                         Text(profile!!.phoneNumber!!,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     },
+                )
+            }
+
+            HorizontalDivider(color = EcoColors.CardBorder)
+
+            // ── Impact section ────────────────────────────────────────────────
+            val total = localCount + cloudCount
+            val pct   = if (total > 0) (localCount * 100 / total) else 0
+            ListItem(
+                overlineContent = { Text("Impact", color = EcoColors.DimGreen) },
+                headlineContent = { Text("On-device responses") },
+                trailingContent = {
+                    Text("$localCount", color = EcoColors.Green,
+                        style = MaterialTheme.typography.titleMedium)
+                },
+            )
+            ListItem(
+                headlineContent = { Text("Cloud responses") },
+                trailingContent = {
+                    Text("$cloudCount",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.titleMedium)
+                },
+            )
+            if (total > 0) {
+                ListItem(
+                    headlineContent = { Text("On-device rate") },
+                    trailingContent = {
+                        Text("$pct%",
+                            color = if (pct >= 80) EcoColors.Green else MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleMedium)
+                    },
+                )
+                val shareText = "🌿 $localCount of $total questions answered on-device ($pct%)\nvia EcoInference — local-first AI"
+                ListItem(
+                    headlineContent = { Text("Share my stats") },
+                    leadingContent  = {
+                        Icon(Icons.Default.Share, contentDescription = null,
+                            tint = EcoColors.Green)
+                    },
+                    modifier = Modifier.clickable {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Share stats"))
+                    }
                 )
             }
 

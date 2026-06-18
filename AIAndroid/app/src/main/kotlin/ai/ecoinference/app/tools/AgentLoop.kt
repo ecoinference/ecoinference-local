@@ -60,11 +60,24 @@ fun runAgentLoop(
         // Try format A first, then format B
         val (matchRaw, nativeFormat) = run {
             val a = TOOL_CALL_RE.find(response)
-            if (a != null) Pair(a.groupValues[1].trim(), false)
-            else {
-                val b = NATIVE_CALL_RE.find(response)
-                if (b != null) Pair(b.groupValues[1].trim(), true) else Pair(null, false)
+            if (a != null) return@run Pair(a.groupValues[1].trim(), false)
+            val b = NATIVE_CALL_RE.find(response)
+            if (b != null) return@run Pair(b.groupValues[1].trim(), true)
+
+            // Neither regex matched — likely a missing/malformed closing tag
+            // (model truncated or hallucinated something other than the close
+            // tag, e.g. a stray "/>"). Fall back to "from opening tag to end of
+            // string" so the repair pipeline in parseToolCall/parseNativeToolCall
+            // gets a chance to recover it instead of giving up immediately.
+            val openA = response.indexOf("<tool_call>")
+            if (openA >= 0) {
+                return@run Pair(response.substring(openA + "<tool_call>".length).trim(), false)
             }
+            val openB = response.indexOf("<|tool_call>")
+            if (openB >= 0) {
+                return@run Pair(response.substring(openB + "<|tool_call>".length).trim(), true)
+            }
+            Pair(null, false)
         }
 
         if (matchRaw == null) {
@@ -140,15 +153,19 @@ fun runAgentLoop(
  */
 private fun parseToolCall(raw: String): Pair<String, String>? {
     if (raw.startsWith("{")) {
-        return try {
-            val obj      = jsonParser.parseToJsonElement(raw).jsonObject
-            val toolName = obj["name"]?.jsonPrimitive?.content ?: return null
-            val toolArgs = obj["args"]?.jsonObject?.toString() ?: "{}"
-            Pair(toolName, toolArgs)
-        } catch (e: Exception) {
-            Log.e(TAG, "Canonical JSON parse failed: ${e.message}")
-            null
-        }
+        // Multi-attempt parse, each step progressively more aggressive at repair —
+        // mirrors iOS AgentLoop.swift. Most responses parse on the first try;
+        // the later steps only kick in for malformed/truncated tool calls
+        // (e.g. a stray "/>" where the model should have closed the JSON).
+        tryParseCanonical(raw)?.let { return it }
+        val escaped = escapeControlCharsInStrings(raw)
+        tryParseCanonical(escaped)?.let { return it }
+        val sanitized = sanitizeStructuralGarbage(escaped)
+        tryParseCanonical(sanitized)?.let { return it }
+        val closed = autoCloseJson(sanitized)
+        tryParseCanonical(closed)?.let { return it }
+        Log.e(TAG, "Canonical JSON parse failed after all repair attempts: $raw")
+        return null
     }
 
     val braceIdx = raw.indexOf('{')
@@ -168,6 +185,81 @@ private fun parseToolCall(raw: String): Pair<String, String>? {
     val bare = raw.trim()
     if (bare.isNotBlank() && !bare.contains(" ")) return Pair(bare, "{}")
     return null
+}
+
+private fun tryParseCanonical(raw: String): Pair<String, String>? = try {
+    val obj      = jsonParser.parseToJsonElement(raw).jsonObject
+    val toolName = obj["name"]?.jsonPrimitive?.content ?: return null
+    val toolArgs = obj["args"]?.jsonObject?.toString() ?: "{}"
+    Pair(toolName, toolArgs)
+} catch (e: Exception) {
+    null
+}
+
+// ── JSON repair helpers (mirror iOS AgentLoop.swift) ──────────────────────────
+
+/** Escapes literal control characters (newline, tab, CR) inside JSON string values. */
+private fun escapeControlCharsInStrings(s: String): String {
+    val result = StringBuilder()
+    var inString = false
+    var escaped = false
+    for (ch in s) {
+        if (escaped) { result.append(ch); escaped = false; continue }
+        if (ch == '\\' && inString) { result.append(ch); escaped = true; continue }
+        if (ch == '"') { inString = !inString; result.append(ch); continue }
+        if (inString) {
+            when (ch) {
+                '\n' -> result.append("\\n")
+                '\r' -> result.append("\\r")
+                '\t' -> result.append("\\t")
+                else -> result.append(ch)
+            }
+        } else {
+            result.append(ch)
+        }
+    }
+    return result.toString()
+}
+
+/**
+ * Strips characters outside string literals that aren't valid JSON
+ * structural/whitespace/value characters (e.g. a stray '/' or '>' from the
+ * model blending in XML/HTML tag syntax instead of closing the JSON).
+ * No-op on well-formed JSON.
+ */
+private fun sanitizeStructuralGarbage(s: String): String {
+    val allowed = "{}[]:,\"-+.eE0123456789truefalsenull \t\n\r".toSet()
+    val result = StringBuilder()
+    var inString = false
+    var escaped = false
+    for (ch in s) {
+        if (escaped) { result.append(ch); escaped = false; continue }
+        if (ch == '\\' && inString) { result.append(ch); escaped = true; continue }
+        if (ch == '"') { inString = !inString; result.append(ch); continue }
+        if (inString) { result.append(ch); continue }
+        if (ch in allowed) result.append(ch)
+        // else: drop — not valid outside a JSON string literal.
+    }
+    return result.toString()
+}
+
+/** Appends missing closing braces/brackets to truncated JSON. */
+private fun autoCloseJson(s: String): String {
+    val stack = mutableListOf<Char>()
+    var inString = false
+    var escaped = false
+    for (ch in s) {
+        if (escaped) { escaped = false; continue }
+        if (ch == '\\' && inString) { escaped = true; continue }
+        if (ch == '"') { inString = !inString; continue }
+        if (inString) continue
+        when (ch) {
+            '{' -> stack.add('}')
+            '[' -> stack.add(']')
+            '}', ']' -> if (stack.isNotEmpty()) stack.removeAt(stack.size - 1)
+        }
+    }
+    return s + stack.asReversed().joinToString("")
 }
 
 // ── Format B parser (Gemma 4 native) ─────────────────────────────────────────
