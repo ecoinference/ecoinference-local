@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Top-level tab container.
-/// Default tab is Models (Option C) — the user explicitly navigates to Chat
-/// once a model is loaded.
+/// Default tab is Models. Loading a model auto-navigates to Chat once it
+/// finishes (AppState.loadModel sets deepLink = .openChat() on success).
 struct RootView: View {
 
     @EnvironmentObject private var appState: AppState

@@ -23,6 +23,7 @@ fun ModelCard(
     isDownloading:      Boolean,
     downloadProgress:   Float,      // 0–100
     isLoading:          Boolean,
+    isOtherLoading:     Boolean = false,
     onDownload:         () -> Unit,
     onLoad:             (useGpu: Boolean) -> Unit,
     onUnload:           () -> Unit,
@@ -153,7 +154,7 @@ fun ModelCard(
                         // Downloaded, not loaded
                         Button(
                             onClick  = { showGpuDialog = true },
-                            enabled  = !isLoading,
+                            enabled  = !isLoading && !isOtherLoading,
                             colors   = ButtonDefaults.buttonColors(containerColor = EcoColors.Green,
                                 contentColor = EcoColors.DarkInner),
                         ) {
@@ -170,6 +171,7 @@ fun ModelCard(
                         Spacer(Modifier.width(4.dp))
                         OutlinedButton(
                             onClick = onDelete,
+                            enabled = !isLoading && !isOtherLoading,
                             colors  = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error),
                             border  = BorderStroke(1.dp, MaterialTheme.colorScheme.error),

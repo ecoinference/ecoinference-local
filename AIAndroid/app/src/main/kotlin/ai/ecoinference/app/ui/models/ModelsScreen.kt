@@ -26,6 +26,7 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
     val downloadingId     by appState.downloadingModelId.collectAsStateWithLifecycle()
     val downloadError     by appState.downloadError.collectAsStateWithLifecycle()
     val isLoading         by appState.isLoading.collectAsStateWithLifecycle()
+    val loadingModelId    by appState.loadingModelId.collectAsStateWithLifecycle()
     val loadError         by appState.loadError.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -72,7 +73,8 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
                         model            = model,
                         isDownloading    = downloadActive && downloadingId == model.id,
                         downloadProgress = if (downloadingId == model.id) downloadProgress else 0f,
-                        isLoading        = isLoading,
+                        isLoading        = loadingModelId == model.id,
+                        isOtherLoading   = isLoading && loadingModelId != model.id,
                         onDownload       = { appState.startDownload(model.id) },
                         onLoad           = { useGpu -> appState.loadModel(model.id, useGpu) },
                         onUnload         = { appState.unloadModel() },

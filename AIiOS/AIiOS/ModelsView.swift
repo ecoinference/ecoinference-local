@@ -106,12 +106,14 @@ private struct ModelRow: View {
 
     // MARK: Status badge
 
+    private var isLoadingThis: Bool { appState.loadingModelId == model.id }
+
     @ViewBuilder private var statusBadge: some View {
         if model.loaded {
             Label("Loaded", systemImage: "checkmark.circle.fill")
                 .font(.caption)
                 .foregroundStyle(.green)
-        } else if appState.isLoading && appState.loadErrorModelId == nil {
+        } else if isLoadingThis && appState.loadErrorModelId == nil {
             Label("Loading…", systemImage: "hourglass")
                 .font(.caption)
                 .foregroundStyle(.orange)
@@ -139,8 +141,8 @@ private struct ModelRow: View {
             }
             .buttonStyle(.bordered)
 
-        } else if appState.isLoading {
-            // Busy — show spinner, no action
+        } else if isLoadingThis {
+            // This model is busy loading — show spinner, no action
             ProgressView()
                 .scaleEffect(0.8)
 
@@ -153,6 +155,7 @@ private struct ModelRow: View {
                     .font(.caption)
             }
             .buttonStyle(.borderedProminent)
+            .disabled(appState.isLoading)
 
             // Delete
             Button(role: .destructive) {
@@ -162,6 +165,7 @@ private struct ModelRow: View {
                     .font(.caption)
             }
             .buttonStyle(.bordered)
+            .disabled(appState.isLoading)
 
         } else if appState.downloadActive && appState.downloadingModelId == model.id {
             // This model is downloading — cancel handled by banner

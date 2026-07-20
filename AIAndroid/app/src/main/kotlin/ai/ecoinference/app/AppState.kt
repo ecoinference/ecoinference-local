@@ -49,6 +49,9 @@ class AppState(private val appContext: Context) : ViewModel() {
     private val _isLoading          = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _loadingModelId     = MutableStateFlow<String?>(null)
+    val loadingModelId: StateFlow<String?> = _loadingModelId.asStateFlow()
+
     private val _loadError          = MutableStateFlow<String?>(null)
     val loadError: StateFlow<String?> = _loadError.asStateFlow()
 
@@ -157,9 +160,10 @@ class AppState(private val appContext: Context) : ViewModel() {
 
     fun loadModel(modelId: String, useGpu: Boolean = false) {
         val info = ModelCatalog.findById(modelId) ?: return
-        if (!download.isDownloaded(info)) return
+        if (!download.isDownloaded(info) || _isLoading.value) return
 
         _isLoading.value        = true
+        _loadingModelId.value   = modelId
         _loadError.value        = null
         _loadErrorModelId.value = null
 
@@ -175,13 +179,16 @@ class AppState(private val appContext: Context) : ViewModel() {
                 _modelLoaded.value      = true
                 _loadedModelId.value    = modelId
                 _isLoading.value        = false
+                _loadingModelId.value   = null
                 _loadError.value        = null
                 _loadErrorModelId.value = null
                 refreshCatalog()
+                deepLink.value          = DeepLinkAction.OpenChat()
             } catch (e: Exception) {
                 _loadError.value        = e.message ?: "Load failed"
                 _loadErrorModelId.value = modelId
                 _isLoading.value        = false
+                _loadingModelId.value   = null
                 refreshCatalog()
             }
         }

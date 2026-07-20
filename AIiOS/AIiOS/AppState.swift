@@ -27,6 +27,7 @@ final class AppState: ObservableObject {
     @Published private(set) var modelLoaded        = false
     @Published private(set) var loadedModelId: String?
     @Published private(set) var isLoading          = false
+    @Published private(set) var loadingModelId: String?
     @Published private(set) var loadError: String?
     @Published private(set) var loadErrorModelId: String?
     /// True when the loaded model's bundle supports image attachment in the UI.
@@ -153,9 +154,11 @@ final class AppState: ObservableObject {
 
     func loadModel(modelId: String, useGpu: Bool = false) {
         guard let info = ModelCatalog.find(id: modelId),
-              download.isDownloaded(info) else { return }
+              download.isDownloaded(info),
+              !isLoading else { return }
 
         isLoading        = true
+        loadingModelId    = modelId
         loadError        = nil
         loadErrorModelId = nil
 
@@ -179,15 +182,18 @@ final class AppState: ObservableObject {
                     self?.modelLoaded       = true
                     self?.loadedModelId     = modelId
                     self?.isLoading         = false
+                    self?.loadingModelId    = nil
                     self?.loadError         = nil
                     self?.loadErrorModelId  = nil
                     self?.refreshCatalog()
+                    self?.deepLink          = .openChat()
                 }
             } catch {
                 await MainActor.run { [weak self] in
                     self?.loadError         = error.localizedDescription
                     self?.loadErrorModelId  = modelId
                     self?.isLoading         = false
+                    self?.loadingModelId    = nil
                     self?.refreshCatalog()
                 }
             }
