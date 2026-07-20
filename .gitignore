@@ -53,3 +53,6 @@ DerivedData/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local model weights (multi-GB GGUF/litertlm files) — never commit, fetched from B2
+/models/

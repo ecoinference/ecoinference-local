@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "available_models": {
+      "defaultValue": {
+        "value": "[{\"id\":\"gemma4-e2b-it\",\"variants\":[{\"platform\":\"mobile\",\"model_size\":\"E2B\",\"filename\":\"gemma-4-E2B-it.litertlm\"}]},{\"id\":\"gemma4-e4b-it\",\"variants\":[{\"platform\":\"mobile\",\"model_size\":\"E4B\",\"filename\":\"gemma-4-E4B-it.litertlm\"}]}]"
+      },
+      "description": "Allowlist of downloadable model variants. Each entry has id, name, and variants array (platform, model_size, filename).",
+      "valueType": "JSON"
+    }
+  }
+}
