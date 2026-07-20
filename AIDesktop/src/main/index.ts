@@ -6,6 +6,17 @@ import { LlamaServer } from './llamaServer'
 import { initAutoUpdater, checkForUpdatesNow, quitAndInstall } from './autoUpdate'
 import { checkForRecentUpdate, UpdateInfo } from './versionTracker'
 
+// Chromium's default ANGLE backend (D3D11) fails silently on Windows ARM64 +
+// Adreno (renders a fully blank window, no error) — likely because Adreno's
+// D3D11 driver support is a translation layer, not native. Adreno GPUs are
+// built around Vulkan/GLES natively, so route ANGLE through Vulkan instead of
+// falling back to software rendering. See WINDOWS_HANDOFF.md-adjacent notes:
+// if Vulkan doesn't pan out, try 'gl' next — both are more native to Adreno
+// than D3D11.
+if (process.platform === 'win32' && process.arch === 'arm64') {
+  app.commandLine.appendSwitch('use-angle', 'vulkan')
+}
+
 // Prevent duplicate app instances — each one would carry its own Chromium +
 // Electron overhead, and could race to bind llama-server's port. If a second
 // launch is attempted, it quits immediately and the first instance is focused.

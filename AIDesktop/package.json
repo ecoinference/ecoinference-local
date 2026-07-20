@@ -37,9 +37,6 @@
     "productName": "EcoInference",
     "directories": { "output": "dist" },
     "files": ["out/**/*"],
-    "extraResources": [
-      { "from": "resources/bin", "to": "bin" }
-    ],
     "publish": {
       "provider": "generic",
       "url": "https://releases.ecoinference.ai/file/ecoinference-releases/",
@@ -47,10 +44,17 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64"] }]
+      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "extraResources": [
+        { "from": "resources/bin/llama-server", "to": "bin/llama-server" }
+      ]
     },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }],
+      "signAndEditExecutable": false,
+      "extraResources": [
+        { "from": "resources/bin/win-${arch}", "to": "bin" }
+      ]
     }
   }
 }

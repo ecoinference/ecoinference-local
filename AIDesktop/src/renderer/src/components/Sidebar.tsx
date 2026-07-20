@@ -174,10 +174,10 @@ const styles: Record<string, React.CSSProperties> = {
   justUpdatedBanner: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
     marginBottom: 8, padding: '7px 8px', borderRadius: 6,
-    background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600,
+    background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 11, fontWeight: 600,
   },
   dismissBtn: {
-    background: 'none', border: 'none', color: '#fff', fontSize: 14,
+    background: 'none', border: 'none', color: 'var(--on-accent)', fontSize: 14,
     lineHeight: 1, padding: 0, opacity: 0.8,
   },
 }
