@@ -30,8 +30,6 @@ fun ModelCard(
     onCancelDownload:   () -> Unit,
 ) {
     var showGpuDialog by remember { mutableStateOf(false) }
-    var showHfDialog  by remember { mutableStateOf(false) }
-    var hfToken       by remember { mutableStateOf("") }
 
     if (showGpuDialog) {
         AlertDialog(
@@ -47,37 +45,6 @@ fun ModelCard(
         )
     }
 
-    if (showHfDialog) {
-        AlertDialog(
-            onDismissRequest = { showHfDialog = false },
-            title            = { Text("HuggingFace Token Required") },
-            text             = {
-                Column {
-                    Text("This model requires accepting the licence on HuggingFace and supplying a token.")
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value         = hfToken,
-                        onValueChange = { hfToken = it },
-                        label         = { Text("HF Token") },
-                        singleLine    = true,
-                    )
-                }
-            },
-            confirmButton    = {
-                TextButton(onClick = {
-                    showHfDialog = false
-                    onDownload()
-                    // Note: no current catalog entry sets requiresHfToken, so this
-                    // dialog/path is currently unreachable. Settings no longer has
-                    // an HF token field — wire [hfToken] through onDownload if this
-                    // ever needs to become reachable again.
-                }) { Text("Download") }
-            },
-            dismissButton    = {
-                TextButton(onClick = { showHfDialog = false }) { Text("Cancel") }
-            },
-        )
-    }
 
     Card(
         modifier = Modifier
@@ -148,9 +115,7 @@ fun ModelCard(
                     }
                     !model.downloaded -> {
                         Button(
-                            onClick = {
-                                if (model.requiresHfToken) showHfDialog = true else onDownload()
-                            },
+                            onClick = { onDownload() },
                             colors = ButtonDefaults.buttonColors(containerColor = EcoColors.Green,
                                 contentColor = EcoColors.DarkInner),
                         ) {

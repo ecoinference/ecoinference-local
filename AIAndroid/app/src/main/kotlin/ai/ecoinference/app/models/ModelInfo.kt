@@ -11,9 +11,7 @@ data class ModelInfo(
     val description: String = "",
     @SerialName("parameter_count") val parameterCount: String = "",
     @SerialName("file_size_mb")   val fileSizeMb: Int,
-    @SerialName("download_url")   val downloadUrl: String,
     @SerialName("file_name")      val fileName: String,
-    @SerialName("requires_hf_token") val requiresHfToken: Boolean,
     @SerialName("license_url")    val licenseUrl: String? = null,
     /** "android" | "ios" | "all" */
     val platform: String,

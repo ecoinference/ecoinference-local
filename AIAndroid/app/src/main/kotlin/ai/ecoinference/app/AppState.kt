@@ -8,6 +8,7 @@ import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.models.ModelCatalog
 import ai.ecoinference.app.models.ModelInfo
 import ai.ecoinference.app.services.DownloadService
+import ai.ecoinference.app.services.RemoteConfigService
 import ai.ecoinference.app.services.SettingsService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,9 @@ class AppState(private val appContext: Context) : ViewModel() {
     private val inference = InferenceService.getInstance(appContext)
     private val download  = DownloadService.getInstance(appContext)
     val settings          = SettingsService.getInstance(appContext)
+
+    // Set of model IDs enabled by Remote Config; null = not yet fetched (show all).
+    private var enabledModelIds: Set<String>? = null
 
     // ── Model state ───────────────────────────────────────────────────────────
 
@@ -85,30 +89,32 @@ class AppState(private val appContext: Context) : ViewModel() {
 
     init {
         refreshCatalog()
+        viewModelScope.launch {
+            enabledModelIds = RemoteConfigService.fetchEnabledModelIds()
+            refreshCatalog()
+        }
     }
 
     // ── Catalog ───────────────────────────────────────────────────────────────
 
     fun refreshCatalog() {
-        val loadedId = inference.loadedModelId
-        _models.value = ModelCatalog.all.map { info ->
-            info.copy(
-                downloaded = download.isDownloaded(info),
-                loaded     = info.id == loadedId,
-            )
-        }
+        val loadedId  = inference.loadedModelId
+        val allowlist = enabledModelIds
+        _models.value = ModelCatalog.all
+            .filter { allowlist == null || it.id in allowlist }
+            .map { info ->
+                info.copy(
+                    downloaded = download.isDownloaded(info),
+                    loaded     = info.id == loadedId,
+                )
+            }
         _imageInputEnabled.value =
             _models.value.firstOrNull { it.loaded }?.supportsImageInput ?: false
     }
 
     // ── Download ──────────────────────────────────────────────────────────────
 
-    /**
-     * [authToken] is currently unused — model files are served unauthenticated
-     * from our own server. Kept so a future auth-locked server can pass a
-     * token through without changing this call site.
-     */
-    fun startDownload(modelId: String, authToken: String? = null) {
+    fun startDownload(modelId: String) {
         val info = ModelCatalog.findById(modelId) ?: return
         if (_downloadActive.value) return
 
@@ -120,7 +126,7 @@ class AppState(private val appContext: Context) : ViewModel() {
 
         viewModelScope.launch {
             try {
-                download.download(model = info, authToken = authToken) { progress ->
+                download.download(model = info) { progress ->
                     _downloadProgress.value = (progress * 100).toFloat()
                 }
                 _downloadActive.value     = false

@@ -9,9 +9,6 @@ package ai.ecoinference.app.models
  */
 object ModelCatalog {
 
-    private const val HF_BASE = "https://huggingface.co"
-    private const val PI_BASE = "https://models.example.invalid/models"
-
     // ── Gemma 4 — Android (.litertlm, LiteRT-LM Kotlin SDK) ──────────────────
 
     private val gemma4E2b = ModelInfo(
@@ -21,14 +18,12 @@ object ModelCatalog {
                            "Good balance of speed and quality (~2.6 GB).",
         parameterCount   = "E2B",
         fileSizeMb       = 2588,
-        downloadUrl      = "$PI_BASE/gemma-4-E2B-it.litertlm",
         fileName         = "gemma-4-E2B-it.litertlm",
-        requiresHfToken  = false,
-        licenseUrl       = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm",
+        licenseUrl       = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm",
         platform         = "android",
         gemmaVersion     = 4,
-        supportsVision   = true,   // SigLIP encoder in bundle
-        supportsImageInput = true, // Android SDK supports E2B vision fully
+        supportsVision   = true,
+        supportsImageInput = true,
         maxContextTokens = 4096,
     )
 
@@ -39,14 +34,12 @@ object ModelCatalog {
                            "Best quality; needs ≥6 GB RAM and ~3.7 GB storage.",
         parameterCount   = "E4B",
         fileSizeMb       = 3659,
-        downloadUrl      = "$PI_BASE/gemma-4-E4B-it.litertlm",
         fileName         = "gemma-4-E4B-it.litertlm",
-        requiresHfToken  = false,
-        licenseUrl       = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm",
+        licenseUrl       = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
         platform         = "android",
         gemmaVersion     = 4,
-        supportsVision   = true,   // SigLIP encoder in bundle
-        supportsImageInput = true, // Android SDK supports E4B vision (unlike iOS native-v0.12.0)
+        supportsVision   = true,
+        supportsImageInput = true,
         maxContextTokens = 4096,
     )
 

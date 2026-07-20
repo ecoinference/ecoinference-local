@@ -3,28 +3,28 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyDn-xZJuXsKPJCo-koijfkOVzf2BVCO3Z0</string>
+	<string>AIzaSyB6aMKL7KyjK6vQXIbOa1gvdAv-yGa6mxY</string>
 	<key>GCM_SENDER_ID</key>
-	<string>970154223697</string>
+	<string>333037511007</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>ai.ecoinference.eiapp</string>
 	<key>PROJECT_ID</key>
-	<string>eiapp-e16aa</string>
+	<string>ecoinference-28c31</string>
 	<key>STORAGE_BUCKET</key>
-	<string>eiapp-e16aa.firebasestorage.app</string>
+	<string>ecoinference-28c31.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_GCM_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:970154223697:ios:99baf534df921a9de3f070</string>
+	<string>1:333037511007:ios:b6eef7076edb5b9ac6d6ea</string>
 </dict>
 </plist>

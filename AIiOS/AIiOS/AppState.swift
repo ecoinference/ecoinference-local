@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import os.log
+import FirebaseRemoteConfig
 
 private let log = Logger(subsystem: "ai.ecoinference.app", category: "AppState")
 
@@ -56,20 +57,47 @@ final class AppState: ObservableObject {
     private let inference = InferenceService.shared
     private let download  = DownloadService.shared
 
+    /// Set of model IDs enabled by Remote Config; nil = fetch pending (show all).
+    private var enabledModelIds: Set<String>? = nil
+
     private init() {
         refreshCatalog()
+        Task { await fetchRemoteConfig() }
+    }
+
+    private func fetchRemoteConfig() async {
+        let rc = RemoteConfig.remoteConfig()
+        rc.configSettings = RemoteConfigSettings()
+        rc.configSettings.minimumFetchInterval = 3600
+        do {
+            try await rc.fetchAndActivate()
+            let raw = rc.configValue(forKey: "available_models").stringValue
+            guard let data = raw.data(using: .utf8),
+                  let arr  = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+            else { return }
+            let ids = Set(arr.compactMap { $0["id"] as? String }.filter { !$0.isEmpty })
+            if !ids.isEmpty {
+                enabledModelIds = ids
+                refreshCatalog()
+            }
+        } catch {
+            log.warning("Remote Config fetch failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Catalog
 
     func refreshCatalog() {
-        let loadedId = inference.loadedModelId
-        models = ModelCatalog.all.map { info in
-            var m = info
-            m.downloaded = download.isDownloaded(m)
-            m.loaded     = (m.id == loadedId)
-            return m
-        }
+        let loadedId  = inference.loadedModelId
+        let allowlist = enabledModelIds
+        models = ModelCatalog.all
+            .filter { allowlist == nil || allowlist!.contains($0.id) }
+            .map { info in
+                var m = info
+                m.downloaded = download.isDownloaded(m)
+                m.loaded     = (m.id == loadedId)
+                return m
+            }
         imageInputEnabled = models.first(where: { $0.loaded })?.supportsImageInput ?? false
     }
 
@@ -78,7 +106,7 @@ final class AppState: ObservableObject {
     /// [authToken] is currently unused — model files are served unauthenticated from
     /// our own server. Kept so a future auth-locked server can pass a token through
     /// without changing this call site.
-    func startDownload(modelId: String, authToken: String? = nil) {
+    func startDownload(modelId: String) {
         guard let info = ModelCatalog.find(id: modelId) else { return }
         guard !downloadActive else { return }
 
@@ -92,7 +120,7 @@ final class AppState: ObservableObject {
 
         Task {
             do {
-                try await downloadSvc.download(model: info, authToken: authToken) { [weak self] progress in
+                try await downloadSvc.download(model: info) { [weak self] progress in
                     Task { @MainActor [weak self] in
                         self?.downloadProgress = progress * 100
                     }

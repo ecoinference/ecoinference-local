@@ -1,7 +1,6 @@
 package ai.ecoinference.app.services
 
 import android.content.Context
-import ai.ecoinference.app.models.ModelCatalog
 import ai.ecoinference.app.models.ModelInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -42,39 +41,22 @@ class DownloadService private constructor(private val context: Context) {
     }
 
     /**
-     * Downloads [model] from its catalog URL, reporting progress via [onProgress] (0.0–1.0).
-     *
-     * [authToken] is currently unused — model files are served unauthenticated
-     * from our own server. Kept so a future auth-locked server can pass a
-     * token through without changing this call site. If the download returns
-     * HTTP 401/403 and no token was supplied, the error message contains
-     * "license_required" so the caller can prompt the user.
-     *
-     * Supports coroutine cancellation — cancels the download and cleans up the
-     * temp file.
+     * Fetches a presigned B2 download URL from Firebase Functions, then streams
+     * the model file to disk. Progress is reported via [onProgress] (0.0–1.0).
+     * Supports coroutine cancellation — cancels the in-flight request and
+     * removes the temp file.
      */
     suspend fun download(
         model:      ModelInfo,
-        authToken:  String? = null,
         onProgress: (Double) -> Unit = {},
     ) = withContext(Dispatchers.IO) {
         val destFile = filePath(model)
         val tempFile = File(context.filesDir, "${model.fileName}.tmp")
 
         try {
-            val requestBuilder = Request.Builder().url(model.downloadUrl)
-            if (!authToken.isNullOrBlank()) {
-                requestBuilder.addHeader("Authorization", "Bearer $authToken")
-            }
+            val presignedUrl = B2Service.modelDownloadUrl(model.id, model.fileName)
 
-            client.newCall(requestBuilder.build()).execute().use { response ->
-                if (response.code == 401 || response.code == 403) {
-                    throw Exception(
-                        "license_required: HTTP ${response.code} — " +
-                        "accept the licence at ${model.licenseUrl ?: model.downloadUrl} " +
-                        "then retry with a HuggingFace token."
-                    )
-                }
+            client.newCall(Request.Builder().url(presignedUrl).build()).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw Exception("HTTP ${response.code}: ${response.message}")
                 }

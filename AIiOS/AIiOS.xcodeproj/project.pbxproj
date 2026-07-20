@@ -31,6 +31,7 @@
 		6D42D6A98C3C923E74E8650E /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 00484D7D7A20D3FAC92E1567 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E267DE7EC343852511F3601 /* libStreamProxy.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */; };
 		6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5757F96D605803F0D991C8D /* DownloadService.swift */; };
+		1FB1B6D651AF4C36BCCE4AD7 /* B2Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C6EDAF298E444F8C336F62 /* B2Service.swift */; };
 		73BA278EAF0D86EC2D80E4AE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACFB2917A419EA15F57507C3 /* RootView.swift */; };
 		76E26FB3203577D9FF59EBF9 /* ImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95FC43E646AD692045D6B0F /* ImageStore.swift */; };
 		7C247C21E439FD23B25561D0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC649D8C9041D42CFA1757A /* AgentLoop.swift */; };
@@ -152,6 +153,7 @@
 		CDD5FAF636339EAFE648372D /* PythonCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonCommand.swift; sourceTree = "<group>"; };
 		DF4421B40D4D7723A6080397 /* PythonTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonTools.swift; sourceTree = "<group>"; };
 		F5757F96D605803F0D991C8D /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
+		D0C6EDAF298E444F8C336F62 /* B2Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = B2Service.swift; sourceTree = "<group>"; };
 		F8F30C2E93722C6645941BA9 /* EcoInference.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EcoInference.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
 		FDA0060B41B5BC1A612164CF /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			children = (
 				6F590FB8D3531E83DE497E7D /* DebugLogger.swift */,
 				F5757F96D605803F0D991C8D /* DownloadService.swift */,
+				D0C6EDAF298E444F8C336F62 /* B2Service.swift */,
 				8844BE75CE9F7CEB7E8DD17F /* EmbeddedPython.swift */,
 				B95FC43E646AD692045D6B0F /* ImageStore.swift */,
 				2FB6ADFDFEC6994B5A0CD941 /* InferenceService.swift */,
@@ -426,6 +429,7 @@
 				08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */,
 				4847408AAADA7756673A42D8 /* DebugLogger.swift in Sources */,
 				6EA9DB2561604B41E8A015FF /* DownloadService.swift in Sources */,
+				1FB1B6D651AF4C36BCCE4AD7 /* B2Service.swift in Sources */,
 				29893BDA19C01ABE2B57ECA7 /* EcoTheme.swift in Sources */,
 				64E3F7C8134673ACA7644190 /* EmbeddedPython.swift in Sources */,
 				9656C400CB7A39A58253A1D4 /* HardwareTools.swift in Sources */,

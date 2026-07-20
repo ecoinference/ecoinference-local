@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "970154223697",
-    "project_id": "eiapp-e16aa",
-    "storage_bucket": "eiapp-e16aa.firebasestorage.app"
+    "project_number": "333037511007",
+    "project_id": "ecoinference-28c31",
+    "storage_bucket": "ecoinference-28c31.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:970154223697:android:0b2a880d1176e6efe3f070",
+        "mobilesdk_app_id": "1:333037511007:android:b854962bfbf2efb7c6d6ea",
         "android_client_info": {
           "package_name": "ai.ecoinference.eiapp"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "970154223697-ff2dhh15oof76l91aih3ptl191eo4oir.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC3gG02RRn3iei0n-4sWdR2xsaV319Iglk"
+          "current_key": "AIzaSyDeQCxETF14-h8YEuFPfzvtNalVAtS193A"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "970154223697-ff2dhh15oof76l91aih3ptl191eo4oir.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

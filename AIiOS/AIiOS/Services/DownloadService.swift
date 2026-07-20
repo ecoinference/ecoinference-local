@@ -2,16 +2,14 @@ import Foundation
 
 enum DownloadError: LocalizedError {
     case httpError(Int)
-    case licenseRequired(String)
     case fileMoveError(String)
     case alreadyDownloading
 
     var errorDescription: String? {
         switch self {
-        case .httpError(let code):         return "HTTP \(code) — check your access credentials."
-        case .licenseRequired(let url):    return "license_required: accept licence at \(url) then retry."
-        case .fileMoveError(let msg):      return "Failed to save file: \(msg)"
-        case .alreadyDownloading:          return "A download is already in progress."
+        case .httpError(let code):      return "HTTP \(code) — download failed."
+        case .fileMoveError(let msg):   return "Failed to save file: \(msg)"
+        case .alreadyDownloading:       return "A download is already in progress."
         }
     }
 }
@@ -77,14 +75,9 @@ final class DownloadService {
     // ── Download ──────────────────────────────────────────────────────────────
 
     /// Download [model] to the Documents directory, calling [onProgress] (0.0–1.0) as data arrives.
-    /// Throws DownloadError on network or auth failure.
-    ///
-    /// [authToken] is currently unused — our model files are served unauthenticated
-    /// from our own server. The parameter is kept so we can add a Bearer token here
-    /// without touching call sites if we ever lock down model hosting behind auth.
+    /// Fetches a presigned URL from Firebase Functions before streaming.
     func download(
         model: ModelInfo,
-        authToken: String? = nil,
         onProgress: @escaping (Double) -> Void
     ) async throws {
         // Atomically check-and-set isDownloading to avoid races between
@@ -96,11 +89,13 @@ final class DownloadService {
         }
         defer { lock.withLock { _isDownloading = false } }
 
-        var request = URLRequest(url: URL(string: model.downloadUrl)!)
+        let presignedUrl = try await B2Service.shared.modelDownloadUrl(
+            modelId: model.id,
+            filename: model.fileName
+        )
+
+        var request = URLRequest(url: presignedUrl)
         request.timeoutInterval = 30
-        if let token = authToken, !token.isEmpty {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
 
         let destination = filePath(for: model)
 
@@ -123,12 +118,6 @@ final class DownloadService {
         guard let http = response as? HTTPURLResponse else {
             closeHandle()
             throw DownloadError.httpError(0)
-        }
-
-        if http.statusCode == 401 || http.statusCode == 403 {
-            closeHandle()
-            let licenseURL = model.licenseUrl ?? model.downloadUrl
-            throw DownloadError.licenseRequired(licenseURL)
         }
 
         guard http.statusCode == 200 else {
