@@ -2,7 +2,8 @@ import { app, shell, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { join } from 'path'
 import * as fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { LlamaServer } from './llamaServer'
+import { LlamaCppServer } from './backends/LlamaCppServer'
+import { GenieXServer } from './backends/GenieXServer'
 import { initAutoUpdater, checkForUpdatesNow, quitAndInstall } from './autoUpdate'
 import { checkForRecentUpdate, UpdateInfo } from './versionTracker'
 
@@ -26,7 +27,13 @@ if (!gotSingleInstanceLock) {
 }
 
 let mainWindow: BrowserWindow | null = null
-const llamaServer = new LlamaServer()
+// Backend selection: llama.cpp everywhere except Windows ARM64, which uses Qualcomm's
+// GenieX (Hexagon NPU) instead — llama.cpp's own GPU backends (Vulkan, OpenCL) don't
+// work correctly on Snapdragon's Adreno GPU. GenieX here relies on being installed
+// separately on the machine (not bundled) — local testing only, not release-ready.
+const inferenceServer = (process.platform === 'win32' && process.arch === 'arm64')
+  ? new GenieXServer()
+  : new LlamaCppServer()
 let isQuitting = false
 let updateInfo: UpdateInfo | null = null
 
@@ -130,15 +137,15 @@ ipcMain.handle('fs:abortWrite', (_e, path: string) => {
 // ── llama-server IPC ──────────────────────────────────────────────────────────
 
 ipcMain.handle('llama:start', async (_event, modelPath: string) => {
-  return llamaServer.start(modelPath)
+  return inferenceServer.start(modelPath)
 })
 
 ipcMain.handle('llama:stop', async () => {
-  return llamaServer.stop()
+  return inferenceServer.stop()
 })
 
 ipcMain.handle('llama:status', async () => {
-  return llamaServer.status()
+  return inferenceServer.status()
 })
 
 // ── Auto-update IPC ────────────────────────────────────────────────────────────
@@ -150,6 +157,7 @@ ipcMain.handle('updater:install', () => quitAndInstall())
 
 ipcMain.handle('app:getVersion', () => app.getVersion())
 ipcMain.handle('app:getUpdateInfo', () => updateInfo)
+ipcMain.handle('app:getPlatform', () => ({ platform: process.platform, arch: process.arch }))
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
@@ -175,7 +183,7 @@ app.whenReady().then(async () => {
 
   // Reconcile any orphaned llama-server left running from a previous session
   // (e.g. app crashed without cleanup) before the UI assumes a clean slate.
-  await llamaServer.ensureClean()
+  await inferenceServer.ensureClean()
 
   // Compare against the version recorded on the previous launch so the UI can show
   // a one-time "you're now on vX" confirmation after an auto-update relaunches the app.
@@ -210,12 +218,12 @@ app.on('before-quit', (event) => {
   if (isQuitting) return
   isQuitting = true
   event.preventDefault()
-  llamaServer.stop().finally(() => app.quit())
+  inferenceServer.stop().finally(() => app.quit())
 })
 
 // Last-resort synchronous safety net for abrupt termination (SIGINT/SIGTERM,
 // e.g. Ctrl+C in a dev terminal, or the OS killing the process directly) where
 // the async before-quit path above never gets a chance to run.
-process.on('exit', () => llamaServer.killSync())
+process.on('exit', () => inferenceServer.killSync())
 process.on('SIGINT', () => process.exit(0))
 process.on('SIGTERM', () => process.exit(0))

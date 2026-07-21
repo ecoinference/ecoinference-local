@@ -74,9 +74,11 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
             <button style={s.btnPrimary} onClick={handleLoad} disabled={isLoading || isOtherLoading}>
               {isLoading ? 'Loading…' : 'Load'}
             </button>
-            <button style={s.btnDanger} onClick={() => deleteModel(model.id)} disabled={isLoading || isOtherLoading}>
-              Delete
-            </button>
+            {model.backend !== 'geniex' && (
+              <button style={s.btnDanger} onClick={() => deleteModel(model.id)} disabled={isLoading || isOtherLoading}>
+                Delete
+              </button>
+            )}
           </>
         )}
         {model.loaded && (
