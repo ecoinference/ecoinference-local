@@ -54,7 +54,7 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
         <div>
           <div style={s.modelName}>{model.displayName}</div>
           <div style={s.modelMeta}>
-            {formatSize(model.fileSizeMb)}
+            {model.backend === 'geniex' ? 'Managed by GenieX' : formatSize(model.fileSizeMb)}
             {model.supportsVision       && <span style={s.badge}>Vision</span>}
             {model.maxContextTokens >= 16384 && <span style={s.badge}>16k ctx</span>}
           </div>
