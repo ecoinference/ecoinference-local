@@ -31,6 +31,23 @@ fun ModelCard(
     onCancelDownload:   () -> Unit,
 ) {
     var showGpuDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title            = { Text("Delete ${model.displayName}?") },
+            text             = { Text("This removes the downloaded file. You'll need to download it again to use it.") },
+            confirmButton    = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton    = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
 
     if (showGpuDialog) {
         AlertDialog(
@@ -141,7 +158,7 @@ fun ModelCard(
                         }
                         // Delete (only when loaded — unload first, then delete)
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showDeleteConfirm = true },
                             colors  = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error),
                             border  = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
@@ -170,7 +187,7 @@ fun ModelCard(
                         }
                         Spacer(Modifier.width(4.dp))
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showDeleteConfirm = true },
                             enabled = !isLoading && !isOtherLoading,
                             colors  = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error),
