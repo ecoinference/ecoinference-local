@@ -53,7 +53,25 @@ fun runAgentLoop(
         Log.d(TAG, "Iteration $iterations — calling chatStream")
 
         val sb = StringBuilder()
-        inference.chatStream(history, maxTokens, temperature).collect { token -> sb.append(token) }
+        // Lightweight benchmark — Android has no native benchmark hook (unlike
+        // iOS's litert_lm_conversation_get_benchmark_info), so approximate via
+        // wall-clock timing around the token stream. Each streamed "token" may
+        // actually be a multi-token chunk, so decode tok/s here is a chunk-rate
+        // floor, not an exact token rate.
+        val startNanos = System.nanoTime()
+        var firstTokenNanos = 0L
+        var chunkCount = 0
+        inference.chatStream(history, maxTokens, temperature).collect { token ->
+            if (chunkCount == 0) firstTokenNanos = System.nanoTime()
+            chunkCount++
+            sb.append(token)
+        }
+        val endNanos = System.nanoTime()
+        val ttftMs = (firstTokenNanos - startNanos) / 1_000_000.0
+        val decodeMs = (endNanos - firstTokenNanos) / 1_000_000.0
+        val decodeRate = if (decodeMs > 0 && chunkCount > 1) (chunkCount - 1) * 1000.0 / decodeMs else 0.0
+        Log.i(TAG, "benchmark: TTFT=%.3fs  decode=%.1f chunks/s (%d chunks, %.3fs total)"
+            .format(ttftMs / 1000.0, decodeRate, chunkCount, (endNanos - startNanos) / 1_000_000_000.0))
         val response = sb.toString().trim()
         Log.d(TAG, "Model response (iter=$iterations):\n$response")
 
@@ -135,7 +153,25 @@ fun runAgentLoop(
     }
 
     if (iterations >= MAX_TOOL_ITERATIONS) {
-        emit(AgentToken.Text("(Reached maximum tool iterations without a final answer.)"))
+        // Don't just give up — run one more no-more-tools turn so the user
+        // gets a real answer from whatever was gathered, instead of a static
+        // placeholder (mirrors iOS AgentLoop/ChatView's forced-final turn).
+        Log.d(TAG, "Tool budget exhausted after $iterations iterations — forcing final turn")
+        history += InferenceMessage(
+            role = "user",
+            text = "(Tool budget exhausted. Answer now using only the information gathered above; " +
+                "if it is insufficient, say what is missing.)",
+        )
+        val sb = StringBuilder()
+        inference.chatStream(history, maxTokens, temperature).collect { token -> sb.append(token) }
+        val finalResponse = sb.toString().trim()
+        if (TOOL_CALL_RE.containsMatchIn(finalResponse) || NATIVE_CALL_RE.containsMatchIn(finalResponse)) {
+            // Model ignored the nudge — still never show a raw tool-call fragment.
+            Log.e(TAG, "Forced-final turn still contained a tool call")
+            emit(AgentToken.Text("I wasn't able to finish that within the tool budget — please try rephrasing."))
+        } else {
+            emit(AgentToken.Text(SPECIAL_TOKEN_RE.replace(finalResponse, "").trim()))
+        }
     }
 
     Log.d(TAG, "runAgentLoop done after $iterations iteration(s)")

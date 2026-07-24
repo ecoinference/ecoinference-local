@@ -19,6 +19,12 @@ enum AgentLoop {
     /// Maximum agentic iterations per user turn before giving up.
     static let maxIterations = 2
 
+    /// Appended as a user turn when the iteration budget is exhausted while
+    /// the model still wants to call another tool — asks for a real answer
+    /// instead of letting a raw tool-call fragment reach the chat bubble.
+    static let budgetExhaustedNudge =
+        "(Tool budget exhausted. Answer now using only the information gathered above; if it is insufficient, say what is missing.)"
+
     // ── Detection ─────────────────────────────────────────────────────────────
 
     /// Returns true if `response` appears to contain a tool-call opening tag.

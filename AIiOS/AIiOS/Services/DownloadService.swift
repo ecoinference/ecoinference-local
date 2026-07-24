@@ -4,12 +4,15 @@ enum DownloadError: LocalizedError {
     case httpError(Int)
     case fileMoveError(String)
     case alreadyDownloading
+    case insufficientStorage(requiredMb: Int, availableMb: Int)
 
     var errorDescription: String? {
         switch self {
         case .httpError(let code):      return "HTTP \(code) — download failed."
         case .fileMoveError(let msg):   return "Failed to save file: \(msg)"
         case .alreadyDownloading:       return "A download is already in progress."
+        case .insufficientStorage(let required, let available):
+            return "Not enough storage: this model needs ~\(required) MB, but only \(available) MB is free."
         }
     }
 }
@@ -58,6 +61,25 @@ final class DownloadService {
         return size >= minBytes
     }
 
+    /// Throws `.insufficientStorage` if there isn't enough free space on the
+    /// Documents volume to hold `model`. A 10% buffer accounts for filesystem
+    /// overhead and the temp file existing alongside the final destination
+    /// momentarily during the move.
+    private func checkAvailableStorage(for model: ModelInfo) throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        guard let systemAttrs = try? FileManager.default.attributesOfFileSystem(forPath: docs.path),
+              let freeBytes = systemAttrs[.systemFreeSize] as? Int64 else {
+            return // Can't determine free space — don't block the download over it.
+        }
+        let requiredBytes = Int64(model.fileSizeMb) * 1_000_000 * 11 / 10
+        guard freeBytes >= requiredBytes else {
+            throw DownloadError.insufficientStorage(
+                requiredMb: Int(requiredBytes / 1_000_000),
+                availableMb: Int(freeBytes / 1_000_000)
+            )
+        }
+    }
+
     /// Delete a downloaded model file.
     func delete(_ model: ModelInfo) throws {
         let path = filePath(for: model)
@@ -88,6 +110,8 @@ final class DownloadService {
             _cancellationRequested = false
         }
         defer { lock.withLock { _isDownloading = false } }
+
+        try checkAvailableStorage(for: model)
 
         let presignedUrl = try await B2Service.shared.modelDownloadUrl(
             modelId: model.id,

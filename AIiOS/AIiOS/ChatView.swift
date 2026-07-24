@@ -513,6 +513,21 @@ struct ChatView: View {
                     _ = nextTargetId  // suppress unused warning; final update uses streamingId
                 }
 
+                // If the loop hit the iteration cap while the model still wanted
+                // to call another tool, don't let the raw tool-call fragment
+                // reach the chat bubble — force one more no-more-tools turn.
+                if AgentLoop.hasToolCall(response) {
+                    chatLog.info("  tool budget exhausted after \(AgentLoop.maxIterations) iterations — forcing final turn")
+                    taskHistory.append(InferenceMessage(role: "assistant", text: response))
+                    taskHistory.append(InferenceMessage(role: "user", text: AgentLoop.budgetExhaustedNudge))
+                    response = try inference.chat(messages: taskHistory)
+                    if AgentLoop.hasToolCall(response) {
+                        // Model ignored the nudge — still never show a raw tool-call fragment.
+                        chatLog.error("  forced-final turn still contained a tool call: \(response.prefix(200))")
+                        response = "I wasn't able to finish that within the tool budget — please try rephrasing."
+                    }
+                }
+
                 // ── Final response ────────────────────────────────────────────
                 taskHistory.append(InferenceMessage(role: "assistant", text: response))
                 guard !Task.isCancelled else { return }

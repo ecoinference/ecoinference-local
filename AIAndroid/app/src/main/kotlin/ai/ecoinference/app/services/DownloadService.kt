@@ -10,6 +10,10 @@ import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+/** Mirrors iOS's DownloadError.insufficientStorage. */
+class InsufficientStorageException(requiredMb: Int, availableMb: Int) :
+    Exception("Not enough storage: this model needs ~$requiredMb MB, but only $availableMb MB is free.")
+
 /**
  * Handles model file downloads.
  * Mirrors the role of iOS DownloadService.swift.
@@ -52,6 +56,17 @@ class DownloadService private constructor(private val context: Context) {
     ) = withContext(Dispatchers.IO) {
         val destFile = filePath(model)
         val tempFile = File(context.filesDir, "${model.fileName}.tmp")
+
+        // 10% buffer for filesystem overhead and the temp file existing
+        // alongside the final destination momentarily during the move.
+        val requiredBytes = model.fileSizeMb.toLong() * 1_000_000 * 11 / 10
+        val availableBytes = destFile.parentFile?.usableSpace ?: Long.MAX_VALUE
+        if (availableBytes < requiredBytes) {
+            throw InsufficientStorageException(
+                requiredMb  = (requiredBytes / 1_000_000).toInt(),
+                availableMb = (availableBytes / 1_000_000).toInt(),
+            )
+        }
 
         try {
             val presignedUrl = B2Service.modelDownloadUrl(model.id, model.fileName)
