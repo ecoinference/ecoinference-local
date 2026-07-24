@@ -112,7 +112,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   bubble: { display: 'flex', flexDirection: 'column', maxWidth: '72%' },
   bubbleUser: {
-    background: 'var(--accent)', color: '#fff',
+    background: 'var(--accent)', color: 'var(--on-accent)',
     borderRadius: '14px 14px 4px 14px', padding: '10px 14px',
   },
   bubbleAssistant: {
@@ -139,7 +139,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sendBtn: {
     width: 40, height: 40, borderRadius: 10, border: 'none',
-    background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 18,
+    background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 700, fontSize: 18,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 
@@ -150,6 +150,6 @@ const styles: Record<string, React.CSSProperties> = {
   emptyText: { color: 'var(--text-dim)', fontSize: 15 },
   btnPrimary: {
     padding: '9px 22px', borderRadius: 8, border: 'none',
-    background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14,
+    background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 600, fontSize: 14,
   },
 }

@@ -45,6 +45,7 @@ export interface UpdateInfo {
 const appInfoAPI = {
   getVersion:    (): Promise<string>              => ipcRenderer.invoke('app:getVersion'),
   getUpdateInfo: (): Promise<UpdateInfo | null>    => ipcRenderer.invoke('app:getUpdateInfo'),
+  getPlatform:   (): Promise<{ platform: string; arch: string }> => ipcRenderer.invoke('app:getPlatform'),
 }
 
 if (process.contextIsolated) {

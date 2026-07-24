@@ -42,13 +42,19 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
     }
   }
 
+  function handleDelete(): void {
+    if (confirm(`Delete ${model.displayName}? This removes the downloaded file (${formatSize(model.fileSizeMb)}) from your computer. You'll need to download it again to use it.`)) {
+      deleteModel(model.id)
+    }
+  }
+
   return (
     <div style={s.card}>
       <div style={s.cardHeader}>
         <div>
           <div style={s.modelName}>{model.displayName}</div>
           <div style={s.modelMeta}>
-            {formatSize(model.fileSizeMb)}
+            {model.backend === 'geniex' ? 'Managed by GenieX' : formatSize(model.fileSizeMb)}
             {model.supportsVision       && <span style={s.badge}>Vision</span>}
             {model.maxContextTokens >= 16384 && <span style={s.badge}>16k ctx</span>}
           </div>
@@ -74,9 +80,11 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
             <button style={s.btnPrimary} onClick={handleLoad} disabled={isLoading || isOtherLoading}>
               {isLoading ? 'Loading…' : 'Load'}
             </button>
-            <button style={s.btnDanger} onClick={() => deleteModel(model.id)} disabled={isLoading || isOtherLoading}>
-              Delete
-            </button>
+            {model.backend !== 'geniex' && (
+              <button style={s.btnDanger} onClick={handleDelete} disabled={isLoading || isOtherLoading}>
+                Delete
+              </button>
+            )}
           </>
         )}
         {model.loaded && (
@@ -127,8 +135,8 @@ const s: Record<string, React.CSSProperties> = {
   progressFill: { height: '100%', background: 'var(--accent)', borderRadius: 2, transition: 'width 0.2s' },
   progressLabel:{ fontSize: 13, color: 'var(--text-dim)' },
   actions:      { display: 'flex', gap: 8 },
-  btnPrimary:   { padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 13 },
-  btnAccent:    { padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 13 },
+  btnPrimary:   { padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 600, fontSize: 13 },
+  btnAccent:    { padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 600, fontSize: 13 },
   btnSecondary: { padding: '7px 16px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text)', fontWeight: 600, fontSize: 13 },
   btnDanger:    { padding: '7px 16px', borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--danger)', fontWeight: 600, fontSize: 13 },
   error:        { color: 'var(--danger)', fontSize: 12, margin: 0 },

@@ -1,6 +1,6 @@
 {
   "name": "aidesktop",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "EcoInference desktop app — local AI on Windows and macOS",
   "main": "./out/main/index.js",
   "author": "EcoInference",
@@ -11,7 +11,8 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "package:mac": "electron-vite build && electron-builder --mac",
-    "package:win": "electron-vite build && electron-builder --win"
+    "package:win": "electron-vite build && electron-builder --win --x64",
+    "package:win-arm64": "electron-vite build && electron-builder --win --arm64"
   },
   "dependencies": {
     "firebase": "^11.8.1",
@@ -37,9 +38,6 @@
     "productName": "EcoInference",
     "directories": { "output": "dist" },
     "files": ["out/**/*"],
-    "extraResources": [
-      { "from": "resources/bin", "to": "bin" }
-    ],
     "publish": {
       "provider": "generic",
       "url": "https://releases.ecoinference.ai/file/ecoinference-releases/",
@@ -47,10 +45,17 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64"] }]
+      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "extraResources": [
+        { "from": "resources/bin/llama-server", "to": "bin/llama-server" }
+      ]
     },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [{ "target": "nsis" }],
+      "signAndEditExecutable": false,
+      "extraResources": [
+        { "from": "resources/bin/win-${arch}", "to": "bin" }
+      ]
     }
   }
 }

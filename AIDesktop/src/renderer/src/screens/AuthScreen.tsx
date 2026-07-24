@@ -97,7 +97,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   submitBtn: {
     padding: '10px 0', borderRadius: 8, border: 'none',
-    background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14,
+    background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 600, fontSize: 14,
   },
   error: { color: 'var(--danger)', fontSize: 13, margin: 0 },
   toggle: { fontSize: 13, color: 'var(--text-dim)', margin: 0, textAlign: 'center' },

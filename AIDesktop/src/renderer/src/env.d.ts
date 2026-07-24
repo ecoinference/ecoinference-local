@@ -40,6 +40,7 @@ declare global {
         previousVersion?: string
         currentVersion:   string
       } | null>
+      getPlatform:   () => Promise<{ platform: string; arch: string }>
     }
   }
 }

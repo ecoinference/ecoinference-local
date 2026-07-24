@@ -17,6 +17,11 @@ export interface Message {
   content: string
 }
 
+interface PlatformInfo {
+  platform: string
+  arch:     string
+}
+
 interface State {
   user:                User | null
   authLoading:         boolean
@@ -25,6 +30,7 @@ interface State {
   enabledModelIds:     Set<string> | null
   downloadedFiles:     Set<string>      // basenames present in modelsDir
   modelsDir:           string
+  platformInfo:        PlatformInfo | null
   loadedModelId:       string | null
   loadingModelId:      string | null
   serverRunning:       boolean
@@ -39,6 +45,7 @@ interface State {
 type Action =
   | { type: 'SET_USER';             user: User | null }
   | { type: 'SET_SCREEN';           screen: Screen }
+  | { type: 'SET_PLATFORM';         info: PlatformInfo }
   | { type: 'SET_ENABLED_IDS';      ids: Set<string> | null }
   | { type: 'SET_MODELS_DIR';       dir: string }
   | { type: 'SET_DOWNLOADED';       files: Set<string> }
@@ -49,10 +56,26 @@ type Action =
   | { type: 'DOWNLOAD_PROGRESS';    progress: number }
   | { type: 'DOWNLOAD_DONE' }
   | { type: 'DOWNLOAD_ERROR';       error: string; modelId: string }
-  | { type: 'APPEND_MESSAGE';       message: Message }
-  | { type: 'PATCH_LAST_ASSISTANT'; delta: string }
-  | { type: 'SET_GENERATING';       value: boolean }
+  | { type: 'APPEND_MESSAGE';             message: Message }
+  | { type: 'PATCH_LAST_ASSISTANT';       delta: string }
+  | { type: 'SET_LAST_ASSISTANT_CONTENT'; content: string }
+  | { type: 'SET_GENERATING';             value: boolean }
   | { type: 'CLEAR_MESSAGES' }
+
+// ── Reasoning-model helpers ───────────────────────────────────────────────────
+
+// Reasoning models (Qwen3's thinking mode, DeepSeek-R1 distills, etc.) emit their
+// internal monologue inline as <think>...</think> before the real answer — useful
+// for the model, not for the user. Strip it from what's displayed. Re-derived from
+// the full raw buffer on every chunk (rather than parsed incrementally) so a
+// <think>/</think> tag split across two stream chunks can't leave a stray fragment
+// visible — recomputing from scratch is cheap at chat-message lengths.
+function stripThinking(rawText: string): string {
+  const withoutClosedBlocks = rawText.replace(/<think>[\s\S]*?<\/think>/g, '')
+  // Whatever's left starting at <think> (if anything) is a still-open block —
+  // the model hasn't finished reasoning yet, so there's nothing to show for it.
+  return withoutClosedBlocks.replace(/<think>[\s\S]*$/, '').trim()
+}
 
 // ── Catalog helpers ───────────────────────────────────────────────────────────
 
@@ -60,12 +83,29 @@ function buildCatalog(
   enabled: Set<string> | null,
   downloaded: Set<string>,
   loadedId: string | null,
+  platformInfo: PlatformInfo | null,
 ): ModelInfo[] {
+  // Windows ARM64/Snapdragon has no llama.cpp GPU/NPU path worth shipping (see project
+  // memory) — it runs GenieX-backed models instead, while every other platform runs
+  // llama-cpp-backed ones. Until platform info loads, show nothing rather than guess.
+  const isWinArm64 = platformInfo?.platform === 'win32' && platformInfo?.arch === 'arm64'
+  const wantBackend = platformInfo === null ? null : isWinArm64 ? 'geniex' : 'llama-cpp'
+
+  // Windows ARM64's catalog is intentionally hardcoded in this build, not managed via
+  // Firebase Remote Config the way the Gemma 4 catalog is — GenieX models are inherently
+  // local/experimental for this specific platform variant (see project memory) and this
+  // is expected to always be a one-off rather than something rolled out centrally, so
+  // skip the remote allowlist check entirely here rather than needing it kept in sync.
+  const skipRemoteAllowlist = isWinArm64
+
   return ModelCatalog
-    .filter((m) => enabled === null || enabled.has(m.id))
+    .filter((m) => skipRemoteAllowlist || enabled === null || enabled.has(m.id))
+    .filter((m) => wantBackend === null || m.backend === wantBackend)
     .map((m) => ({
       ...m,
-      downloaded: downloaded.has(m.fileName),
+      // GenieX manages its own model download/caching — there's no local file for the
+      // app's own download flow to track, so just treat it as always ready to load.
+      downloaded: m.backend === 'geniex' ? true : downloaded.has(m.fileName),
       loaded:     m.id === loadedId,
     }))
 }
@@ -79,11 +119,17 @@ function reducer(state: State, action: Action): State {
                screen: action.user ? 'models' : 'auth' }
     case 'SET_SCREEN':
       return { ...state, screen: action.screen }
+    case 'SET_PLATFORM':
+      return {
+        ...state,
+        platformInfo: action.info,
+        models: buildCatalog(state.enabledModelIds, state.downloadedFiles, state.loadedModelId, action.info),
+      }
     case 'SET_ENABLED_IDS':
       return {
         ...state,
         enabledModelIds: action.ids,
-        models: buildCatalog(action.ids, state.downloadedFiles, state.loadedModelId),
+        models: buildCatalog(action.ids, state.downloadedFiles, state.loadedModelId, state.platformInfo),
       }
     case 'SET_MODELS_DIR':
       return { ...state, modelsDir: action.dir }
@@ -91,13 +137,13 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         downloadedFiles: action.files,
-        models: buildCatalog(state.enabledModelIds, action.files, state.loadedModelId),
+        models: buildCatalog(state.enabledModelIds, action.files, state.loadedModelId, state.platformInfo),
       }
     case 'SET_LOADED_MODEL':
       return {
         ...state,
         loadedModelId: action.id,
-        models: buildCatalog(state.enabledModelIds, state.downloadedFiles, action.id),
+        models: buildCatalog(state.enabledModelIds, state.downloadedFiles, action.id, state.platformInfo),
       }
     case 'SET_LOADING_MODEL':
       return { ...state, loadingModelId: action.id }
@@ -121,6 +167,14 @@ function reducer(state: State, action: Action): State {
       const last = msgs[msgs.length - 1]
       if (last?.role === 'assistant') {
         msgs[msgs.length - 1] = { ...last, content: last.content + action.delta }
+      }
+      return { ...state, messages: msgs }
+    }
+    case 'SET_LAST_ASSISTANT_CONTENT': {
+      const msgs = [...state.messages]
+      const last = msgs[msgs.length - 1]
+      if (last?.role === 'assistant') {
+        msgs[msgs.length - 1] = { ...last, content: action.content }
       }
       return { ...state, messages: msgs }
     }
@@ -154,8 +208,6 @@ export function useAppContext(): AppContextValue {
   return ctx
 }
 
-const LLAMA_URL = 'http://127.0.0.1:8765/v1/chat/completions'
-
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AppProvider({ children }: { children: React.ReactNode }): JSX.Element {
@@ -167,6 +219,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     enabledModelIds:    null,
     downloadedFiles:    new Set<string>(),
     modelsDir:          '',
+    platformInfo:       null,
     loadedModelId:      null,
     loadingModelId:     null,
     serverRunning:      false,
@@ -186,6 +239,14 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     window.fsOps.modelsDir().then((dir) => {
       modelsDirRef.current = dir
       dispatch({ type: 'SET_MODELS_DIR', dir })
+    })
+  }, [])
+
+  // Fetch platform info once — determines which backend's models show in the catalog
+  // (llama-cpp everywhere except Windows ARM64/Snapdragon, which uses GenieX instead).
+  useEffect(() => {
+    window.appInfo.getPlatform().then((info) => {
+      dispatch({ type: 'SET_PLATFORM', info })
     })
   }, [])
 
@@ -267,7 +328,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
 
   const deleteModel = useCallback(async (modelId: string) => {
     const info = findModel(modelId)
-    if (!info) return
+    if (!info || info.backend === 'geniex') return // GenieX manages its own cache, nothing local to delete
     await window.fsOps.unlink(`${modelsDirRef.current}/${info.fileName}`)
     await refreshDownloaded()
   }, [refreshDownloaded])
@@ -280,13 +341,17 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     if (!info) return
     dispatch({ type: 'SET_LOADING_MODEL', id: modelId })
     try {
-      const modelPath = `${modelsDirRef.current}/${info.fileName}`
+      // llama-cpp: fileName is a real file downloaded to modelsDir. geniex: fileName is
+      // already the GenieX model ID (e.g. "qualcomm/Qwen3-8B") — pass it straight through.
+      const modelPath = info.backend === 'geniex'
+        ? info.fileName
+        : `${modelsDirRef.current}/${info.fileName}`
       const result = await window.llama.start(modelPath)
       if (result.ok) {
         dispatch({ type: 'SET_LOADED_MODEL', id: modelId })
         dispatch({ type: 'SET_SERVER_RUNNING', running: true })
       } else {
-        throw new Error(result.error ?? 'Failed to start llama-server')
+        throw new Error(result.error ?? 'Failed to start inference server')
       }
     } finally {
       dispatch({ type: 'SET_LOADING_MODEL', id: null })
@@ -312,12 +377,19 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     abortRef.current = new AbortController()
 
     try {
+      // Port differs per backend (llama-server: 8765, GenieX: 18181) — ask the main
+      // process what's actually running rather than assuming. The "model" field is
+      // ignored by llama-server but required by GenieX, so always send it.
+      const status = await window.llama.status() as { port: number }
+      const loadedInfo = state.loadedModelId ? findModel(state.loadedModelId) : undefined
+      const chatUrl = `http://127.0.0.1:${status.port}/v1/chat/completions`
+
       const history = [...state.messages, userMsg].map(({ role, content }) => ({ role, content }))
-      const res = await fetch(LLAMA_URL, {
+      const res = await fetch(chatUrl, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         signal:  abortRef.current.signal,
-        body:    JSON.stringify({ messages: history, stream: true }),
+        body:    JSON.stringify({ model: loadedInfo?.fileName, messages: history, stream: true }),
       })
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
@@ -325,6 +397,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
+      let rawContent = '' // full text including any <think> blocks — displayed content is derived from this
 
       while (true) {
         const { done, value } = await reader.read()
@@ -333,12 +406,17 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
         const lines = buf.split('\n')
         buf = lines.pop() ?? ''
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6).trim()
+          // llama-server emits "data: {...}" (with a space); GenieX emits "data:{...}"
+          // (no space) — accept either rather than requiring an exact "data: " match.
+          if (!line.startsWith('data:')) continue
+          const data = line.slice(5).trim()
           if (data === '[DONE]') continue
           try {
             const delta = JSON.parse(data)?.choices?.[0]?.delta?.content
-            if (delta) dispatch({ type: 'PATCH_LAST_ASSISTANT', delta })
+            if (delta) {
+              rawContent += delta
+              dispatch({ type: 'SET_LAST_ASSISTANT_CONTENT', content: stripThinking(rawContent) })
+            }
           } catch { /* malformed chunk */ }
         }
       }
@@ -349,7 +427,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     } finally {
       dispatch({ type: 'SET_GENERATING', value: false })
     }
-  }, [state.generating, state.messages])
+  }, [state.generating, state.messages, state.loadedModelId])
 
   const clearChat = useCallback(() => dispatch({ type: 'CLEAR_MESSAGES' }), [])
 
