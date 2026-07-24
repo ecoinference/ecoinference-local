@@ -447,7 +447,14 @@ struct ChatView: View {
                 // ── Agentic tool loop ─────────────────────────────────────────
                 for iteration in 0..<AgentLoop.maxIterations {
                     guard AgentLoop.hasToolCall(response) else { break }
-                    guard let toolCall = AgentLoop.parse(response) else { break }
+                    guard let toolCall = AgentLoop.parse(response) else {
+                        // Tool-call tag present but unparseable after all repair
+                        // attempts — never show the raw <tool_call>/JSON fragment
+                        // to the user (mirrors Android AgentLoop.kt's fallback).
+                        chatLog.error("  tool call detected but failed to parse: \(response.prefix(200))")
+                        response = "Sorry, I couldn't parse the tool call."
+                        break
+                    }
                     chatLog.info("  tool call iter=\(iteration) name=\(toolCall.toolName)")
 
                     // Show any text the model emitted before the <tool_call> tag

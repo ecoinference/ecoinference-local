@@ -95,7 +95,11 @@ final class DownloadService {
         )
 
         var request = URLRequest(url: presignedUrl)
-        request.timeoutInterval = 30
+        // Idle timeout (resets on each byte received), not a total-transfer cap.
+        // 30s was too tight for multi-GB files on first request, when Cloudflare/B2
+        // haven't warmed the path yet — matches Android's readTimeout(0) intent of
+        // not timing out mid-transfer, while still catching a genuinely dead connection.
+        request.timeoutInterval = 120
 
         let destination = filePath(for: model)
 
