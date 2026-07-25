@@ -17,6 +17,16 @@ enum DownloadError: LocalizedError {
     }
 }
 
+/// Snapshot of an in-progress download, passed to the `onProgress` callback.
+struct DownloadProgress {
+    /// 0.0–1.0
+    let fraction: Double
+    /// Instantaneous speed since the previous callback, in bytes/sec.
+    let bytesPerSecond: Double
+    /// Estimated seconds remaining at the current speed. `.infinity` if unknown.
+    let etaSeconds: Double
+}
+
 /// Downloads model files (currently always hosted on our own server) using URLSession.
 /// Progress is reported via a closure (0.0–1.0).
 ///
@@ -96,11 +106,11 @@ final class DownloadService {
 
     // ── Download ──────────────────────────────────────────────────────────────
 
-    /// Download [model] to the Documents directory, calling [onProgress] (0.0–1.0) as data arrives.
+    /// Download [model] to the Documents directory, calling [onProgress] as data arrives.
     /// Fetches a presigned URL from Firebase Functions before streaming.
     func download(
         model: ModelInfo,
-        onProgress: @escaping (Double) -> Void
+        onProgress: @escaping (DownloadProgress) -> Void
     ) async throws {
         // Atomically check-and-set isDownloading to avoid races between
         // concurrent HTTP requests or a UI tap + HTTP request arriving together.
@@ -156,6 +166,8 @@ final class DownloadService {
         let totalBytes = max(1, response.expectedContentLength)
         var receivedBytes: Int64 = 0
         var buffer = Data(capacity: 256 * 1024)
+        var lastCallbackTime = Date()
+        var lastCallbackBytes: Int64 = 0
 
         for try await byte in asyncBytes {
             if lock.withLock({ _cancellationRequested }) { break }
@@ -165,7 +177,23 @@ final class DownloadService {
             if buffer.count >= 256 * 1024 {
                 fileHandle.write(buffer)
                 buffer.removeAll(keepingCapacity: true)
-                onProgress(Double(receivedBytes) / Double(totalBytes))
+
+                let now      = Date()
+                let elapsed  = now.timeIntervalSince(lastCallbackTime)
+                let bytesPerSecond = elapsed > 0
+                    ? Double(receivedBytes - lastCallbackBytes) / elapsed
+                    : 0
+                lastCallbackTime  = now
+                lastCallbackBytes = receivedBytes
+
+                let remaining   = totalBytes - receivedBytes
+                let etaSeconds  = bytesPerSecond > 0 ? Double(remaining) / bytesPerSecond : .infinity
+
+                onProgress(DownloadProgress(
+                    fraction:       Double(receivedBytes) / Double(totalBytes),
+                    bytesPerSecond: bytesPerSecond,
+                    etaSeconds:     etaSeconds
+                ))
             }
         }
 
@@ -190,6 +218,6 @@ final class DownloadService {
             throw DownloadError.fileMoveError(error.localizedDescription)
         }
 
-        onProgress(1.0)
+        onProgress(DownloadProgress(fraction: 1.0, bytesPerSecond: 0, etaSeconds: 0))
     }
 }

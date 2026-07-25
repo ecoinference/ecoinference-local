@@ -428,7 +428,11 @@ struct ChatView: View {
         }
 
         let imageData = image?.jpegData(compressionQuality: 0.85)
-        let sendText  = text.isEmpty ? " " : text
+        // Blank text only reaches here when an image is attached (see the
+        // `!text.isEmpty || pendingImage != nil` guard above) — a bare " " with
+        // tool-calling available in the system prompt was leading the model to
+        // attempt a bogus tool call instead of just describing the image.
+        let sendText  = text.isEmpty ? (image != nil ? "Describe this image." : " ") : text
         inferenceHistory.append(InferenceMessage(role: "user", text: sendText, imageData: imageData))
 
         let historySnapshot = inferenceHistory

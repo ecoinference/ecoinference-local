@@ -22,6 +22,8 @@ fun ModelCard(
     model:              ModelInfo,
     isDownloading:      Boolean,
     downloadProgress:   Float,      // 0–100
+    downloadSpeedText:  String = "",
+    downloadEtaText:    String = "",
     isLoading:          Boolean,
     isOtherLoading:     Boolean = false,
     onDownload:         () -> Unit,
@@ -110,9 +112,19 @@ fun ModelCard(
                     color        = EcoColors.Green,
                     trackColor   = EcoColors.CardBorder,
                 )
-                Text("${downloadProgress.toInt()}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.DimGreen)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    val leading = buildString {
+                        append("${downloadProgress.toInt()}%")
+                        if (downloadSpeedText.isNotEmpty()) append("  ·  $downloadSpeedText")
+                    }
+                    Text(leading, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                    if (downloadEtaText.isNotEmpty()) {
+                        Text(downloadEtaText, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))

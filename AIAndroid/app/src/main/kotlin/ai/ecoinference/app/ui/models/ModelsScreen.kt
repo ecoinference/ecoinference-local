@@ -23,6 +23,8 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
     val models            by appState.models.collectAsStateWithLifecycle()
     val downloadActive    by appState.downloadActive.collectAsStateWithLifecycle()
     val downloadProgress  by appState.downloadProgress.collectAsStateWithLifecycle()
+    val downloadSpeedText by appState.downloadSpeedText.collectAsStateWithLifecycle()
+    val downloadEtaText   by appState.downloadEtaText.collectAsStateWithLifecycle()
     val downloadingId     by appState.downloadingModelId.collectAsStateWithLifecycle()
     val downloadError     by appState.downloadError.collectAsStateWithLifecycle()
     val isLoading         by appState.isLoading.collectAsStateWithLifecycle()
@@ -71,8 +73,10 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
                 items(models, key = { it.id }) { model ->
                     ModelCard(
                         model            = model,
-                        isDownloading    = downloadActive && downloadingId == model.id,
-                        downloadProgress = if (downloadingId == model.id) downloadProgress else 0f,
+                        isDownloading     = downloadActive && downloadingId == model.id,
+                        downloadProgress  = if (downloadingId == model.id) downloadProgress else 0f,
+                        downloadSpeedText = if (downloadingId == model.id) downloadSpeedText else "",
+                        downloadEtaText   = if (downloadingId == model.id) downloadEtaText else "",
                         isLoading        = loadingModelId == model.id,
                         isOtherLoading   = isLoading && loadingModelId != model.id,
                         onDownload       = { appState.startDownload(model.id) },

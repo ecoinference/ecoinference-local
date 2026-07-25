@@ -65,9 +65,18 @@ struct ModelsView: View {
             }
             ProgressView(value: appState.downloadProgress, total: 100)
                 .progressViewStyle(.linear)
-            Text(String(format: "%.0f%%", appState.downloadProgress))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(String(format: "%.0f%%", appState.downloadProgress))
+                if !appState.downloadSpeedText.isEmpty {
+                    Text("·  \(appState.downloadSpeedText)")
+                }
+                Spacer()
+                if !appState.downloadEtaText.isEmpty {
+                    Text(appState.downloadEtaText)
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
         }
         .padding()
         .background(.thinMaterial)

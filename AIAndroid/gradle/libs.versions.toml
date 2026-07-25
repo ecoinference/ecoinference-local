@@ -17,6 +17,7 @@ commonsMath          = "3.6.1"
 chaquopy             = "17.0.0"
 googleServices       = "4.4.2"
 firebaseBom          = "33.7.0"
+junit                = "4.13.2"
 
 [libraries]
 androidx-core-ktx                  = { group = "androidx.core",            name = "core-ktx",                       version.ref = "coreKtx"           }
@@ -46,6 +47,7 @@ firebase-auth                      = { group = "com.google.firebase",       name
 firebase-firestore                 = { group = "com.google.firebase",       name = "firebase-firestore"                                                  }
 firebase-storage                   = { group = "com.google.firebase",       name = "firebase-storage"                                                    }
 firebase-config                    = { group = "com.google.firebase",       name = "firebase-config"                                                     }
+junit                               = { group = "junit",                    name = "junit",                          version.ref = "junit"             }
 
 [plugins]
 android-application  = { id = "com.android.application",                    version.ref = "agp"      }

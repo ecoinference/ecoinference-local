@@ -59,6 +59,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests {
+            // android.util.Log (and other stubbed Android SDK calls) throw by
+            // default on the plain JVM test runner ("not mocked") — return
+            // defaults instead so logic tests that happen to log don't crash.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -109,6 +118,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.config)
+
+    // Unit tests (local JVM, no device/emulator needed)
+    testImplementation(libs.junit)
 }
 
 // ── Chaquopy — on-device Python runtime ───────────────────────────────────────
