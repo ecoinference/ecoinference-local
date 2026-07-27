@@ -44,6 +44,9 @@ class InferenceService private constructor(context: Context) {
 
     fun unload() = engine.unload()
 
+    /** Stops the in-flight generation (if any) — see [LiteRtLmEngine.cancelActiveGeneration]. */
+    fun cancelInference() = engine.cancelActiveGeneration()
+
     fun chatStream(
         messages:    List<InferenceMessage>,
         maxTokens:   Int   = 2048,

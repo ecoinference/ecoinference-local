@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,11 +57,25 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     // Only truly ready when loaded AND the load coroutine has finished
     val modelReady = modelLoaded && !isModelLoading
 
+    // Defense-in-depth clearing of the input focus if the model unloads out
+    // from under the user (mirrors an iOS fix, 2026-07-27, for a case where a
+    // stuck keyboard forced a user to force-quit) — Android's back button and
+    // native IME affordances already provide a way out here, so this hasn't
+    // been observed as a real problem on this platform, but costs nothing.
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(modelLoaded) {
+        if (!modelLoaded) focusManager.clearFocus()
+    }
+
     var messages          by remember { mutableStateOf(listOf<ChatMessage>()) }
     var inputText         by remember { mutableStateOf("") }
     var pendingImageUri   by remember { mutableStateOf<Uri?>(null) }
     var pendingImageBytes by remember { mutableStateOf<ByteArray?>(null) }
     var isGenerating      by remember { mutableStateOf(false) }
+    // True from the moment Stop is tapped until the next send() — gives
+    // immediate feedback that the tap registered, since cancelling the
+    // native generation isn't instant.
+    var stopRequested     by remember { mutableStateOf(false) }
     var generatingJob     by remember { mutableStateOf<Job?>(null) }
     var showClearDialog   by remember { mutableStateOf(false) }
 
@@ -89,6 +104,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
     fun sendMessage() {
         val text = inputText.trim()
         if (text.isEmpty() && pendingImageBytes == null) return
+        stopRequested = false
         if (!modelReady) {
             val msg = if (isModelLoading) "Model is still loading, please wait…"
                       else "No model loaded — go to Models tab"
@@ -169,10 +185,29 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 // "Describe this image." prompt always grounds correctly.
                 // Prepending an explicit grounding cue nudges the model onto the
                 // same reliable path, without changing the displayed bubble text.
+                val historySource = messages.dropLast(1)
                 val inferenceMessages = buildList {
                     if (combinedSystem.isNotBlank())
                         add(InferenceMessage(role = "system", text = combinedSystem))
-                    messages.dropLast(1).forEach { msg ->
+                    var i = 0
+                    while (i < historySource.size) {
+                        val msg  = historySource[i]
+                        val next = historySource.getOrNull(i + 1)
+                        // A cancelled turn (Stop pressed mid-generation) leaves a
+                        // blank-text assistant reply, which was already being
+                        // skipped — but its paired user message (with an image
+                        // attached) was still sent as history on the NEXT send,
+                        // landing in a fresh Conversation as a dangling image-only
+                        // user turn with no assistant response. That mismatch
+                        // between the prompt template's expected image count and
+                        // what's actually attached caused a native
+                        // "Provided less images than expected in the prompt"
+                        // error on the following message (2026-07-27). Drop the
+                        // whole cancelled pair, not just the blank assistant half.
+                        if (msg.role == "user" && next?.role == "assistant" && next.text.isBlank()) {
+                            i += 2
+                            continue
+                        }
                         if (msg.role != "assistant" || msg.text.isNotBlank()) {
                             val sendText = if (msg.role == "user" && msg.imageBytes != null && msg.text.isNotBlank())
                                 "Looking at the attached image, ${msg.text} Answer directly from what " +
@@ -181,6 +216,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                             add(InferenceMessage(role = msg.role, text = sendText,
                                 imageBytes = msg.imageBytes))
                         }
+                        i++
                     }
                 }
 
@@ -233,11 +269,20 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         routingReason = decision.reason,
                     )
                 scope.launch { appState.settings.incrementLifetimeLocal() }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // User-requested stop (Stop button) — preserve whatever was
+                // already streamed instead of showing it as an error. Must
+                // rethrow so structured concurrency still sees this coroutine
+                // as genuinely cancelled, not merely finished.
+                if (messages.lastOrNull()?.isStreaming == true)
+                    messages = messages.dropLast(1) + messages.last().copy(isStreaming = false)
+                throw e
             } catch (e: Exception) {
                 messages = messages.dropLast(1) +
                     ChatMessage(role = "assistant", text = "Error: ${e.message}", tier = RouterTier.LOCAL)
             } finally {
                 isGenerating = false
+                stopRequested = false
             }
         }
     }
@@ -517,14 +562,27 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
             )
 
             if (isGenerating) {
-                IconButton(onClick = {
-                    generatingJob?.cancel()
-                    isGenerating = false
-                    if (messages.lastOrNull()?.isStreaming == true)
-                        messages = messages.dropLast(1) + messages.last().copy(isStreaming = false)
-                }) {
+                IconButton(
+                    enabled = !stopRequested,
+                    onClick = {
+                        // Immediate feedback — cancelling native generation isn't
+                        // instant, so dim the button right away rather than leaving
+                        // it looking like the tap did nothing. isGenerating and the
+                        // streamed text are left for the coroutine's own
+                        // CancellationException handler / finally block below to
+                        // finalize, once cancellation has actually taken effect.
+                        stopRequested = true
+                        // Must signal the native engine to stop BEFORE cancelling the
+                        // coroutine — cancelling the Job alone races Conversation.close()
+                        // against the still-running native generation thread and crashes
+                        // (confirmed SIGSEGV in liblitertlm_jni.so, 2026-07-27).
+                        InferenceService.getInstance(context).cancelInference()
+                        generatingJob?.cancel()
+                    },
+                ) {
                     Icon(Icons.Default.Stop, contentDescription = "Stop",
-                        tint = MaterialTheme.colorScheme.error)
+                        tint = if (stopRequested) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                               else MaterialTheme.colorScheme.error)
                 }
             } else {
                 IconButton(

@@ -38,11 +38,26 @@ Last updated: 2026-07-27, from the macOS/mobile machine.
   custom text. Confirmed working live on iPhone 15 Pro and a Xiaomi 24030PN60G (both correctly
   identified a bird from a photo + "What bird is this").
 
-### Noted, not yet investigated
-- iOS "Stop" button may not actually interrupt an in-progress local generation — the engine's
-  cancel path only exists for the multimodal Conversation API per its own code comment ("Session
-  API has none [cancel API] in v0.12.0"); unconfirmed whether it works for the blocking
-  non-streaming call the main chat flow uses. Needs a live repro with log capture before fixing.
+- **Stop button — a chain of five confirmed bugs, both platforms, all fixed and live-device
+  verified.** What started as "Stop doesn't seem to work" uncovered: (1) Android had a real
+  native SIGSEGV crash — cancelling the coroutine closed the native `Conversation` while a
+  background thread was still decoding on it; fixed via the SDK's `Conversation.cancelProcess()`
+  called before teardown. (2) iOS Stop button UX — changed to an icon, added immediate
+  "Stopping…" feedback instead of looking unresponsive during the real multi-second delay before
+  the blocking native call returns. (3) iOS: cancelling mid-prefill was found to genuinely
+  corrupt the speculative-decoding "drafter" model state (confirmed via native log — a
+  subsequent turn failed with a real XNNPACK tensor-allocation error) even though the
+  cancellation itself completes cleanly — reverted an initial "skip the safety unload for
+  user-requested stops" change, always force-unload now, but auto-reload the same model right
+  after so it's transparent rather than stranding. Android has no equivalent risk (doesn't use
+  speculative decoding at all) so this wasn't ported there. (4) iOS: found a real stuck-keyboard
+  trap with no way out except force-quit, when the model auto-unloaded mid-chat — added an
+  explicit "Done" button plus auto-dismiss on unload; ported a defense-in-depth version to
+  Android. (5) Android: a cancelled turn's image-bearing user message was still being replayed
+  as dangling history on the next send (no paired assistant reply), causing a native
+  "Provided less images than expected in the prompt" error — fixed by dropping the whole
+  cancelled (user, assistant) pair from history, not just the empty assistant half. Full
+  writeup with exact log evidence in local memory `project_gemma4pilot.md`, not this repo.
 
 ### Recently completed (2026-07-24)
 - Delete confirmation dialog on Models screen, both platforms (`83f2dbb`).

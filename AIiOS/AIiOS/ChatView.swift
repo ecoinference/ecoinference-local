@@ -38,6 +38,12 @@ struct ChatView: View {
     @State private var messages:   [Message] = []
     @State private var isGenerating = false
     @State private var streamingId: UUID?
+    // Set by stopGeneration() so the catch block below can tell a
+    // user-requested cancellation (which surfaces as a "send_message
+    // returned nil" error, since the local chat call is non-streaming) apart
+    // from a genuine failure — a user-initiated stop shouldn't look like an
+    // alarming error.
+    @State private var userRequestedStop = false
     @State private var inferTask:   Task<Void,Never>? = nil
     @State private var scrollProxy: ScrollViewProxy? = nil
 
@@ -143,6 +149,10 @@ struct ChatView: View {
                 showImagePicker = false
             } onCancel: { showImagePicker = false }
         }
+        // ── Dismiss keyboard if the model unloads out from under the user ──────
+        .onChange(of: appState.modelLoaded) { _, loaded in
+            if !loaded { inputFocused = false }
+        }
         // ── Deep link handler ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
             guard let action else { return }
@@ -195,8 +205,14 @@ struct ChatView: View {
                     }
                     Spacer()
                     if isGenerating {
-                        Button("Stop") { stopGeneration() }
-                            .font(.footnote).foregroundStyle(.red)
+                        Button {
+                            stopGeneration()
+                        } label: {
+                            Image(systemName: "stop.circle.fill")
+                                .font(.title2)
+                        }
+                        .foregroundStyle(userRequestedStop ? .gray : .red)
+                        .disabled(userRequestedStop)
                     }
                 }
                 .padding(.horizontal).padding(.top, 4)
@@ -243,6 +259,19 @@ struct ChatView: View {
                     .focused($inputFocused)
                     .onSubmit { sendCurrentInput() }
                     .padding(.leading, (modelReady && isMultimodal) ? 4 : 12)
+                    // Guaranteed way to dismiss the keyboard — the interactive
+                    // scroll-to-dismiss on the message list only works if there's
+                    // enough scrollable content, and isn't discoverable. Found
+                    // 2026-07-27: a user could get stuck with the keyboard up and
+                    // no way to close it (had to force-quit) after the model
+                    // auto-unloaded mid-chat. Never rely on a single dismissal
+                    // path for the keyboard again.
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { inputFocused = false }
+                        }
+                    }
 
                 Button(action: sendCurrentInput) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -371,6 +400,7 @@ struct ChatView: View {
 
     private func send(text: String, image: UIImage? = nil, systemOverride: String? = nil) {
         guard modelReady else { return }
+        userRequestedStop = false
 
         let turnIndex = messages.filter {
             if case .user = $0.role { return true }; return false
@@ -574,15 +604,41 @@ struct ChatView: View {
                 // If send_message returned nil the C engine may be in a corrupted
                 // state — even subsequent text turns will fail until a full reload.
                 // Unload now so the UI correctly reflects the invalid engine state.
+                //
+                // This is also how a user-requested Stop surfaces: the local chat
+                // call is non-streaming/blocking, so cancelActiveSession()'s native
+                // cancel_process() call makes send_message itself return nil rather
+                // than the Swift Task's cancellation short-circuiting anything. Don't
+                // show that expected case as an alarming error.
                 let needsUnload = errText.contains("conversation_send_message returned nil")
+                let wasUserStop = userRequestedStop && needsUnload
                 await MainActor.run {
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
-                        messages[idx] = Message(role: .error, text: "⚠️ \(errText)")
+                        messages[idx] = wasUserStop
+                            ? Message(role: .assistant, text: "(Generation stopped — reloading model…)")
+                            : Message(role: .error, text: "⚠️ \(errText)")
                     }
                     if needsUnload {
+                        // Always unload on a nil return, even for a user-requested
+                        // stop — confirmed via live device log (2026-07-27) that
+                        // cancelling mid-prefill can leave the speculative-decoding
+                        // "drafter" model corrupted (a subsequent turn failed with a
+                        // genuine XNNPACK tensor-allocation error,
+                        // llm_litert_mtp_drafter.cc), even though the cancellation
+                        // itself completes cleanly. Skipping the unload here was a
+                        // real regression, not just an unnecessary reload.
+                        //
+                        // Auto-reload the same model right after, rather than
+                        // leaving the user stuck at an unloaded state — this is
+                        // now a routine consequence of Stop, not a rare corruption
+                        // case, so it shouldn't require a manual trip to Models.
+                        let modelToReload = appState.loadedModelId
                         dlog("send: engine corrupted after send_message nil — forcing unload")
                         appState.unloadModel()
+                        if let modelId = modelToReload {
+                            appState.loadModel(modelId: modelId, useGpu: SettingsService.shared.useGpu)
+                        }
                     }
                 }
             }
@@ -681,8 +737,22 @@ struct ChatView: View {
     }
 
     private func stopGeneration() {
-        inferTask?.cancel()
+        userRequestedStop = true
+        // The underlying local chat call is non-streaming/blocking, so there's
+        // a real delay (the native call has to actually notice cancel_process()
+        // and return) before anything visibly changes — give immediate feedback
+        // so the tap doesn't look like it did nothing.
+        if let sid = streamingId, let idx = messages.firstIndex(where: { $0.id == sid }) {
+            messages[idx].text = "Stopping…"
+        }
+        // Signal the native engine to stop BEFORE cancelling the Swift Task —
+        // matches the fix needed on Android, where the reverse order raced
+        // Conversation teardown against the still-running native generation
+        // thread and crashed. iOS's conversation isn't torn down on Task
+        // cancellation alone, so this is a correctness/ordering improvement
+        // rather than a confirmed crash fix here.
         InferenceService.shared.cancelInference()
+        inferTask?.cancel()
         dlog("stopGeneration() called")
     }
 
