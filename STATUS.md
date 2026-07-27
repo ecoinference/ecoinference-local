@@ -13,11 +13,36 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-07-25, from the macOS/mobile machine.
+Last updated: 2026-07-27, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-07-27)
+- **About section on Settings screen, both platforms** — replaces iOS's bare version-only row
+  and Android's hardcoded static footer with a real About block (🌿, name, tagline, dynamic
+  version, LiteRT-LM attribution), matching desktop's existing About screen.
+- **"Try with Cloud" was dropping the attached image, both platforms** — `retryWithCloud()`
+  never actually had the image available to re-send (iOS hardcoded `image: nil`; Android read
+  a field that was only ever populated on the user bubble, never the assistant one despite a
+  comment claiming it worked). Fixed by storing the source image on the assistant message at
+  creation time.
+- **Local vision + a custom text question made the model deny having an image, both
+  platforms** — confirmed via native engine logs that the image genuinely reached the vision
+  encoder and prefill completed; the model's own generation just didn't ground on it for
+  specific questions (worked fine for the generic auto-filled "Describe this image." prompt).
+  Root cause: the tool-calling system prompt primes the model to look for a tool for
+  specialized questions. Fix: append an explicit "you already have vision, no tool needed"
+  nudge to the outgoing inference text (not the displayed bubble) when an image accompanies
+  custom text. Confirmed working live on iPhone 15 Pro and a Xiaomi 24030PN60G (both correctly
+  identified a bird from a photo + "What bird is this").
+
+### Noted, not yet investigated
+- iOS "Stop" button may not actually interrupt an in-progress local generation — the engine's
+  cancel path only exists for the multimodal Conversation API per its own code comment ("Session
+  API has none [cancel API] in v0.12.0"); unconfirmed whether it works for the blocking
+  non-streaming call the main chat flow uses. Needs a live repro with log capture before fixing.
 
 ### Recently completed (2026-07-24)
 - Delete confirmation dialog on Models screen, both platforms (`83f2dbb`).

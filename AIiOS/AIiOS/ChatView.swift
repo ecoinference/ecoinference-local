@@ -14,6 +14,7 @@ private struct Message: Identifiable {
     var chartImage   : UIImage? = nil   // assistant messages: tool-generated chart
     var tier          : RouterService.Tier? = nil   // which tier produced this (assistant only)
     var sourcePrompt  : String? = nil   // user prompt that produced this response (assistant only)
+    var sourceImage   : UIImage? = nil  // user-attached image that produced this response (assistant only)
     var routingReason : String? = nil   // why the router chose this tier (assistant only)
 
     enum Role {
@@ -400,6 +401,7 @@ struct ChatView: View {
         // ── Assistant placeholder ─────────────────────────────────────────────
         let assistantMsg = Message(role: .assistant, text: "", tier: decision.tier,
                                    sourcePrompt: decision.tier == .local ? text : nil,
+                                   sourceImage: decision.tier == .local ? image : nil,
                                    routingReason: decision.reason)
         messages.append(assistantMsg)
         streamingId  = assistantMsg.id
@@ -432,7 +434,24 @@ struct ChatView: View {
         // `!text.isEmpty || pendingImage != nil` guard above) — a bare " " with
         // tool-calling available in the system prompt was leading the model to
         // attempt a bogus tool call instead of just describing the image.
-        let sendText  = text.isEmpty ? (image != nil ? "Describe this image." : " ") : text
+        //
+        // A custom question alongside an image ("What bird is this") was found
+        // to reliably make the model claim no image was provided, even though
+        // the engine trace confirms the vision encoder ran and prefill
+        // succeeded — reproducible across fresh conversations (fixed seed=0 in
+        // the bundle's sampler config), while the generic "Describe this
+        // image." prompt always grounds correctly. Prepending an explicit
+        // grounding cue nudges the model onto the same reliable path without
+        // changing what the user sees in their own chat bubble.
+        let sendText: String
+        if text.isEmpty {
+            sendText = image != nil ? "Describe this image." : " "
+        } else if image != nil {
+            sendText = "Looking at the attached image, \(text) Answer directly from what you " +
+                       "see — you already have full vision of the image and do not need any tool for this."
+        } else {
+            sendText = text
+        }
         inferenceHistory.append(InferenceMessage(role: "user", text: sendText, imageData: imageData))
 
         let historySnapshot = inferenceHistory
@@ -657,7 +676,7 @@ struct ChatView: View {
         isGenerating = true
         scrollToBottom()
 
-        sendToCloud(text: prompt, image: nil, priorHistory: priorHistory,
+        sendToCloud(text: prompt, image: sourceMsg.sourceImage, priorHistory: priorHistory,
                     targetId: placeholder.id, systemOverride: nil)
     }
 

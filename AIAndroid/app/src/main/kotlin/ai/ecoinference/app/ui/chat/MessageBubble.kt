@@ -46,6 +46,7 @@ data class ChatMessage(
     val isStreaming:   Boolean = false,
     val tier:          RouterTier? = null,
     val sourcePrompt:  String? = null,      // user prompt that produced this response (assistant only)
+    val sourceImageBytes: ByteArray? = null, // user-attached image that produced this response (assistant only)
     val routingReason: String? = null,      // why the router chose this tier (assistant only)
 )
 

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.AppState
+import ai.ecoinference.app.BuildConfig
 import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.ui.theme.EcoColors
@@ -314,12 +315,29 @@ fun SettingsScreen(
                 }
             }
 
-            // ── Footer ────────────────────────────────────────────────────────
-            Spacer(Modifier.height(8.dp))
-            Text("EcoInference v1.0.0",
-                style = MaterialTheme.typography.bodySmall,
-                color = EcoColors.NearWhite.copy(alpha = 0.35f),
-                modifier = Modifier.align(Alignment.CenterHorizontally))
+            // ── About ────────────────────────────────────────────────────────
+            Divider(color = EcoColors.CardBorder)
+            SectionLabel("About")
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text("🌿", style = MaterialTheme.typography.displaySmall)
+                Text("EcoInference",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface)
+                Text("Local AI, offline and private.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = EcoColors.NearWhite.copy(alpha = 0.6f))
+                Spacer(Modifier.height(8.dp))
+                Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                Text("Local inference: Google LiteRT-LM",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = EcoColors.NearWhite.copy(alpha = 0.5f))
+            }
             Spacer(Modifier.height(16.dp))
         }
     }

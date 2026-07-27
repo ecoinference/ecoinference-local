@@ -162,13 +162,25 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     if (toolBlock.isNotBlank()) appendLine(toolBlock)
                 }.trim()
 
+                // A custom question alongside an image (e.g. "What bird is this")
+                // was found on iOS to reliably make the local model claim no
+                // image was provided, even though the engine trace confirmed the
+                // vision encoder ran and prefill succeeded — while the generic
+                // "Describe this image." prompt always grounds correctly.
+                // Prepending an explicit grounding cue nudges the model onto the
+                // same reliable path, without changing the displayed bubble text.
                 val inferenceMessages = buildList {
                     if (combinedSystem.isNotBlank())
                         add(InferenceMessage(role = "system", text = combinedSystem))
                     messages.dropLast(1).forEach { msg ->
-                        if (msg.role != "assistant" || msg.text.isNotBlank())
-                            add(InferenceMessage(role = msg.role, text = msg.text,
+                        if (msg.role != "assistant" || msg.text.isNotBlank()) {
+                            val sendText = if (msg.role == "user" && msg.imageBytes != null && msg.text.isNotBlank())
+                                "Looking at the attached image, ${msg.text} Answer directly from what " +
+                                    "you see — you already have full vision of the image and do not need any tool for this."
+                            else msg.text
+                            add(InferenceMessage(role = msg.role, text = sendText,
                                 imageBytes = msg.imageBytes))
+                        }
                     }
                 }
 
@@ -217,6 +229,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         isStreaming   = false,
                         tier          = RouterTier.LOCAL,
                         sourcePrompt  = text,
+                        sourceImageBytes = imageBytes,
                         routingReason = decision.reason,
                     )
                 scope.launch { appState.settings.incrementLifetimeLocal() }
@@ -245,7 +258,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         val cloudMessages = priorHistory + InferenceMessage(
             role       = "user",
             text       = prompt,
-            imageBytes = sourceMsg.imageBytes,   // re-attach image if there was one
+            imageBytes = sourceMsg.sourceImageBytes,   // re-attach image if there was one
         )
 
         val placeholder = ChatMessage(role = "assistant", text = "", isStreaming = true,

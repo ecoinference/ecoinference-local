@@ -116,9 +116,26 @@ struct SettingsView: View {
                 }
 
                 // ── About ─────────────────────────────────────────────────────
-                Section("About") {
+                Section {
+                    VStack(spacing: 6) {
+                        Text("🌿")
+                            .font(.system(size: 40))
+                        Text("EcoInference")
+                            .font(.headline)
+                        Text("Local AI, offline and private.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+
                     LabeledContent("Version", value: appVersion)
+                    LabeledContent("Local inference", value: "Google LiteRT-LM")
                     LabeledContent("URL scheme", value: "ecoinference://")
+                } header: {
+                    Text("About")
+                } footer: {
+                    Text("© \(Calendar.current.component(.year, from: Date())) EcoInference")
                 }
             }
             .scrollContentBackground(.hidden)
