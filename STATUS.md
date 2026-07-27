@@ -37,6 +37,9 @@ Last updated: 2026-07-25, from the macOS/mobile machine.
 - iPad blank-screen bug fixed (`UITextEffectsWindow` system overlay was getting the same
   opaque-background treatment as app windows) (`b622d8b`).
 - iOS model-download timeout + tool-call parse fallback fixes (`71bf594`).
+- Android `minSdk` bumped 26 → 30 — `.litertlm` models require API 30+; a Galaxy S9 (Android
+  10/API 29) was confirmed to hard-fail loading the native `libLiteRtLm.so` (`54d2d9f`).
+  S9-class hardware is now explicitly out of scope.
 
 ### Deferred / not started
 - **Tool error messages leak raw internal JSON into chat bubbles** — confirmed on iOS
@@ -47,9 +50,6 @@ Last updated: 2026-07-25, from the macOS/mobile machine.
 - Mobile model downloads still go through the presigned-URL Firebase Function round-trip, not
   the direct public-CDN pattern desktop now uses. Not broken, just the older/costlier path.
 - Sharing prompts / friending — future feature, no design yet.
-- `minSdk` bumped 26 → 30 on Android (`.litertlm` models require API 30+; a Galaxy S9 on
-  Android 10/API 29 was confirmed to hard-fail loading the native lib) — **uncommitted as of
-  this writing**, in `AIAndroid/app/build.gradle.kts`.
 
 ---
 
