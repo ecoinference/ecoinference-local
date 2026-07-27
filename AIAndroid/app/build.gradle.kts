@@ -17,7 +17,7 @@ android {
         // it only affects generated R/BuildConfig class packages, not the
         // installed app ID, so no Kotlin source files need to change.
         applicationId = "ai.ecoinference.eiapp"
-        minSdk        = 26        // LiteRT-LM requires API 26+
+        minSdk        = 30        // .litertlm models require API 30+ (LiteRtLm native lib load fails below this)
         targetSdk     = 35
         versionCode   = 1
         versionName   = "1.0.0"
