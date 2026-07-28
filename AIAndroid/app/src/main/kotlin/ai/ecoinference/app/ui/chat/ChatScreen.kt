@@ -37,14 +37,22 @@ import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.router.RouterTier
 import ai.ecoinference.app.services.GeminiService
+import ai.ecoinference.app.services.LocationPreamble
+import ai.ecoinference.app.services.PythonCommand
 import ai.ecoinference.app.tools.AgentToken
+import ai.ecoinference.app.tools.PythonRunner
 import ai.ecoinference.app.tools.ToolRegistry
+import ai.ecoinference.app.tools.ToolResult
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
 import ai.ecoinference.app.ui.theme.EcoWordmark
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+
+/** Matches the `use tool <request>` chat command. Mirrors iOS's toolCmdRe. */
+private val TOOL_CMD_RE = Regex("^use tool\\s+(.+)$", RegexOption.IGNORE_CASE)
 
 @Composable
 fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
@@ -101,9 +109,107 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
+    // ── `list tools` handler ─────────────────────────────────────────────────
+    fun handleListTools(rawInput: String) {
+        messages = messages + ChatMessage(role = "user", text = rawInput)
+        messages = messages + ChatMessage(role = "assistant", text = PythonCommand.listMessage())
+    }
+
+    // ── `use tool <request>` handler ─────────────────────────────────────────
+    // Generates Python via a one-shot code-gen prompt, then actually executes
+    // it on-device via the same PythonRunner the automatic run_python tool
+    // uses — ported from iOS 2026-07-28 (previously iOS-only, and only showed
+    // the generated source without ever running it).
+    fun handleToolCommand(rawInput: String, request: String) {
+        if (!modelReady) return
+        stopRequested = false
+        messages = messages + ChatMessage(role = "user", text = rawInput)
+        messages = messages + ChatMessage(role = "code", text = "Generating Python code…", isStreaming = true)
+        isGenerating = true
+
+        generatingJob = scope.launch {
+            try {
+                val locPreamble = LocationPreamble.fetch(context)
+                val prompt = PythonCommand.buildToolPrompt(request, locPreamble)
+                val raw = InferenceService.getInstance(context).chat(
+                    messages    = listOf(InferenceMessage(role = "user", text = prompt)),
+                    maxTokens   = 2048,
+                    temperature = 0.1f,
+                )
+                val code = PythonCommand.extractCode(raw) ?: raw
+                messages = messages.dropLast(1) + ChatMessage(role = "code", text = code)
+
+                // The generation can genuinely run out of token budget before
+                // finishing, or the model can decline/answer in prose instead
+                // of writing code — running either as-is just produces a
+                // confusing SyntaxError, so detect both and say so plainly.
+                val trimmedCode = code.trim()
+                val danglingEndings = setOf('.', ',', '+', '-', '*', '/', '=', ':', '(', '[', '{', '\\')
+                val looksTruncated = trimmedCode.isEmpty() || danglingEndings.contains(trimmedCode.last())
+                val looksLikeCode  = trimmedCode.contains("(") || trimmedCode.contains("import ")
+
+                if (looksTruncated) {
+                    messages = messages + ChatMessage(
+                        role = "tool",
+                        text = "⚠️ The generated code was cut off before finishing — try a shorter or simpler request.",
+                    )
+                    return@launch
+                }
+                if (!looksLikeCode) {
+                    messages = messages + ChatMessage(
+                        role = "tool",
+                        text = "⚠️ The model didn't return runnable code for that request — try rephrasing.",
+                    )
+                    return@launch
+                }
+
+                messages = messages + ChatMessage(role = "tool", text = "", isStreaming = true)
+                // Defensive timeout — generated code could contain a runaway
+                // loop or an unexpectedly heavy computation. There's no clean
+                // way to interrupt CPython mid-execution from here, but the
+                // user must never be left staring at a stuck spinner
+                // indefinitely (see the earlier stuck-keyboard lesson this
+                // session on always having a way out).
+                val result = withTimeoutOrNull(30_000) { PythonRunner.execute(code) }
+                    ?: ToolResult.Text("⚠️ Execution is taking longer than expected (30s+) — it may still be running in the background, but won't be shown here.")
+                messages = messages.dropLast(1) + when (result) {
+                    is ToolResult.Image -> ChatMessage(role = "assistant", text = result.caption, chartBytes = result.bytes)
+                    else                -> ChatMessage(role = "tool", text = result.displayText())
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // User-requested stop — freeze whatever was already streamed
+                // instead of showing it as an error, and rethrow so structured
+                // concurrency still sees this coroutine as genuinely cancelled.
+                if (messages.lastOrNull()?.isStreaming == true)
+                    messages = messages.dropLast(1) + messages.last().copy(isStreaming = false)
+                throw e
+            } catch (e: Exception) {
+                messages = messages.dropLast(1) + ChatMessage(role = "assistant", text = "⚠️ Code generation failed: ${e.message}")
+            } finally {
+                isGenerating  = false
+                stopRequested = false
+            }
+        }
+    }
+
     fun sendMessage() {
         val text = inputText.trim()
         if (text.isEmpty() && pendingImageBytes == null) return
+
+        // ── Command shortcuts (text-only) ────────────────────────────────────
+        if (pendingImageBytes == null) {
+            if (text.equals("list tools", ignoreCase = true)) {
+                handleListTools(text)
+                inputText = ""
+                return
+            }
+            TOOL_CMD_RE.matchEntire(text)?.let { m ->
+                handleToolCommand(text, m.groupValues[1].trim())
+                inputText = ""
+                return
+            }
+        }
+
         stopRequested = false
         if (!modelReady) {
             val msg = if (isModelLoading) "Model is still loading, please wait…"
@@ -206,6 +312,15 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         // whole cancelled pair, not just the blank assistant half.
                         if (msg.role == "user" && next?.role == "assistant" && next.text.isBlank()) {
                             i += 2
+                            continue
+                        }
+                        // "code"/"tool" bubbles come from the `use tool` command
+                        // (generated source + its execution output) — not
+                        // meaningful conversation context, and "code"/"tool"
+                        // aren't valid InferenceMessage roles for the engine.
+                        // Mirrors iOS's cloudHistoryMessages() `default: nil`.
+                        if (msg.role != "user" && msg.role != "assistant") {
+                            i++
                             continue
                         }
                         if (msg.role != "assistant" || msg.text.isNotBlank()) {

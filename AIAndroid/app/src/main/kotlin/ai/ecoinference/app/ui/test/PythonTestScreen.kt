@@ -1,6 +1,5 @@
 package ai.ecoinference.app.ui.test
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.animation.animateContentSize
@@ -31,9 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.Tasks
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.inference.InferenceMessage
 import ai.ecoinference.app.inference.InferenceService
@@ -49,8 +45,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.TimeZone
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "PythonTests"
 
@@ -489,7 +483,7 @@ internal class PythonTestViewModel : ViewModel() {
             _currentIndex.value = 0
             _states.value       = TEST_CASES.map { TestState(it) }
 
-            val preamble  = fetchGpsPreamble(context)
+            val preamble  = ai.ecoinference.app.services.LocationPreamble.fetch(context)
             val inference = InferenceService.getInstance(context)
 
             TEST_CASES.forEachIndexed { index, tc ->
@@ -753,34 +747,8 @@ internal class PythonTestViewModel : ViewModel() {
     }
 }
 
-// ── GPS preamble ──────────────────────────────────────────────────────────────
-
-@SuppressLint("MissingPermission")
-private suspend fun fetchGpsPreamble(context: Context): String =
-    withContext(Dispatchers.IO) {
-        try {
-            val client = LocationServices.getFusedLocationProviderClient(context)
-            val loc    = Tasks.await(
-                client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null),
-                5, TimeUnit.SECONDS,
-            )
-            val tz     = TimeZone.getDefault()
-            val offset = tz.rawOffset / 3_600_000.0
-            if (loc != null)
-                buildPreamble(loc.latitude, loc.longitude, tz.id, offset)
-            else
-                defaultPreamble()
-        } catch (e: Exception) {
-            Log.w(TAG, "GPS unavailable, using fallback coords: ${e.message}")
-            defaultPreamble()
-        }
-    }
-
-private fun buildPreamble(lat: Double, lon: Double, tzId: String, tzOffset: Double) =
-    "user_latitude = $lat\nuser_longitude = $lon\nuser_timezone = \"$tzId\"\nuser_timezone_offset = $tzOffset\n"
-
-private fun defaultPreamble() =
-    buildPreamble(41.8450, -91.7026, "America/Chicago", -6.0)
+// GPS preamble moved to ai.ecoinference.app.services.LocationPreamble (2026-07-28)
+// so the `use tool` command can share it instead of duplicating this logic.
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 

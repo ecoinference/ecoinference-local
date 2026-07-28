@@ -45,62 +45,28 @@ enum PythonCommand {
     }
 
     /// Builds the LLM prompt for a `use tool <request>` command.
-    /// Mirrors Flutter's PythonCommand.buildToolPrompt() exactly.
+    ///
+    /// Kept deliberately compact — this instructional text and the model's
+    /// response share one fixed total token budget (see
+    /// `ModelInfo.maxContextTokens`), so every character spent here is a
+    /// character the generated code doesn't get. Confirmed truncating
+    /// mid-statement on-device with the original, more verbose version
+    /// (2026-07-28). Also explicitly asks for compact, non-human-readable
+    /// code (short names, no comments/blank lines) — Python runs identically
+    /// either way, so this trims the response's own token cost for free.
     static func buildToolPrompt(request: String, locationPreamble: String? = nil) -> String {
-        let libNames = libs.map(\.name).joined(separator: ", ")
-        let locSection = locationPreamble.map { preamble in
-            """
-
-PRE-DEFINED VARIABLES (already set before your code runs — do NOT redefine them):
-- user_latitude         (float)             — device GPS latitude
-- user_longitude        (float)             — device GPS longitude
-- user_timezone_offset  (float)             — device UTC offset in hours (e.g. -5.0 for CDT)
-- user_timezone         (datetime.timezone) — ready-made tzinfo object; use directly as tzinfo= in astral/datetime calls
-Use these directly whenever the task involves the user's current location or local time.
-Do NOT hardcode placeholder coordinates or timezones. Do NOT use zoneinfo — use user_timezone instead.
-
-"""
+        let libNames = libs.map(\.name).joined(separator: ",")
+        let locSection = locationPreamble.map { _ in
+            " Pre-defined(don't redefine):user_latitude,user_longitude(floats),user_timezone_offset(float,UTC hrs),user_timezone(tzinfo)—use for location/time tasks,never hardcode,never zoneinfo."
         } ?? ""
 
         return """
-You are a Python code generator. Write code to accomplish the task below.
-
-INSTALLED LIBRARIES (the ONLY third-party imports allowed): \(libNames)
-
-Python standard library modules (math, datetime, json, re, statistics, etc.) are also available.
-\(locSection)
-Task: \(request)
-
-STRICT RULES — violating any rule will cause a runtime error:
-1. Every import must come from the INSTALLED LIBRARIES list or the Python standard library. Do NOT invent or guess library names.
-2. Always write every import statement explicitly at the top.
-3. For simple maths use the built-in math module — do not import numpy just for basic arithmetic.
-4. If the task needs a library NOT on the installed list, solve it with the standard library instead.
-5. All output: assign the final answer to a variable named result (e.g. result = 42). CRITICAL EXCEPTIONS:
-   - matplotlib: do NOT assign result — the PNG is auto-captured from the open figure. Never write result = "done" or any other string.
-   - plotly: do NOT assign result — the figure is auto-captured from the 'fig' variable. If you must assign result manually, use fig.to_html(include_plotlyjs='cdn', full_html=True).
-6. Do NOT call exit() or quit() — these raise SystemExit.
-   Do NOT use try/except blocks — they hide errors. Write straightforward code without exception handling.
-7. Library choice for charts: use plotly for interactive charts; use matplotlib for static plots/images.
-8. Do NOT make any network/HTTP requests from Python code.
-9. Do NOT call fig.write_image() — kaleido is not available.
-10. Do NOT read or write local file paths — use in-memory objects (BytesIO, StringIO) if needed.
-11. datetime usage: always use 'import datetime' then 'datetime.date.today()'. Do NOT do 'from datetime import datetime' then call 'datetime.datetime.today()'.
-
-CORRECT IMPORT PATTERNS — use exactly these, no variations:
-- numpy:      import numpy as np
-- scipy:      from scipy import stats  /  from scipy.optimize import minimize
-- pandas:     import pandas as pd
-- matplotlib: import matplotlib.pyplot as plt  — do NOT call plt.show() (auto-captured)
-- plotly:     import plotly.express as px  OR  import plotly.graph_objects as go  — assign figure to 'fig', do NOT call fig.show()
-- astral:     from astral import LocationInfo; from astral.sun import sun; from astral.moon import phase
-  LocationInfo: LocationInfo(name="Place", region="", timezone="UTC", latitude=user_latitude, longitude=user_longitude)
-  sun() usage: s = sun(location.observer, date=some_date, tzinfo=user_timezone)  — access as s['sunrise'], s['sunset'], s['noon']
-  phase() usage: phase(date) returns a float 0–28
-- folium:     import folium  — create map as m = folium.Map(location=[lat,lon], zoom_start=n)  — assign result = m.get_root().render()
-- shapely:    from shapely.geometry import Point, Polygon, LineString
-
-Return ONLY the Python code block, no explanation.
+Python code generator. Task:\(request)
+Write MINIMAL code:short names,no comments/blank lines/docstrings,semicolons where natural. Correct>readable.
+Only import:\(libNames),or stdlib. Never guess a library.\(locSection)
+Rules:scalar-only math→use math not numpy(numpy is for arrays—always use numpy for array/vectorized math). result=<answer> EXCEPT matplotlib(never set result,PNG auto-captured) and plotly(never set result,fig auto-captured;else fig.to_html(include_plotlyjs='cdn',full_html=True)). No exit/quit,no try/except,no network,no file I/O(use BytesIO/StringIO),no fig.write_image(). plotly=interactive,matplotlib=static. datetime:import datetime;datetime.date.today() not from datetime import datetime.
+Imports:numpy as np|from scipy import stats/from scipy.optimize import minimize|pandas as pd|matplotlib.pyplot as plt(no plt.show())|plotly.express as px/plotly.graph_objects as go(assign fig,no fig.show())|astral:from astral import LocationInfo;from astral.sun import sun;from astral.moon import phase—LocationInfo(name="P",region="",timezone="UTC",latitude=user_latitude,longitude=user_longitude);sun(location.observer,date=d,tzinfo=user_timezone)→s['sunrise']/s['sunset']/s['noon'];phase(date)→float 0-28|folium:import folium;m=folium.Map(location=[lat,lon],zoom_start=n);result=m.get_root().render()|shapely:from shapely.geometry import Point,Polygon,LineString
+Return ONLY code,no explanation,no fence.
 """
     }
 
@@ -132,7 +98,30 @@ Return ONLY the Python code block, no explanation.
             if !code.isEmpty { return code }
         }
 
-        // 3. Raw fallback
-        return trimmed
+        // 3. No matched fence pair. Two real cases seen in practice:
+        // (a) the response was cut off before the model wrote a closing ```
+        //     (leading marker present, no trailing one), or
+        // (b) the model started straight into code with no opening fence at
+        //     all, but still tacked on a trailing ``` out of habit (trailing
+        //     marker present, no leading one).
+        // Either way, leaving an unmatched fence marker embedded in the
+        // "code" guarantees a Python syntax error, so strip whichever single
+        // marker is actually present at the start and/or end — independently,
+        // since only one of the two may be there.
+        var text = trimmed
+        if let range = text.range(of: "```python", options: [.caseInsensitive, .anchored]) {
+            text = String(text[range.upperBound...])
+        } else if text.hasPrefix("```") {
+            text = String(text.dropFirst(3))
+            if let nl = text.firstIndex(of: "\n") {
+                text = String(text[text.index(after: nl)...])
+            }
+        }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.hasSuffix("```") {
+            text = String(text.dropLast(3)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return text.isEmpty ? nil : text
     }
 }

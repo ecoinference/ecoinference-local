@@ -360,15 +360,26 @@ struct ChatView: View {
                 dlog("handleToolCommand: calling resetConversation()")
                 inference.resetConversation()
                 dlog("handleToolCommand: calling inference.chat()")
+                // 1024 was too tight — a real generation for "plot a sine
+                // wave" hit 7673 raw chars and got cut off mid-code, which
+                // guaranteed a syntax error once execution was wired up
+                // (2026-07-27, confirmed via device log character counts).
                 let raw  = try inference.chat(
                     messages:    [InferenceMessage(role: "user", text: prompt)],
-                    maxTokens:   1024,
+                    maxTokens:   2048,
                     temperature: 0.1
                 )
-                dlog("handleToolCommand: chat() returned — raw=\(raw.count) chars")
+                let hasOpenFence  = raw.range(of: "```python", options: .caseInsensitive) != nil
+                let closeFenceIdx = hasOpenFence
+                    ? raw.range(of: "```python", options: .caseInsensitive).flatMap {
+                          raw.range(of: "```", range: $0.upperBound..<raw.endIndex)
+                      }
+                    : nil
+                dlog("handleToolCommand: chat() returned — raw=\(raw.count) chars hasOpenFence=\(hasOpenFence) hasCloseFence=\(closeFenceIdx != nil) — tail: \(raw.suffix(300))")
                 // Reset again so the tool call doesn't contaminate the next chat turn.
                 inference.resetConversation()
                 let code = PythonCommand.extractCode(from: raw) ?? raw
+                dlog("handleToolCommand: extracted code (\(code.count) chars) — tail: \(code.suffix(300))")
                 guard !Task.isCancelled else { dlog("handleToolCommand: cancelled after chat"); return }
                 await MainActor.run {
                     if let idx = messages.firstIndex(where: { $0.id == targetId }) {
@@ -381,6 +392,92 @@ struct ChatView: View {
                     scrollToBottom()
                 }
                 dlog("handleToolCommand: UI updated with code (\(code.count) chars)")
+
+                // Actually run the generated code on-device via the same
+                // embedded PythonRunner the automatic run_python tool uses —
+                // "use tool" previously only ever displayed the source, never
+                // executed it, which made the command misleading to document.
+                //
+                // The generation can genuinely run out of token budget before
+                // finishing (confirmed live, 2026-07-28: code cut off mid-line
+                // at "plt." with no fence markers at all, so presence/absence
+                // of a closing ``` isn't a reliable truncation signal). Running
+                // known-incomplete code just produces a cryptic SyntaxError, so
+                // detect the obvious case — code ending mid-statement — and say
+                // so plainly instead of attempting it.
+                let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+                let danglingEndings: Set<Character> = [".", ",", "+", "-", "*", "/", "=", ":", "(", "[", "{", "\\"]
+                if trimmedCode.isEmpty || danglingEndings.contains(trimmedCode.last!) {
+                    dlog("handleToolCommand: code looks truncated (ends with '\(trimmedCode.last.map(String.init) ?? "empty")') — skipping execution")
+                    await MainActor.run {
+                        messages.append(Message(
+                            role: .tool(name: "run_python"),
+                            text: "⚠️ The generated code was cut off before finishing — try a shorter or simpler request."
+                        ))
+                        scrollToBottom()
+                    }
+                    await MainActor.run { isGenerating = false; streamingId = nil; inferTask = nil }
+                    return
+                }
+
+                // The model can also decline or answer in prose instead of
+                // writing code at all (e.g. "I can't help with that request.")
+                // — every genuine script for this feature has at least one
+                // function call or import, so the complete absence of both is
+                // a reliable signal this isn't code, and running it would
+                // just produce a confusing SyntaxError.
+                let looksLikeCode = trimmedCode.contains("(") || trimmedCode.contains("import ")
+                if !looksLikeCode {
+                    dlog("handleToolCommand: response doesn't look like code — skipping execution")
+                    await MainActor.run {
+                        messages.append(Message(
+                            role: .tool(name: "run_python"),
+                            text: "⚠️ The model didn't return runnable code for that request — try rephrasing."
+                        ))
+                        scrollToBottom()
+                    }
+                    await MainActor.run { isGenerating = false; streamingId = nil; inferTask = nil }
+                    return
+                }
+
+                let runningMsg = Message(role: .tool(name: "run_python"), text: "")
+                let runningId  = runningMsg.id
+                await MainActor.run {
+                    messages.append(runningMsg)
+                    scrollToBottom()
+                }
+                guard !Task.isCancelled else { dlog("handleToolCommand: cancelled before execute"); return }
+
+                // Defensive timeout — generated code could contain a runaway
+                // loop or an unexpectedly heavy computation. There's no clean
+                // way to interrupt CPython mid-execution from here (it may
+                // keep running in the background using CPU until it finishes
+                // or the interpreter faults), but the user must never be left
+                // staring at a stuck spinner indefinitely — see the earlier
+                // stuck-keyboard lesson this session on always having a way out.
+                let result: ToolResult = await withTaskGroup(of: ToolResult?.self) { group in
+                    group.addTask { await PythonRunner.execute(code: code) }
+                    group.addTask {
+                        try? await Task.sleep(nanoseconds: 30_000_000_000)
+                        return nil
+                    }
+                    let first = await group.next() ?? nil
+                    group.cancelAll()
+                    if let first { return first }
+                    dlog("handleToolCommand: execution timed out after 30s")
+                    return .text("⚠️ Execution is taking longer than expected (30s+) — it may still be running in the background, but won't be shown here.")
+                }
+                dlog("handleToolCommand: execute() returned")
+                await MainActor.run {
+                    if let idx = messages.firstIndex(where: { $0.id == runningId }) {
+                        if case .image(let img, let caption) = result {
+                            messages[idx] = Message(role: .assistant, text: caption, chartImage: img)
+                        } else {
+                            messages[idx] = Message(role: .tool(name: "run_python"), text: result.displayText)
+                        }
+                    }
+                    scrollToBottom()
+                }
             } catch {
                 dlog("handleToolCommand: chat() threw — \(error.localizedDescription)")
                 inference.resetConversation()
@@ -538,11 +635,13 @@ struct ChatView: View {
                     }
                     chatLog.info("  tool result: \(toolResultText.prefix(80))")
 
-                    // Update tool bubble with result summary
+                    // Update tool bubble with result summary — the human-facing
+                    // display text, not the raw model-facing JSON (see
+                    // ToolResult.displayText).
                     await MainActor.run {
                         if let idx = messages.firstIndex(where: { $0.id == toolMsgId }) {
                             messages[idx] = Message(role: .tool(name: toolCall.toolName),
-                                                    text: toolResultText)
+                                                    text: toolResultVal.displayText)
                         }
                         scrollToBottom()
                     }

@@ -13,11 +13,41 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-07-27, from the macOS/mobile machine.
+Last updated: 2026-07-28, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Pending — Help tab (deferred to next session)
+User wants a new bottom-nav Help tab explaining EcoInference's features to end users. Placement
+decided (new tab, not buried in Settings). A feature inventory was gathered but is already
+partly stale (see below — `use tool` went from broken to working the same session it was
+inventoried) — re-verify anything load-bearing before writing copy from it. Not started.
+
+### Recently completed (2026-07-28)
+- **Tool-error JSON leaking into chat bubbles — fixed, both platforms.** Tool errors are
+  `{"error":"..."}` JSON meant for the model, not the user — added `ToolResult.displayText`/
+  `humanReadable()` to unwrap it into a clean "⚠️ <message>" line (Python tracebacks reduced to
+  just their summary line). Verified with 6 deterministic unit tests, not just live spot checks.
+  Turned out Android's production chat UI already discarded tool output entirely, so this
+  specific leak was iOS-only in practice — the fix was still added to Android for parity.
+- **`use tool <request>` command made to actually execute code, and ported to Android from
+  scratch.** Previously iOS-only and non-functional — it only ever displayed model-generated
+  Python as a read-only code block, never ran it (despite there being a working embedded Python
+  interpreter already available via the same runner the automatic `run_python` tool uses). Now
+  wired to actually execute, with real defensive hardening found through live debugging: fence-
+  marker extraction fixed for both truncated-response and stray-marker cases; a genuine
+  token-budget truncation issue traced to the model's fixed total prompt+response budget (tried
+  raising E4B's ceiling 4096→8192, confirmed **unsafe** — the model loads fine but the first
+  generation fails outright, meaning it exceeds what the `.litertlm` bundle was compiled to
+  support; reverted to 4096); fixed by shrinking the prompt's own token cost and asking for
+  compact, non-human-readable code instead (Python runs the same either way); added a 30s
+  execution timeout and non-code/truncation detection so a bad generation never leaves the user
+  stuck or executes obvious garbage. Full port to Android (`use tool`/`list tools` detection,
+  compact prompt, execution, new "code"/"tool" message-bubble styles) worked on the first
+  live-device attempt, since all the hard debugging happened on iOS first. Full writeup with
+  exact log evidence in local memory `project_gemma4pilot.md`, not this repo.
 
 ### Recently completed (2026-07-27)
 - **About section on Settings screen, both platforms** — replaces iOS's bare version-only row
