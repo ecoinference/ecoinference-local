@@ -168,6 +168,12 @@ Last updated: 2026-07-29, from the macOS/mobile machine.
 ## Desktop (Electron)
 
 ### Recently completed
+- **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `74410ae`)** — second
+  GenieX/NPU model alongside the existing Qwen3-8B, confirmed working via the same backend
+  architecture (Snapdragon X2 chip) with zero changes needed to `AppContext`/`ModelsScreen`.
+  Also wires up real image-attach support in `ChatScreen.tsx`, gated on a new
+  `supportsImageInput` flag, so the VL model's vision capability is actually usable rather
+  than just advertised in the catalog.
 - Full flow verified end-to-end through the real public CDN on macOS: sign in → download →
   load → chat, both `npm run dev` and the packaged `.app`.
 - App distribution live: `electron-updater` + `releases.ecoinference.ai`.
