@@ -19,7 +19,7 @@ Last updated: 2026-07-29, from the macOS/mobile machine.
 
 ## Mobile (iOS + Android)
 
-### Recently completed (2026-07-29)
+### Recently completed (2026-07-29) — tagged `v2.16-json-leak-settings`
 - **Tool-error JSON leak on Settings → Developer → Inference Tests screens — fixed, both
   platforms.** Same class of bug as the chat-bubble fix: `TestView.swift`'s and
   `PythonTestScreen.kt`'s `evaluate()` reused one raw string for both pass/fail detection
