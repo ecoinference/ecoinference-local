@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.ecoinference.app.AppState
+import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.inference.InferenceMessage
 import ai.ecoinference.app.inference.InferenceService
 import ai.ecoinference.app.router.RouterService
@@ -400,6 +401,25 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 stopRequested = false
             }
         }
+    }
+
+    // ── Deep link handler ────────────────────────────────────────────────────
+    // Pre-existing gap found 2026-07-28: RootScreen.kt's own deep-link
+    // handling only switches tabs — it never read prefill/autoSend, so
+    // ecoinference://chat?message=...&send=1 silently dropped both. ChatScreen
+    // needs its own observer, mirroring iOS ChatView.swift's onChange(of:
+    // appState.deepLink). This screen owns clearing OpenChat specifically
+    // (RootScreen.kt deliberately leaves it set) since it's the one actually
+    // consuming prefill/autoSend, and only gets composed once RootScreen has
+    // already switched to this tab.
+    val deepLink by appState.deepLink.collectAsStateWithLifecycle()
+    LaunchedEffect(deepLink) {
+        val action = deepLink as? DeepLinkAction.OpenChat ?: return@LaunchedEffect
+        action.prefill?.let { inputText = it }
+        if (action.autoSend && !action.prefill.isNullOrEmpty()) {
+            sendMessage()
+        }
+        appState.deepLink.value = null
     }
 
     fun retryWithCloud(sourceMsg: ChatMessage) {

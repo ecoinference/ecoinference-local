@@ -11,6 +11,7 @@
 		08AF257EA858C4ADC5CCE1B8 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABDAD50B9218431BBD5D0AD /* ChatView.swift */; };
 		0E36E453E323AC26252EEA54 /* libLiteRtMetalAccelerator.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		100A0020852952CF87FE1246 /* ImageEditTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FADADA2AC8ABE44CAD962C8 /* ImageEditTools.swift */; };
+		17A4615EE0C6297E98EEE707 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8823B773F04C3C80C74B251E /* HelpView.swift */; };
 		1BAEDE0FF320CE7D9620C7A0 /* PythonTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4421B40D4D7723A6080397 /* PythonTools.swift */; };
 		1E5756172A2417B3D23EE591 /* ToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC39CF38328F273C28DCECD0 /* ToolResult.swift */; };
 		1FB1B6D651AF4C36BCCE4AD7 /* B2Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C6EDAF298E444F8C336F62 /* B2Service.swift */; };
@@ -133,6 +134,7 @@
 		7E42818491234BF49436D57E /* libLiteRtLm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtLm.xcframework; path = Frameworks/libLiteRtLm.xcframework; sourceTree = "<group>"; };
 		81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libStreamProxy.xcframework; path = Frameworks/libStreamProxy.xcframework; sourceTree = "<group>"; };
 		82302E30D1D9900FA1613871 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8823B773F04C3C80C74B251E /* HelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		8844BE75CE9F7CEB7E8DD17F /* EmbeddedPython.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedPython.swift; sourceTree = "<group>"; };
 		8B7B40BE196B9DC33D949DC0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		8C7FFBBADD4F233987049D14 /* MathTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathTools.swift; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 				6EF6B9015A1BB4870277F334 /* Models */,
 				6B5F45C348400A26EBD4B47D /* Services */,
 				0AEC69AEB7C627DD26C9E0E1 /* Tools */,
+				8823B773F04C3C80C74B251E /* HelpView.swift */,
 			);
 			path = AIiOS;
 			sourceTree = "<group>";
@@ -541,6 +544,7 @@
 				8502C1F818D11ED52FED8EBC /* ToolDefinition.swift in Sources */,
 				A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */,
 				3E7714B6C626998CB64DA56E /* InferenceMessage.swift in Sources */,
+				17A4615EE0C6297E98EEE707 /* HelpView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
