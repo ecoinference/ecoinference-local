@@ -26,6 +26,8 @@ object ToolRegistry {
             appendLine("<tool_call>{\"name\":\"tool_name\",\"args\":{\"param\":\"value\"}}</tool_call>")
             appendLine("After calling a tool, wait for <tool_result> before writing your final answer.")
             appendLine("Do NOT guess or make up answers that require real-time data — use a tool instead.")
+            appendLine("You have a budget of $MAX_TOOL_ITERATIONS tool calls for this response — plan accordingly " +
+                "and give your best answer once you've gathered what you need, rather than calling tools repeatedly.")
             appendLine()
             appendLine("Available tools:")
             for (t in tools.values) {

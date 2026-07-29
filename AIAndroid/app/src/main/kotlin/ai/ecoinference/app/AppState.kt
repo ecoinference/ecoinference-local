@@ -70,6 +70,12 @@ class AppState(private val appContext: Context) : ViewModel() {
     private val _downloadProgress   = MutableStateFlow(0f)
     val downloadProgress: StateFlow<Float> = _downloadProgress.asStateFlow()
 
+    private val _downloadSpeedText  = MutableStateFlow("")
+    val downloadSpeedText: StateFlow<String> = _downloadSpeedText.asStateFlow()
+
+    private val _downloadEtaText    = MutableStateFlow("")
+    val downloadEtaText: StateFlow<String> = _downloadEtaText.asStateFlow()
+
     private val _downloadingModelId = MutableStateFlow<String?>(null)
     val downloadingModelId: StateFlow<String?> = _downloadingModelId.asStateFlow()
 
@@ -123,6 +129,8 @@ class AppState(private val appContext: Context) : ViewModel() {
 
         _downloadActive.value       = true
         _downloadProgress.value     = 0f
+        _downloadSpeedText.value    = ""
+        _downloadEtaText.value      = ""
         _downloadingModelId.value   = modelId
         _downloadError.value        = null
         _downloadErrorModelId.value = null
@@ -130,14 +138,20 @@ class AppState(private val appContext: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 download.download(model = info) { progress ->
-                    _downloadProgress.value = (progress * 100).toFloat()
+                    _downloadProgress.value  = (progress.fraction * 100).toFloat()
+                    _downloadSpeedText.value = formatSpeed(progress.bytesPerSecond)
+                    _downloadEtaText.value   = formatEta(progress.etaSeconds)
                 }
                 _downloadActive.value     = false
                 _downloadProgress.value   = 100f
+                _downloadSpeedText.value  = ""
+                _downloadEtaText.value    = ""
                 _downloadingModelId.value = null
                 refreshCatalog()
             } catch (e: Exception) {
                 _downloadActive.value       = false
+                _downloadSpeedText.value    = ""
+                _downloadEtaText.value      = ""
                 _downloadError.value        = e.message ?: "Download failed"
                 _downloadErrorModelId.value = modelId
                 _downloadingModelId.value   = null
@@ -202,5 +216,24 @@ class AppState(private val appContext: Context) : ViewModel() {
         _loadErrorModelId.value = null
         _imageInputEnabled.value = false
         refreshCatalog()
+    }
+
+    private fun formatSpeed(bytesPerSecond: Double): String {
+        if (bytesPerSecond <= 0) return ""
+        val mbPerSecond = bytesPerSecond / 1_000_000
+        return if (mbPerSecond >= 1) {
+            "%.1f MB/s".format(mbPerSecond)
+        } else {
+            "%.0f KB/s".format(bytesPerSecond / 1_000)
+        }
+    }
+
+    private fun formatEta(seconds: Double): String {
+        if (!seconds.isFinite() || seconds <= 0) return ""
+        return if (seconds >= 60) {
+            "${kotlin.math.ceil(seconds / 60).toInt()} min left"
+        } else {
+            "${kotlin.math.ceil(seconds).toInt()} sec left"
+        }
     }
 }

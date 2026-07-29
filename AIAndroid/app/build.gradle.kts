@@ -17,7 +17,7 @@ android {
         // it only affects generated R/BuildConfig class packages, not the
         // installed app ID, so no Kotlin source files need to change.
         applicationId = "ai.ecoinference.eiapp"
-        minSdk        = 26        // LiteRT-LM requires API 26+
+        minSdk        = 30        // .litertlm models require API 30+ (LiteRtLm native lib load fails below this)
         targetSdk     = 35
         versionCode   = 1
         versionName   = "1.0.0"
@@ -57,6 +57,15 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    testOptions {
+        unitTests {
+            // android.util.Log (and other stubbed Android SDK calls) throw by
+            // default on the plain JVM test runner ("not mocked") — return
+            // defaults instead so logic tests that happen to log don't crash.
+            isReturnDefaultValues = true
         }
     }
 }
@@ -109,6 +118,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.config)
+
+    // Unit tests (local JVM, no device/emulator needed)
+    testImplementation(libs.junit)
 }
 
 // ── Chaquopy — on-device Python runtime ───────────────────────────────────────

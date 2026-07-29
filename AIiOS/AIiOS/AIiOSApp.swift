@@ -102,7 +102,17 @@ struct EcoInferenceApp: App {
         let screenBounds = UIScreen.main.bounds
         fputs("[EcoBg:\(label)] \(scenes.count) scene(s) screenBounds=\(screenBounds)\n", stderr)
         for scene in scenes {
-            for window in scene.windows {
+            // Only touch windows at the .normal level — our own app content
+            // window. scene.windows also includes system overlay windows
+            // (e.g. UITextEffectsWindow, used for keyboard/Pencil/selection
+            // effects on Pencil-capable iPads), which sit ABOVE .normal level
+            // by design so they render on top of app content, and DO have a
+            // non-nil rootViewController so that check alone doesn't exclude
+            // them. Inserting our full-screen sentinel into one of those
+            // covers the real app content — this is what caused the "flash
+            // then blank screen" bug seen only on iPad (never iPhone, which
+            // has no Pencil overlay window).
+            for window in scene.windows where window.windowLevel == .normal {
                 let winBg = window.backgroundColor.map { "\($0)" } ?? "nil"
                 let rvBg  = window.rootViewController?.view.backgroundColor.map { "\($0)" } ?? "nil"
                 fputs("[EcoBg:\(label)] window frame=\(window.frame) bg=\(winBg) rvBg=\(rvBg)\n", stderr)

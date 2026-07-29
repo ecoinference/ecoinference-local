@@ -9,7 +9,7 @@ struct ModelsView: View {
         NavigationStack {
             List {
                 ForEach(appState.models) { model in
-                    ModelRow(model: model)
+                    ModelRow(model: model, onDeleteRequest: { showDeleteConfirm = model })
                 }
             }
             .listStyle(.insetGrouped)
@@ -30,6 +30,24 @@ struct ModelsView: View {
                     downloadBanner
                 }
             }
+            // ── Delete confirmation ─────────────────────────────────────────────
+            .alert(
+                "Delete \(showDeleteConfirm?.displayName ?? "Model")?",
+                isPresented: Binding(
+                    get: { showDeleteConfirm != nil },
+                    set: { if !$0 { showDeleteConfirm = nil } }
+                )
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let model = showDeleteConfirm {
+                        appState.deleteModel(modelId: model.id)
+                    }
+                    showDeleteConfirm = nil
+                }
+                Button("Cancel", role: .cancel) { showDeleteConfirm = nil }
+            } message: {
+                Text("This removes the downloaded file. You'll need to download it again to use it.")
+            }
         }
     }
 
@@ -47,9 +65,18 @@ struct ModelsView: View {
             }
             ProgressView(value: appState.downloadProgress, total: 100)
                 .progressViewStyle(.linear)
-            Text(String(format: "%.0f%%", appState.downloadProgress))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(String(format: "%.0f%%", appState.downloadProgress))
+                if !appState.downloadSpeedText.isEmpty {
+                    Text("·  \(appState.downloadSpeedText)")
+                }
+                Spacer()
+                if !appState.downloadEtaText.isEmpty {
+                    Text(appState.downloadEtaText)
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
         }
         .padding()
         .background(.thinMaterial)
@@ -62,6 +89,7 @@ private struct ModelRow: View {
 
     @EnvironmentObject private var appState: AppState
     let model: ModelInfo
+    let onDeleteRequest: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -159,7 +187,7 @@ private struct ModelRow: View {
 
             // Delete
             Button(role: .destructive) {
-                appState.deleteModel(modelId: model.id)
+                onDeleteRequest()
             } label: {
                 Label("Delete", systemImage: "trash")
                     .font(.caption)

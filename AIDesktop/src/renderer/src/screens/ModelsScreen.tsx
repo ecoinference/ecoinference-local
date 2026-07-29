@@ -42,6 +42,12 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
     }
   }
 
+  function handleDelete(): void {
+    if (confirm(`Delete ${model.displayName}? This removes the downloaded file (${formatSize(model.fileSizeMb)}) from your computer. You'll need to download it again to use it.`)) {
+      deleteModel(model.id)
+    }
+  }
+
   return (
     <div style={s.card}>
       <div style={s.cardHeader}>
@@ -75,7 +81,7 @@ function ModelCard({ model }: { model: ModelInfo }): JSX.Element {
               {isLoading ? 'Loading…' : 'Load'}
             </button>
             {model.backend !== 'geniex' && (
-              <button style={s.btnDanger} onClick={() => deleteModel(model.id)} disabled={isLoading || isOtherLoading}>
+              <button style={s.btnDanger} onClick={handleDelete} disabled={isLoading || isOtherLoading}>
                 Delete
               </button>
             )}

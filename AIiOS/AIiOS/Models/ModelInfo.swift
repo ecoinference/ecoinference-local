@@ -121,6 +121,18 @@ enum ModelCatalog {
             supportsVision:              false,
             supportsImageInput:          false,
             supportsSpeculativeDecoding: false,
+            // 8192 was tried (2026-07-28) to give `use tool` more headroom —
+            // it loads fine (no engine_create memory failure, confirming
+            // that specific risk really is E2B's vision-KV-cache-specific),
+            // but the model's own .litertlm bundle rejects it: the very
+            // first generate_content call fails instantly with
+            // "generate_content returned nil", not a slow truncation. This
+            // is the exact "maxContextTokens must not exceed the value the
+            // .litertlm was compiled with" risk already documented on
+            // maxContextTokens' declaration — 8192 exceeds E4B's compiled
+            // ceiling. 4096 is the confirmed-safe value; don't raise this
+            // without re-verifying live on-device generation (not just
+            // engine_create) succeeds.
             maxContextTokens:            4096
         ),
     ]

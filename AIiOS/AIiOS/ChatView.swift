@@ -14,6 +14,7 @@ private struct Message: Identifiable {
     var chartImage   : UIImage? = nil   // assistant messages: tool-generated chart
     var tier          : RouterService.Tier? = nil   // which tier produced this (assistant only)
     var sourcePrompt  : String? = nil   // user prompt that produced this response (assistant only)
+    var sourceImage   : UIImage? = nil  // user-attached image that produced this response (assistant only)
     var routingReason : String? = nil   // why the router chose this tier (assistant only)
 
     enum Role {
@@ -37,6 +38,12 @@ struct ChatView: View {
     @State private var messages:   [Message] = []
     @State private var isGenerating = false
     @State private var streamingId: UUID?
+    // Set by stopGeneration() so the catch block below can tell a
+    // user-requested cancellation (which surfaces as a "send_message
+    // returned nil" error, since the local chat call is non-streaming) apart
+    // from a genuine failure — a user-initiated stop shouldn't look like an
+    // alarming error.
+    @State private var userRequestedStop = false
     @State private var inferTask:   Task<Void,Never>? = nil
     @State private var scrollProxy: ScrollViewProxy? = nil
 
@@ -142,6 +149,10 @@ struct ChatView: View {
                 showImagePicker = false
             } onCancel: { showImagePicker = false }
         }
+        // ── Dismiss keyboard if the model unloads out from under the user ──────
+        .onChange(of: appState.modelLoaded) { _, loaded in
+            if !loaded { inputFocused = false }
+        }
         // ── Deep link handler ─────────────────────────────────────────────────
         .onChange(of: appState.deepLink) { _, action in
             guard let action else { return }
@@ -194,8 +205,14 @@ struct ChatView: View {
                     }
                     Spacer()
                     if isGenerating {
-                        Button("Stop") { stopGeneration() }
-                            .font(.footnote).foregroundStyle(.red)
+                        Button {
+                            stopGeneration()
+                        } label: {
+                            Image(systemName: "stop.circle.fill")
+                                .font(.title2)
+                        }
+                        .foregroundStyle(userRequestedStop ? .gray : .red)
+                        .disabled(userRequestedStop)
                     }
                 }
                 .padding(.horizontal).padding(.top, 4)
@@ -242,6 +259,19 @@ struct ChatView: View {
                     .focused($inputFocused)
                     .onSubmit { sendCurrentInput() }
                     .padding(.leading, (modelReady && isMultimodal) ? 4 : 12)
+                    // Guaranteed way to dismiss the keyboard — the interactive
+                    // scroll-to-dismiss on the message list only works if there's
+                    // enough scrollable content, and isn't discoverable. Found
+                    // 2026-07-27: a user could get stuck with the keyboard up and
+                    // no way to close it (had to force-quit) after the model
+                    // auto-unloaded mid-chat. Never rely on a single dismissal
+                    // path for the keyboard again.
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { inputFocused = false }
+                        }
+                    }
 
                 Button(action: sendCurrentInput) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -330,15 +360,26 @@ struct ChatView: View {
                 dlog("handleToolCommand: calling resetConversation()")
                 inference.resetConversation()
                 dlog("handleToolCommand: calling inference.chat()")
+                // 1024 was too tight — a real generation for "plot a sine
+                // wave" hit 7673 raw chars and got cut off mid-code, which
+                // guaranteed a syntax error once execution was wired up
+                // (2026-07-27, confirmed via device log character counts).
                 let raw  = try inference.chat(
                     messages:    [InferenceMessage(role: "user", text: prompt)],
-                    maxTokens:   1024,
+                    maxTokens:   2048,
                     temperature: 0.1
                 )
-                dlog("handleToolCommand: chat() returned — raw=\(raw.count) chars")
+                let hasOpenFence  = raw.range(of: "```python", options: .caseInsensitive) != nil
+                let closeFenceIdx = hasOpenFence
+                    ? raw.range(of: "```python", options: .caseInsensitive).flatMap {
+                          raw.range(of: "```", range: $0.upperBound..<raw.endIndex)
+                      }
+                    : nil
+                dlog("handleToolCommand: chat() returned — raw=\(raw.count) chars hasOpenFence=\(hasOpenFence) hasCloseFence=\(closeFenceIdx != nil) — tail: \(raw.suffix(300))")
                 // Reset again so the tool call doesn't contaminate the next chat turn.
                 inference.resetConversation()
                 let code = PythonCommand.extractCode(from: raw) ?? raw
+                dlog("handleToolCommand: extracted code (\(code.count) chars) — tail: \(code.suffix(300))")
                 guard !Task.isCancelled else { dlog("handleToolCommand: cancelled after chat"); return }
                 await MainActor.run {
                     if let idx = messages.firstIndex(where: { $0.id == targetId }) {
@@ -351,6 +392,92 @@ struct ChatView: View {
                     scrollToBottom()
                 }
                 dlog("handleToolCommand: UI updated with code (\(code.count) chars)")
+
+                // Actually run the generated code on-device via the same
+                // embedded PythonRunner the automatic run_python tool uses —
+                // "use tool" previously only ever displayed the source, never
+                // executed it, which made the command misleading to document.
+                //
+                // The generation can genuinely run out of token budget before
+                // finishing (confirmed live, 2026-07-28: code cut off mid-line
+                // at "plt." with no fence markers at all, so presence/absence
+                // of a closing ``` isn't a reliable truncation signal). Running
+                // known-incomplete code just produces a cryptic SyntaxError, so
+                // detect the obvious case — code ending mid-statement — and say
+                // so plainly instead of attempting it.
+                let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+                let danglingEndings: Set<Character> = [".", ",", "+", "-", "*", "/", "=", ":", "(", "[", "{", "\\"]
+                if trimmedCode.isEmpty || danglingEndings.contains(trimmedCode.last!) {
+                    dlog("handleToolCommand: code looks truncated (ends with '\(trimmedCode.last.map(String.init) ?? "empty")') — skipping execution")
+                    await MainActor.run {
+                        messages.append(Message(
+                            role: .tool(name: "run_python"),
+                            text: "⚠️ The generated code was cut off before finishing — try a shorter or simpler request."
+                        ))
+                        scrollToBottom()
+                    }
+                    await MainActor.run { isGenerating = false; streamingId = nil; inferTask = nil }
+                    return
+                }
+
+                // The model can also decline or answer in prose instead of
+                // writing code at all (e.g. "I can't help with that request.")
+                // — every genuine script for this feature has at least one
+                // function call or import, so the complete absence of both is
+                // a reliable signal this isn't code, and running it would
+                // just produce a confusing SyntaxError.
+                let looksLikeCode = trimmedCode.contains("(") || trimmedCode.contains("import ")
+                if !looksLikeCode {
+                    dlog("handleToolCommand: response doesn't look like code — skipping execution")
+                    await MainActor.run {
+                        messages.append(Message(
+                            role: .tool(name: "run_python"),
+                            text: "⚠️ The model didn't return runnable code for that request — try rephrasing."
+                        ))
+                        scrollToBottom()
+                    }
+                    await MainActor.run { isGenerating = false; streamingId = nil; inferTask = nil }
+                    return
+                }
+
+                let runningMsg = Message(role: .tool(name: "run_python"), text: "")
+                let runningId  = runningMsg.id
+                await MainActor.run {
+                    messages.append(runningMsg)
+                    scrollToBottom()
+                }
+                guard !Task.isCancelled else { dlog("handleToolCommand: cancelled before execute"); return }
+
+                // Defensive timeout — generated code could contain a runaway
+                // loop or an unexpectedly heavy computation. There's no clean
+                // way to interrupt CPython mid-execution from here (it may
+                // keep running in the background using CPU until it finishes
+                // or the interpreter faults), but the user must never be left
+                // staring at a stuck spinner indefinitely — see the earlier
+                // stuck-keyboard lesson this session on always having a way out.
+                let result: ToolResult = await withTaskGroup(of: ToolResult?.self) { group in
+                    group.addTask { await PythonRunner.execute(code: code) }
+                    group.addTask {
+                        try? await Task.sleep(nanoseconds: 30_000_000_000)
+                        return nil
+                    }
+                    let first = await group.next() ?? nil
+                    group.cancelAll()
+                    if let first { return first }
+                    dlog("handleToolCommand: execution timed out after 30s")
+                    return .text("⚠️ Execution is taking longer than expected (30s+) — it may still be running in the background, but won't be shown here.")
+                }
+                dlog("handleToolCommand: execute() returned")
+                await MainActor.run {
+                    if let idx = messages.firstIndex(where: { $0.id == runningId }) {
+                        if case .image(let img, let caption) = result {
+                            messages[idx] = Message(role: .assistant, text: caption, chartImage: img)
+                        } else {
+                            messages[idx] = Message(role: .tool(name: "run_python"), text: result.displayText)
+                        }
+                    }
+                    scrollToBottom()
+                }
             } catch {
                 dlog("handleToolCommand: chat() threw — \(error.localizedDescription)")
                 inference.resetConversation()
@@ -370,6 +497,7 @@ struct ChatView: View {
 
     private func send(text: String, image: UIImage? = nil, systemOverride: String? = nil) {
         guard modelReady else { return }
+        userRequestedStop = false
 
         let turnIndex = messages.filter {
             if case .user = $0.role { return true }; return false
@@ -400,6 +528,7 @@ struct ChatView: View {
         // ── Assistant placeholder ─────────────────────────────────────────────
         let assistantMsg = Message(role: .assistant, text: "", tier: decision.tier,
                                    sourcePrompt: decision.tier == .local ? text : nil,
+                                   sourceImage: decision.tier == .local ? image : nil,
                                    routingReason: decision.reason)
         messages.append(assistantMsg)
         streamingId  = assistantMsg.id
@@ -428,7 +557,28 @@ struct ChatView: View {
         }
 
         let imageData = image?.jpegData(compressionQuality: 0.85)
-        let sendText  = text.isEmpty ? " " : text
+        // Blank text only reaches here when an image is attached (see the
+        // `!text.isEmpty || pendingImage != nil` guard above) — a bare " " with
+        // tool-calling available in the system prompt was leading the model to
+        // attempt a bogus tool call instead of just describing the image.
+        //
+        // A custom question alongside an image ("What bird is this") was found
+        // to reliably make the model claim no image was provided, even though
+        // the engine trace confirms the vision encoder ran and prefill
+        // succeeded — reproducible across fresh conversations (fixed seed=0 in
+        // the bundle's sampler config), while the generic "Describe this
+        // image." prompt always grounds correctly. Prepending an explicit
+        // grounding cue nudges the model onto the same reliable path without
+        // changing what the user sees in their own chat bubble.
+        let sendText: String
+        if text.isEmpty {
+            sendText = image != nil ? "Describe this image." : " "
+        } else if image != nil {
+            sendText = "Looking at the attached image, \(text) Answer directly from what you " +
+                       "see — you already have full vision of the image and do not need any tool for this."
+        } else {
+            sendText = text
+        }
         inferenceHistory.append(InferenceMessage(role: "user", text: sendText, imageData: imageData))
 
         let historySnapshot = inferenceHistory
@@ -447,7 +597,14 @@ struct ChatView: View {
                 // ── Agentic tool loop ─────────────────────────────────────────
                 for iteration in 0..<AgentLoop.maxIterations {
                     guard AgentLoop.hasToolCall(response) else { break }
-                    guard let toolCall = AgentLoop.parse(response) else { break }
+                    guard let toolCall = AgentLoop.parse(response) else {
+                        // Tool-call tag present but unparseable after all repair
+                        // attempts — never show the raw <tool_call>/JSON fragment
+                        // to the user (mirrors Android AgentLoop.kt's fallback).
+                        chatLog.error("  tool call detected but failed to parse: \(response.prefix(200))")
+                        response = "Sorry, I couldn't parse the tool call."
+                        break
+                    }
                     chatLog.info("  tool call iter=\(iteration) name=\(toolCall.toolName)")
 
                     // Show any text the model emitted before the <tool_call> tag
@@ -478,11 +635,13 @@ struct ChatView: View {
                     }
                     chatLog.info("  tool result: \(toolResultText.prefix(80))")
 
-                    // Update tool bubble with result summary
+                    // Update tool bubble with result summary — the human-facing
+                    // display text, not the raw model-facing JSON (see
+                    // ToolResult.displayText).
                     await MainActor.run {
                         if let idx = messages.firstIndex(where: { $0.id == toolMsgId }) {
                             messages[idx] = Message(role: .tool(name: toolCall.toolName),
-                                                    text: toolResultText)
+                                                    text: toolResultVal.displayText)
                         }
                         scrollToBottom()
                     }
@@ -504,6 +663,21 @@ struct ChatView: View {
                     chatLog.info("  follow-up chat() iter=\(iteration) chars=\(response.count)")
                     // targetId for final update is now nextTargetId
                     _ = nextTargetId  // suppress unused warning; final update uses streamingId
+                }
+
+                // If the loop hit the iteration cap while the model still wanted
+                // to call another tool, don't let the raw tool-call fragment
+                // reach the chat bubble — force one more no-more-tools turn.
+                if AgentLoop.hasToolCall(response) {
+                    chatLog.info("  tool budget exhausted after \(AgentLoop.maxIterations) iterations — forcing final turn")
+                    taskHistory.append(InferenceMessage(role: "assistant", text: response))
+                    taskHistory.append(InferenceMessage(role: "user", text: AgentLoop.budgetExhaustedNudge))
+                    response = try inference.chat(messages: taskHistory)
+                    if AgentLoop.hasToolCall(response) {
+                        // Model ignored the nudge — still never show a raw tool-call fragment.
+                        chatLog.error("  forced-final turn still contained a tool call: \(response.prefix(200))")
+                        response = "I wasn't able to finish that within the tool budget — please try rephrasing."
+                    }
                 }
 
                 // ── Final response ────────────────────────────────────────────
@@ -529,15 +703,41 @@ struct ChatView: View {
                 // If send_message returned nil the C engine may be in a corrupted
                 // state — even subsequent text turns will fail until a full reload.
                 // Unload now so the UI correctly reflects the invalid engine state.
+                //
+                // This is also how a user-requested Stop surfaces: the local chat
+                // call is non-streaming/blocking, so cancelActiveSession()'s native
+                // cancel_process() call makes send_message itself return nil rather
+                // than the Swift Task's cancellation short-circuiting anything. Don't
+                // show that expected case as an alarming error.
                 let needsUnload = errText.contains("conversation_send_message returned nil")
+                let wasUserStop = userRequestedStop && needsUnload
                 await MainActor.run {
                     if let sid = streamingId,
                        let idx = messages.firstIndex(where: { $0.id == sid }) {
-                        messages[idx] = Message(role: .error, text: "⚠️ \(errText)")
+                        messages[idx] = wasUserStop
+                            ? Message(role: .assistant, text: "(Generation stopped — reloading model…)")
+                            : Message(role: .error, text: "⚠️ \(errText)")
                     }
                     if needsUnload {
+                        // Always unload on a nil return, even for a user-requested
+                        // stop — confirmed via live device log (2026-07-27) that
+                        // cancelling mid-prefill can leave the speculative-decoding
+                        // "drafter" model corrupted (a subsequent turn failed with a
+                        // genuine XNNPACK tensor-allocation error,
+                        // llm_litert_mtp_drafter.cc), even though the cancellation
+                        // itself completes cleanly. Skipping the unload here was a
+                        // real regression, not just an unnecessary reload.
+                        //
+                        // Auto-reload the same model right after, rather than
+                        // leaving the user stuck at an unloaded state — this is
+                        // now a routine consequence of Stop, not a rare corruption
+                        // case, so it shouldn't require a manual trip to Models.
+                        let modelToReload = appState.loadedModelId
                         dlog("send: engine corrupted after send_message nil — forcing unload")
                         appState.unloadModel()
+                        if let modelId = modelToReload {
+                            appState.loadModel(modelId: modelId, useGpu: SettingsService.shared.useGpu)
+                        }
                     }
                 }
             }
@@ -631,13 +831,27 @@ struct ChatView: View {
         isGenerating = true
         scrollToBottom()
 
-        sendToCloud(text: prompt, image: nil, priorHistory: priorHistory,
+        sendToCloud(text: prompt, image: sourceMsg.sourceImage, priorHistory: priorHistory,
                     targetId: placeholder.id, systemOverride: nil)
     }
 
     private func stopGeneration() {
-        inferTask?.cancel()
+        userRequestedStop = true
+        // The underlying local chat call is non-streaming/blocking, so there's
+        // a real delay (the native call has to actually notice cancel_process()
+        // and return) before anything visibly changes — give immediate feedback
+        // so the tap doesn't look like it did nothing.
+        if let sid = streamingId, let idx = messages.firstIndex(where: { $0.id == sid }) {
+            messages[idx].text = "Stopping…"
+        }
+        // Signal the native engine to stop BEFORE cancelling the Swift Task —
+        // matches the fix needed on Android, where the reverse order raced
+        // Conversation teardown against the still-running native generation
+        // thread and crashed. iOS's conversation isn't torn down on Task
+        // cancellation alone, so this is a correctness/ordering improvement
+        // rather than a confirmed crash fix here.
         InferenceService.shared.cancelInference()
+        inferTask?.cancel()
         dlog("stopGeneration() called")
     }
 

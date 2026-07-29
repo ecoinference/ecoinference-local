@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -39,19 +41,22 @@ import ai.ecoinference.app.ui.theme.EcoColors
  */
 @Suppress("ArrayInDataClass")
 data class ChatMessage(
-    val role:         String,          // "user" | "assistant"
+    val role:         String,          // "user" | "assistant" | "code" | "tool"
     val text:         String,
     val imageBytes:   ByteArray? = null,   // user-attached input image
     val chartBytes:   ByteArray? = null,   // tool-generated output chart (PNG)
     val isStreaming:   Boolean = false,
     val tier:          RouterTier? = null,
     val sourcePrompt:  String? = null,      // user prompt that produced this response (assistant only)
+    val sourceImageBytes: ByteArray? = null, // user-attached image that produced this response (assistant only)
     val routingReason: String? = null,      // why the router chose this tier (assistant only)
 )
 
 @Composable
 fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) {
     val isUser      = message.role == "user"
+    val isCode      = message.role == "code"
+    val isTool      = message.role == "tool"
     val hasChart    = message.chartBytes != null
     val isAssistant = !isUser
     val showRetry   = isAssistant
@@ -105,13 +110,38 @@ fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) 
                 )
             }
 
+            // ── Tool label (run_python output from `use tool`) ─────────────
+            if (isTool) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(bottom = 2.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Build,
+                        contentDescription = null,
+                        tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        "run_python",
+                        fontSize   = 11.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
             // ── Text ───────────────────────────────────────────────────────
             if (message.text.isNotEmpty()) {
                 Text(
                     text       = message.text,
-                    color      = if (isUser) EcoColors.DarkInner else EcoColors.NearWhite,
-                    fontSize   = 15.sp,
-                    lineHeight = 22.sp,
+                    color      = if (isUser) EcoColors.DarkInner
+                                 else if (isTool) MaterialTheme.colorScheme.onSurfaceVariant
+                                 else EcoColors.NearWhite,
+                    fontSize   = if (isTool) 12.sp else 15.sp,
+                    lineHeight = if (isTool) 17.sp else 22.sp,
+                    fontFamily = if (isCode) FontFamily.Monospace else FontFamily.Default,
                 )
             }
 

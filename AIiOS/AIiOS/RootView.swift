@@ -9,7 +9,7 @@ struct RootView: View {
     @EnvironmentObject private var authService: AuthService
     @State private var selectedTab: Tab = .models
 
-    enum Tab { case chat, models, profile, settings }
+    enum Tab { case chat, models, profile, help, settings }
 
     var body: some View {
         // .ignoresSafeArea() on the ZStack makes its LAYOUT frame = full screen
@@ -34,6 +34,10 @@ struct RootView: View {
                     .environmentObject(authService)
                     .tabItem { Label("Profile", systemImage: "person.circle") }
                     .tag(Tab.profile)
+
+                HelpView()
+                    .tabItem { Label("Help", systemImage: "questionmark.circle") }
+                    .tag(Tab.help)
 
                 SettingsView()
                     .tabItem { Label("Settings", systemImage: "gearshape") }

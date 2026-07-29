@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
@@ -18,13 +19,14 @@ import ai.ecoinference.app.AppState
 import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.ui.auth.ProfileScreen
 import ai.ecoinference.app.ui.chat.ChatScreen
+import ai.ecoinference.app.ui.help.HelpScreen
 import ai.ecoinference.app.ui.models.ModelsScreen
 import ai.ecoinference.app.ui.settings.SettingsScreen
 import ai.ecoinference.app.ui.test.PythonTestScreen
 
 // Tests is no longer a bottom-nav destination — reachable via Settings instead
 // (matches iOS RootView.swift / SettingsView.swift).
-private enum class Tab { Chat, Models, Settings, Profile }
+private enum class Tab { Chat, Models, Settings, Profile, Help }
 
 /**
  * Requests all dangerous permissions required by agentic tools on first launch.
@@ -68,19 +70,25 @@ fun RootScreen(appState: AppState) {
     // System back button/gesture exits the Tests screen instead of the app.
     BackHandler(enabled = showTests) { showTests = false }
 
-    // Handle deep links
+    // Handle deep links — tab-switching only. OpenChat is deliberately NOT
+    // cleared here: ChatScreen only gets composed once selectedTab flips to
+    // Tab.Chat below, and it needs to read this same still-non-null value
+    // itself to apply prefill/autoSend (see ChatScreen.kt's own deep-link
+    // LaunchedEffect) — clearing it here first would race a freshly-composed
+    // ChatScreen out of ever seeing it. Every other action is fully handled
+    // in this one place, so those are safe to clear immediately.
     LaunchedEffect(deepLink) {
         when (val dl = deepLink) {
             is DeepLinkAction.OpenChat     -> selectedTab = Tab.Chat
-            is DeepLinkAction.OpenModels   -> selectedTab = Tab.Models
-            is DeepLinkAction.OpenSettings -> selectedTab = Tab.Settings
+            is DeepLinkAction.OpenModels   -> { selectedTab = Tab.Models; appState.deepLink.value = null }
+            is DeepLinkAction.OpenSettings -> { selectedTab = Tab.Settings; appState.deepLink.value = null }
             is DeepLinkAction.LoadModel    -> {
                 selectedTab = Tab.Models
                 appState.loadModel(dl.id)
+                appState.deepLink.value = null
             }
             else -> Unit
         }
-        if (deepLink != null) appState.deepLink.value = null
     }
 
     Scaffold(
@@ -105,6 +113,12 @@ fun RootScreen(appState: AppState) {
                     label     = { Text("Profile") },
                 )
                 NavigationBarItem(
+                    selected  = selectedTab == Tab.Help,
+                    onClick   = { selectedTab = Tab.Help; showTests = false },
+                    icon      = { Icon(Icons.Default.HelpOutline, contentDescription = "Help") },
+                    label     = { Text("Help") },
+                )
+                NavigationBarItem(
                     selected  = selectedTab == Tab.Settings,
                     onClick   = { selectedTab = Tab.Settings; showTests = false },
                     icon      = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
@@ -124,6 +138,7 @@ fun RootScreen(appState: AppState) {
                 Tab.Settings -> SettingsScreen(appState, Modifier.padding(innerPadding),
                     onOpenTests = { showTests = true })
                 Tab.Profile  -> ProfileScreen()
+                Tab.Help     -> HelpScreen(appState, Modifier.padding(innerPadding))
             }
         }
     }

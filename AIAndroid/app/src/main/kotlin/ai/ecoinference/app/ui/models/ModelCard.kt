@@ -22,6 +22,8 @@ fun ModelCard(
     model:              ModelInfo,
     isDownloading:      Boolean,
     downloadProgress:   Float,      // 0–100
+    downloadSpeedText:  String = "",
+    downloadEtaText:    String = "",
     isLoading:          Boolean,
     isOtherLoading:     Boolean = false,
     onDownload:         () -> Unit,
@@ -31,6 +33,23 @@ fun ModelCard(
     onCancelDownload:   () -> Unit,
 ) {
     var showGpuDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title            = { Text("Delete ${model.displayName}?") },
+            text             = { Text("This removes the downloaded file. You'll need to download it again to use it.") },
+            confirmButton    = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton    = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
 
     if (showGpuDialog) {
         AlertDialog(
@@ -93,9 +112,19 @@ fun ModelCard(
                     color        = EcoColors.Green,
                     trackColor   = EcoColors.CardBorder,
                 )
-                Text("${downloadProgress.toInt()}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.DimGreen)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    val leading = buildString {
+                        append("${downloadProgress.toInt()}%")
+                        if (downloadSpeedText.isNotEmpty()) append("  ·  $downloadSpeedText")
+                    }
+                    Text(leading, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                    if (downloadEtaText.isNotEmpty()) {
+                        Text(downloadEtaText, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -141,7 +170,7 @@ fun ModelCard(
                         }
                         // Delete (only when loaded — unload first, then delete)
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showDeleteConfirm = true },
                             colors  = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error),
                             border  = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
@@ -170,7 +199,7 @@ fun ModelCard(
                         }
                         Spacer(Modifier.width(4.dp))
                         OutlinedButton(
-                            onClick = onDelete,
+                            onClick = { showDeleteConfirm = true },
                             enabled = !isLoading && !isOtherLoading,
                             colors  = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error),

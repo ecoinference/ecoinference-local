@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Wraps the LiteRT-LM [Engine] API for on-device inference.
@@ -34,6 +36,13 @@ class LiteRtLmEngine(private val context: Context) {
     private var engine: Engine? = null
     private var _loadedModelId: String? = null
     private var _isMultimodal: Boolean = false
+
+    // Tracks whichever Conversation is currently mid-generation so the Stop
+    // button has something to call cancelProcess() on. The app only ever
+    // drives one generation at a time from the UI (isGenerating gates
+    // sending), so a single reference is sufficient despite chat/chatStream
+    // being individually safe to call concurrently.
+    private val activeConversation = AtomicReference<Conversation?>(null)
 
     val isLoaded: Boolean      get() = engine != null
     val loadedModelId: String? get() = _loadedModelId
@@ -123,12 +132,18 @@ class LiteRtLmEngine(private val context: Context) {
         val parsed = parseMessages(messages)
         val config = buildConversationConfig(parsed.systemText, parsed.history, temperature, maxTokens)
         try {
-            eng.createConversation(config).use { conversation ->
-                val sb = StringBuilder()
-                conversation.sendMessageAsync(parsed.lastUserContents).collect { message ->
-                    sb.append(message.contents.toString())
+            val conversation = eng.createConversation(config)
+            activeConversation.set(conversation)
+            try {
+                conversation.use { conv ->
+                    val sb = StringBuilder()
+                    conv.sendMessageAsync(parsed.lastUserContents).collect { message ->
+                        sb.append(message.contents.toString())
+                    }
+                    sb.toString().removeGemmaStopTokens()
                 }
-                sb.toString().removeGemmaStopTokens()
+            } finally {
+                activeConversation.compareAndSet(conversation, null)
             }
         } finally {
             parsed.tempFiles.forEach { it.delete() }
@@ -148,16 +163,37 @@ class LiteRtLmEngine(private val context: Context) {
         val parsed = parseMessages(messages)
         val config = buildConversationConfig(parsed.systemText, parsed.history, temperature, maxTokens)
         try {
-            eng.createConversation(config).use { conversation ->
-                conversation.sendMessageAsync(parsed.lastUserContents).collect { message ->
-                    val token = message.contents.toString().removeGemmaStopTokens()
-                    if (token.isNotEmpty()) emit(token)
+            val conversation = eng.createConversation(config)
+            activeConversation.set(conversation)
+            try {
+                conversation.use { conv ->
+                    conv.sendMessageAsync(parsed.lastUserContents).collect { message ->
+                        val token = message.contents.toString().removeGemmaStopTokens()
+                        if (token.isNotEmpty()) emit(token)
+                    }
                 }
+            } finally {
+                activeConversation.compareAndSet(conversation, null)
             }
         } finally {
             parsed.tempFiles.forEach { it.delete() }
         }
     }.flowOn(Dispatchers.IO)
+
+    /**
+     * Signals the in-flight generation (if any) to stop via the native
+     * engine's own cancelProcess() call. Must be used instead of just
+     * cancelling the collecting coroutine — cancelling the coroutine alone
+     * (without this) races Conversation.close() against the still-running
+     * native generation thread and crashes with a SIGSEGV null-pointer
+     * dereference inside liblitertlm_jni.so (confirmed via a real device
+     * crash tombstone, Xiaomi 24030PN60G, 2026-07-27). cancelProcess()
+     * signals the native decode loop to stop cooperatively before the
+     * Conversation is torn down.
+     */
+    fun cancelActiveGeneration() {
+        activeConversation.get()?.cancelProcess()
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

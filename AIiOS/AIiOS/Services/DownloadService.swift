@@ -4,14 +4,27 @@ enum DownloadError: LocalizedError {
     case httpError(Int)
     case fileMoveError(String)
     case alreadyDownloading
+    case insufficientStorage(requiredMb: Int, availableMb: Int)
 
     var errorDescription: String? {
         switch self {
         case .httpError(let code):      return "HTTP \(code) — download failed."
         case .fileMoveError(let msg):   return "Failed to save file: \(msg)"
         case .alreadyDownloading:       return "A download is already in progress."
+        case .insufficientStorage(let required, let available):
+            return "Not enough storage: this model needs ~\(required) MB, but only \(available) MB is free."
         }
     }
+}
+
+/// Snapshot of an in-progress download, passed to the `onProgress` callback.
+struct DownloadProgress {
+    /// 0.0–1.0
+    let fraction: Double
+    /// Instantaneous speed since the previous callback, in bytes/sec.
+    let bytesPerSecond: Double
+    /// Estimated seconds remaining at the current speed. `.infinity` if unknown.
+    let etaSeconds: Double
 }
 
 /// Downloads model files (currently always hosted on our own server) using URLSession.
@@ -58,6 +71,25 @@ final class DownloadService {
         return size >= minBytes
     }
 
+    /// Throws `.insufficientStorage` if there isn't enough free space on the
+    /// Documents volume to hold `model`. A 10% buffer accounts for filesystem
+    /// overhead and the temp file existing alongside the final destination
+    /// momentarily during the move.
+    private func checkAvailableStorage(for model: ModelInfo) throws {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        guard let systemAttrs = try? FileManager.default.attributesOfFileSystem(forPath: docs.path),
+              let freeBytes = systemAttrs[.systemFreeSize] as? Int64 else {
+            return // Can't determine free space — don't block the download over it.
+        }
+        let requiredBytes = Int64(model.fileSizeMb) * 1_000_000 * 11 / 10
+        guard freeBytes >= requiredBytes else {
+            throw DownloadError.insufficientStorage(
+                requiredMb: Int(requiredBytes / 1_000_000),
+                availableMb: Int(freeBytes / 1_000_000)
+            )
+        }
+    }
+
     /// Delete a downloaded model file.
     func delete(_ model: ModelInfo) throws {
         let path = filePath(for: model)
@@ -74,11 +106,11 @@ final class DownloadService {
 
     // ── Download ──────────────────────────────────────────────────────────────
 
-    /// Download [model] to the Documents directory, calling [onProgress] (0.0–1.0) as data arrives.
+    /// Download [model] to the Documents directory, calling [onProgress] as data arrives.
     /// Fetches a presigned URL from Firebase Functions before streaming.
     func download(
         model: ModelInfo,
-        onProgress: @escaping (Double) -> Void
+        onProgress: @escaping (DownloadProgress) -> Void
     ) async throws {
         // Atomically check-and-set isDownloading to avoid races between
         // concurrent HTTP requests or a UI tap + HTTP request arriving together.
@@ -89,13 +121,19 @@ final class DownloadService {
         }
         defer { lock.withLock { _isDownloading = false } }
 
+        try checkAvailableStorage(for: model)
+
         let presignedUrl = try await B2Service.shared.modelDownloadUrl(
             modelId: model.id,
             filename: model.fileName
         )
 
         var request = URLRequest(url: presignedUrl)
-        request.timeoutInterval = 30
+        // Idle timeout (resets on each byte received), not a total-transfer cap.
+        // 30s was too tight for multi-GB files on first request, when Cloudflare/B2
+        // haven't warmed the path yet — matches Android's readTimeout(0) intent of
+        // not timing out mid-transfer, while still catching a genuinely dead connection.
+        request.timeoutInterval = 120
 
         let destination = filePath(for: model)
 
@@ -128,6 +166,8 @@ final class DownloadService {
         let totalBytes = max(1, response.expectedContentLength)
         var receivedBytes: Int64 = 0
         var buffer = Data(capacity: 256 * 1024)
+        var lastCallbackTime = Date()
+        var lastCallbackBytes: Int64 = 0
 
         for try await byte in asyncBytes {
             if lock.withLock({ _cancellationRequested }) { break }
@@ -137,7 +177,23 @@ final class DownloadService {
             if buffer.count >= 256 * 1024 {
                 fileHandle.write(buffer)
                 buffer.removeAll(keepingCapacity: true)
-                onProgress(Double(receivedBytes) / Double(totalBytes))
+
+                let now      = Date()
+                let elapsed  = now.timeIntervalSince(lastCallbackTime)
+                let bytesPerSecond = elapsed > 0
+                    ? Double(receivedBytes - lastCallbackBytes) / elapsed
+                    : 0
+                lastCallbackTime  = now
+                lastCallbackBytes = receivedBytes
+
+                let remaining   = totalBytes - receivedBytes
+                let etaSeconds  = bytesPerSecond > 0 ? Double(remaining) / bytesPerSecond : .infinity
+
+                onProgress(DownloadProgress(
+                    fraction:       Double(receivedBytes) / Double(totalBytes),
+                    bytesPerSecond: bytesPerSecond,
+                    etaSeconds:     etaSeconds
+                ))
             }
         }
 
@@ -162,6 +218,6 @@ final class DownloadService {
             throw DownloadError.fileMoveError(error.localizedDescription)
         }
 
-        onProgress(1.0)
+        onProgress(DownloadProgress(fraction: 1.0, bytesPerSecond: 0, etaSeconds: 0))
     }
 }

@@ -39,6 +39,8 @@ final class AppState: ObservableObject {
 
     @Published private(set) var downloadActive       = false
     @Published private(set) var downloadProgress: Double = 0   // 0–100
+    @Published private(set) var downloadSpeedText: String = ""
+    @Published private(set) var downloadEtaText: String = ""
     @Published private(set) var downloadingModelId: String?
     @Published private(set) var downloadError: String?
     @Published private(set) var downloadErrorModelId: String?
@@ -113,6 +115,8 @@ final class AppState: ObservableObject {
 
         downloadActive        = true
         downloadProgress      = 0
+        downloadSpeedText     = ""
+        downloadEtaText       = ""
         downloadingModelId    = modelId
         downloadError         = nil
         downloadErrorModelId  = nil
@@ -123,21 +127,43 @@ final class AppState: ObservableObject {
             do {
                 try await downloadSvc.download(model: info) { [weak self] progress in
                     Task { @MainActor [weak self] in
-                        self?.downloadProgress = progress * 100
+                        self?.downloadProgress  = progress.fraction * 100
+                        self?.downloadSpeedText = Self.formatSpeed(progress.bytesPerSecond)
+                        self?.downloadEtaText   = Self.formatEta(progress.etaSeconds)
                     }
                 }
                 downloadActive     = false
                 downloadProgress   = 100
+                downloadSpeedText  = ""
+                downloadEtaText    = ""
                 downloadingModelId = nil
                 refreshCatalog()
             } catch {
                 downloadActive       = false
+                downloadSpeedText    = ""
+                downloadEtaText      = ""
                 downloadError        = error.localizedDescription
                 downloadErrorModelId = modelId
                 downloadingModelId   = nil
                 refreshCatalog()
             }
         }
+    }
+
+    private static func formatSpeed(_ bytesPerSecond: Double) -> String {
+        guard bytesPerSecond > 0 else { return "" }
+        let mbPerSecond = bytesPerSecond / 1_000_000
+        return mbPerSecond >= 1
+            ? String(format: "%.1f MB/s", mbPerSecond)
+            : String(format: "%.0f KB/s", bytesPerSecond / 1_000)
+    }
+
+    private static func formatEta(_ seconds: Double) -> String {
+        guard seconds.isFinite, seconds > 0 else { return "" }
+        if seconds >= 60 {
+            return "\(Int((seconds / 60).rounded(.up))) min left"
+        }
+        return "\(Int(seconds.rounded(.up))) sec left"
     }
 
     func cancelDownload() {

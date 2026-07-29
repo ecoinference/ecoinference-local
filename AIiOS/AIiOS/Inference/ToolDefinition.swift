@@ -62,6 +62,8 @@ When you need to use a tool, output EXACTLY one line in this format and nothing 
 <tool_call>{"name":"TOOL_NAME","args":{...}}</tool_call>
 IMPORTANT: The entire tool_call must be valid JSON on a single line. \
 Do NOT use actual newlines inside the tool_call tags.
+You have a budget of \(AgentLoop.maxIterations) tool calls for this response — plan accordingly \
+and give your best answer once you've gathered what you need, rather than calling tools repeatedly.
 
 Available tools:
 """
