@@ -71,6 +71,23 @@ export const ModelCatalog: ModelInfo[] = [
     downloaded:         false,
     loaded:             false,
   },
+  {
+    // NPU model availability is chip-specific to Qualcomm's AI Hub compile catalog (see
+    // project memory) — confirmed working via GenieX on this exact chip (Snapdragon X2
+    // Elite Extreme), not verified on other Snapdragon X-series variants.
+    id:                 'qwen3-vl-4b-npu',
+    displayName:        'Qwen3 VL 4B (NPU)',
+    fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
+    fileName:           'qualcomm/Qwen3-VL-4B-Instruct',
+    licenseUrl:         'https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct',
+    platform:           'desktop',
+    supportsVision:     true,
+    supportsImageInput: true,
+    maxContextTokens:   4096,
+    backend:            'geniex',
+    downloaded:         false,
+    loaded:             false,
+  },
 ]
 
 export function findModel(id: string): ModelInfo | undefined {

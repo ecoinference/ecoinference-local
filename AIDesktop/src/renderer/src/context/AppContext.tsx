@@ -15,6 +15,8 @@ export interface Message {
   id:      string
   role:    'user' | 'assistant'
   content: string
+  /** Data URL (e.g. "data:image/png;base64,...") of an image attached to a user message. */
+  imageDataUrl?: string
 }
 
 interface PlatformInfo {
@@ -196,7 +198,7 @@ interface AppContextValue {
   deleteModel:   (modelId: string) => void
   loadModel:     (modelId: string) => Promise<void>
   unloadModel:   () => Promise<void>
-  sendMessage:   (content: string) => Promise<void>
+  sendMessage:   (content: string, imageDataUrl?: string) => Promise<void>
   clearChat:     () => void
 }
 
@@ -366,10 +368,10 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
 
   // ── Chat ────────────────────────────────────────────────────────────────────
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, imageDataUrl?: string) => {
     if (state.generating) return
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content }
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content, imageDataUrl }
     dispatch({ type: 'APPEND_MESSAGE', message: userMsg })
     dispatch({ type: 'SET_GENERATING', value: true })
     dispatch({ type: 'APPEND_MESSAGE', message: { id: crypto.randomUUID(), role: 'assistant', content: '' } })
@@ -384,7 +386,16 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
       const loadedInfo = state.loadedModelId ? findModel(state.loadedModelId) : undefined
       const chatUrl = `http://127.0.0.1:${status.port}/v1/chat/completions`
 
-      const history = [...state.messages, userMsg].map(({ role, content }) => ({ role, content }))
+      // Messages with an attached image use the OpenAI vision content-parts shape
+      // (content: [{type:"text",...}, {type:"image_url",...}]) instead of a plain string —
+      // applies to any message in history that has one, not just the outgoing one, so a
+      // multi-turn conversation still sends earlier images as context on later turns.
+      const history = [...state.messages, userMsg].map(({ role, content, imageDataUrl }) => ({
+        role,
+        content: imageDataUrl
+          ? [{ type: 'text', text: content }, { type: 'image_url', image_url: { url: imageDataUrl } }]
+          : content,
+      }))
       const res = await fetch(chatUrl, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },

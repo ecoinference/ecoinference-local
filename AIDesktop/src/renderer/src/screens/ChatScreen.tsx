@@ -7,6 +7,9 @@ function MessageBubble({ msg }: { msg: Message }): JSX.Element {
   return (
     <div style={{ ...styles.bubble, alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
       <div style={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
+        {msg.imageDataUrl && (
+          <img src={msg.imageDataUrl} alt="Attached" style={styles.messageImage} />
+        )}
         <pre style={styles.bubbleText}>{msg.content || <span style={styles.cursor}>▊</span>}</pre>
       </div>
     </div>
@@ -16,7 +19,9 @@ function MessageBubble({ msg }: { msg: Message }): JSX.Element {
 export default function ChatScreen(): JSX.Element {
   const { state, sendMessage, clearChat, navigateTo } = useAppContext()
   const [input, setInput] = useState('')
+  const [attachedImage, setAttachedImage] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -33,9 +38,19 @@ export default function ChatScreen(): JSX.Element {
 
   function handleSend(): void {
     const text = input.trim()
-    if (!text || state.generating) return
+    if ((!text && !attachedImage) || state.generating) return
     setInput('')
-    sendMessage(text)
+    setAttachedImage(null)
+    sendMessage(text, attachedImage ?? undefined)
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>): void {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file later
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setAttachedImage(reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   if (!state.loadedModelId || !state.serverRunning) {
@@ -66,7 +81,35 @@ export default function ChatScreen(): JSX.Element {
         <div ref={bottomRef} />
       </div>
 
+      {attachedImage && (
+        <div style={styles.attachmentRow}>
+          <img src={attachedImage} alt="Attached" style={styles.attachmentThumb} />
+          <button style={styles.attachmentRemoveBtn} onClick={() => setAttachedImage(null)} title="Remove image">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div style={styles.inputRow}>
+        {model?.supportsImageInput && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={styles.hiddenFileInput}
+              onChange={handleFileSelect}
+            />
+            <button
+              style={styles.attachBtn}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={state.generating}
+              title="Attach an image"
+            >
+              📷
+            </button>
+          </>
+        )}
         <textarea
           style={styles.textarea}
           placeholder="Message…  (Shift+Enter for new line)"
@@ -79,7 +122,7 @@ export default function ChatScreen(): JSX.Element {
         <button
           style={styles.sendBtn}
           onClick={handleSend}
-          disabled={state.generating || !input.trim()}
+          disabled={state.generating || (!input.trim() && !attachedImage)}
         >
           {state.generating ? '…' : '↑'}
         </button>
@@ -123,12 +166,35 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0, fontFamily: 'inherit', fontSize: 14, lineHeight: 1.5,
     whiteSpace: 'pre-wrap', wordBreak: 'break-word',
   },
+  messageImage: {
+    maxWidth: '100%', maxHeight: 240, borderRadius: 8, display: 'block', marginBottom: 8,
+  },
   cursor: { animation: 'blink 1s step-end infinite' },
+
+  attachmentRow: {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '10px 16px 0', background: 'var(--surface)',
+  },
+  attachmentThumb: {
+    height: 56, width: 56, objectFit: 'cover', borderRadius: 8,
+    border: '1px solid var(--border)',
+  },
+  attachmentRemoveBtn: {
+    background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '50%',
+    width: 22, height: 22, color: 'var(--text-dim)', fontSize: 11, lineHeight: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
 
   inputRow: {
     display: 'flex', gap: 10, padding: '12px 16px',
     borderTop: '1px solid var(--border)', background: 'var(--surface)',
     alignItems: 'flex-end',
+  },
+  hiddenFileInput: { display: 'none' },
+  attachBtn: {
+    width: 40, height: 40, borderRadius: 10, border: '1px solid var(--border)',
+    background: 'var(--surface2)', fontSize: 16,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   textarea: {
     flex: 1, padding: '10px 14px', borderRadius: 12,
