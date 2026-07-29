@@ -48,7 +48,10 @@ Last updated: 2026-07-29, from the macOS/mobile machine.
   limitation** — a real fix means either touching the production-shared 2048 cap or only
   partially delaying the failure, and that trade-off wasn't worth chasing further today.
   Whether `unload()` genuinely leaks native memory needs Instruments/memory-graph profiling to
-  answer; not diagnosable from source alone. Full writeup in local memory
+  answer; not diagnosable from source alone. Instead added a plain-language note under the
+  Inference Tests summary bar, both platforms, shown whenever a test fails, so a partial-run
+  failure doesn't read as a regression. **Verified 2026-07-29 from a clean device restart:
+  full 27-test suite — 26 passed, 1 skipped, 0 failed.** Full writeup in local memory
   `project_gemma4pilot.md`, not this repo.
 
 ### Recently completed (2026-07-28, later)

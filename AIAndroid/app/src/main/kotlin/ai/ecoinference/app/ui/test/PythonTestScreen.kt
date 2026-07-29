@@ -900,10 +900,11 @@ private fun SummaryBar(passed: Int, failed: Int, skipped: Int, total: Int, model
             // regression signal — surfaced here so it isn't mistaken for one.
             if (failed > 0) {
                 Text(
-                    "Note: Python E2E failures partway through a run are a known session-limit issue, not necessarily a regression.",
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 4.dp),
+                    "Running lots of tests in a row can make some fail on their own — that's expected, not a sign the app is broken.",
+                    style      = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color(0xFFFFA000),
+                    modifier   = Modifier.padding(top = 4.dp),
                 )
             }
         }

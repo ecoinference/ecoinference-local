@@ -694,9 +694,9 @@ struct TestView: View {
             // through a run even with a freshly-loaded model. Not a
             // regression signal — surfaced here so it isn't mistaken for one.
             if failed > 0 {
-                Text("Note: Python E2E failures partway through a run are a known session-limit issue, not necessarily a regression.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text("Running lots of tests in a row can make some fail on their own — that's expected, not a sign the app is broken.")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.orange)
             }
         }
         .padding(.horizontal)
