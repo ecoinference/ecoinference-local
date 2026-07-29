@@ -856,39 +856,54 @@ private fun SummaryBar(passed: Int, failed: Int, skipped: Int, total: Int, model
         color    = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier            = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment   = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            StatusBadge("$passed passed", Color(0xFF4CAF50))
-            Spacer(Modifier.width(8.dp))
-            StatusBadge(
-                label = "$failed failed",
-                color = if (failed > 0) MaterialTheme.colorScheme.error else Color.Gray,
-            )
-            if (skipped > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBadge("$passed passed", Color(0xFF4CAF50))
                 Spacer(Modifier.width(8.dp))
-                StatusBadge("$skipped skipped", Color(0xFFFFA000))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "of $total",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            )
-            if (!modelLoaded) {
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    Icons.Default.WarningAmber,
-                    contentDescription = null,
-                    tint               = Color(0xFFFFA000),
-                    modifier           = Modifier.size(16.dp),
+                StatusBadge(
+                    label = "$failed failed",
+                    color = if (failed > 0) MaterialTheme.colorScheme.error else Color.Gray,
                 )
-                Spacer(Modifier.width(4.dp))
+                if (skipped > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    StatusBadge("$skipped skipped", Color(0xFFFFA000))
+                }
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    "No model loaded",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFFFA000),
+                    "of $total",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                )
+                if (!modelLoaded) {
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Default.WarningAmber,
+                        contentDescription = null,
+                        tint               = Color(0xFFFFA000),
+                        modifier           = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "No model loaded",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFFFA000),
+                    )
+                }
+            }
+            // Python E2E tests share one native session that can't be truly
+            // reset between independent turns (SDK limitation — only one
+            // session per engine lifetime), so the real KV-cache fills up
+            // and a handful of Python E2E tests can start failing partway
+            // through a run even with a freshly-loaded model. Not a
+            // regression signal — surfaced here so it isn't mistaken for one.
+            if (failed > 0) {
+                Text(
+                    "Note: Python E2E failures partway through a run are a known session-limit issue, not necessarily a regression.",
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }

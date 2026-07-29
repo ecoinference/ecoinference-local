@@ -670,20 +670,33 @@ struct TestView: View {
     // MARK: Summary bar
 
     private var summaryBar: some View {
-        HStack(spacing: 8) {
-            badge("\(passed) passed",  color: .green)
-            badge("\(failed) failed",  color: failed > 0 ? .red : .secondary)
-            if skipped > 0 {
-                badge("\(skipped) skipped", color: .orange)
-            }
-            Text("of \(results.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-            if !appState.modelLoaded {
-                Label("No model loaded", systemImage: "exclamationmark.triangle")
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                badge("\(passed) passed",  color: .green)
+                badge("\(failed) failed",  color: failed > 0 ? .red : .secondary)
+                if skipped > 0 {
+                    badge("\(skipped) skipped", color: .orange)
+                }
+                Text("of \(results.count)")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !appState.modelLoaded {
+                    Label("No model loaded", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+            // Python E2E tests share one native session that can't be truly
+            // reset between independent turns (SDK limitation — only one
+            // session per engine lifetime), so the real KV-cache fills up
+            // and a handful of Python E2E tests can start failing partway
+            // through a run even with a freshly-loaded model. Not a
+            // regression signal — surfaced here so it isn't mistaken for one.
+            if failed > 0 {
+                Text("Note: Python E2E failures partway through a run are a known session-limit issue, not necessarily a regression.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal)
