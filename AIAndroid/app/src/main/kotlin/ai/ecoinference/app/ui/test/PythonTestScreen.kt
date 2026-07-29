@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -477,7 +478,7 @@ internal class PythonTestViewModel : ViewModel() {
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
 
     fun runAll(context: Context, appState: AppState) {
-        if (_running.value) return
+        if (_running.value || !appState.modelLoaded.value) return
         viewModelScope.launch {
             _running.value      = true
             _currentIndex.value = 0
@@ -686,11 +687,19 @@ internal class PythonTestViewModel : ViewModel() {
             }
         }
 
+        // All detection below runs on the raw `content` (tool errors are
+        // `{"error":"..."}` JSON the model relies on, and the shape itself
+        // is part of what's being tested). `display` is the human-facing
+        // variant stored into TestState.detail — same unwrap ChatScreen
+        // uses for tool bubbles, so a raw error envelope never reaches the
+        // test UI verbatim.
+        val display = ToolResult.humanReadable(content)
+
         // Error markers
         if (content.startsWith("{\"error\"") ||
             content.contains("Traceback (most recent call last)") ||
             content.startsWith("Error:")) {
-            return TestState(tc, TestStatus.Failed, content.take(400))
+            return TestState(tc, TestStatus.Failed, display.take(400))
         }
 
         // Non-empty for inference tests
@@ -706,7 +715,7 @@ internal class PythonTestViewModel : ViewModel() {
                 tc.expectedKind.name
             return TestState(
                 tc, TestStatus.Failed,
-                "Expected $expected, got ${actualKind.name}.\n${content.take(200)}",
+                "Expected $expected, got ${actualKind.name}.\n${display.take(200)}",
             )
         }
 
@@ -716,7 +725,7 @@ internal class PythonTestViewModel : ViewModel() {
             if (!lower.contains(kw.lowercase())) {
                 return TestState(
                     tc, TestStatus.Failed,
-                    "Missing \"$kw\" in result.\n${content.take(200)}",
+                    "Missing \"$kw\" in result.\n${display.take(200)}",
                 )
             }
         }
@@ -726,16 +735,16 @@ internal class PythonTestViewModel : ViewModel() {
             if (lower.contains(kw.lowercase())) {
                 return TestState(
                     tc, TestStatus.Failed,
-                    "Unexpected \"$kw\" found in result.\n${content.take(200)}",
+                    "Unexpected \"$kw\" found in result.\n${display.take(200)}",
                 )
             }
         }
 
         // Pass — store a short preview
         val preview = when (actualKind) {
-            ResultKind.Image -> content
-            ResultKind.Html  -> "[HTML ${content.length / 1024} KB — OK]"
-            ResultKind.Text  -> content.take(200).let { if (content.length > 200) "$it…" else it }
+            ResultKind.Image -> display
+            ResultKind.Html  -> "[HTML ${display.length / 1024} KB — OK]"
+            ResultKind.Text  -> display.take(200).let { if (display.length > 200) "$it…" else it }
         }
         return TestState(tc, TestStatus.Passed, preview)
     }
@@ -764,6 +773,7 @@ internal fun PythonTestScreen(
     val states       by vm.states.collectAsState()
     val running      by vm.running.collectAsState()
     val currentIndex by vm.currentIndex.collectAsState()
+    val modelLoaded  by appState.modelLoaded.collectAsState()
 
     val passed  = states.count { it.status == TestStatus.Passed }
     val failed  = states.count { it.status == TestStatus.Failed }
@@ -800,12 +810,14 @@ internal fun PythonTestScreen(
                     } else {
                         IconButton(
                             onClick  = { vm.runAll(context, appState) },
+                            enabled  = modelLoaded,
                             modifier = Modifier.size(52.dp),
                         ) {
                             Icon(
                                 Icons.Default.PlayCircleOutline,
                                 contentDescription = "Run all tests",
-                                tint               = EcoColors.Green,
+                                tint               = if (modelLoaded) EcoColors.Green
+                                                      else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                 modifier           = Modifier.size(36.dp),
                             )
                         }
@@ -819,7 +831,7 @@ internal fun PythonTestScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            SummaryBar(passed = passed, failed = failed, skipped = skipped, total = states.size)
+            SummaryBar(passed = passed, failed = failed, skipped = skipped, total = states.size, modelLoaded = modelLoaded)
 
             LazyColumn(
                 modifier        = Modifier.fillMaxSize(),
@@ -839,31 +851,62 @@ internal fun PythonTestScreen(
 // ── Summary bar ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun SummaryBar(passed: Int, failed: Int, skipped: Int, total: Int) {
+private fun SummaryBar(passed: Int, failed: Int, skipped: Int, total: Int, modelLoaded: Boolean) {
     Surface(
         color    = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier            = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment   = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            StatusBadge("$passed passed", Color(0xFF4CAF50))
-            Spacer(Modifier.width(8.dp))
-            StatusBadge(
-                label = "$failed failed",
-                color = if (failed > 0) MaterialTheme.colorScheme.error else Color.Gray,
-            )
-            if (skipped > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBadge("$passed passed", Color(0xFF4CAF50))
                 Spacer(Modifier.width(8.dp))
-                StatusBadge("$skipped skipped", Color(0xFFFFA000))
+                StatusBadge(
+                    label = "$failed failed",
+                    color = if (failed > 0) MaterialTheme.colorScheme.error else Color.Gray,
+                )
+                if (skipped > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    StatusBadge("$skipped skipped", Color(0xFFFFA000))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "of $total",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                )
+                if (!modelLoaded) {
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Default.WarningAmber,
+                        contentDescription = null,
+                        tint               = Color(0xFFFFA000),
+                        modifier           = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "No model loaded",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFFFA000),
+                    )
+                }
             }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "of $total",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            )
+            // Python E2E tests share one native session that can't be truly
+            // reset between independent turns (SDK limitation — only one
+            // session per engine lifetime), so the real KV-cache fills up
+            // and a handful of Python E2E tests can start failing partway
+            // through a run even with a freshly-loaded model. Not a
+            // regression signal — surfaced here so it isn't mistaken for one.
+            if (failed > 0) {
+                Text(
+                    "Running lots of tests in a row can make some fail on their own — that's expected, not a sign the app is broken.",
+                    style      = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = Color(0xFFFFA000),
+                    modifier   = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }

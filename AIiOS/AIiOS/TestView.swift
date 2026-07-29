@@ -670,19 +670,32 @@ struct TestView: View {
     // MARK: Summary bar
 
     private var summaryBar: some View {
-        HStack(spacing: 8) {
-            badge("\(passed) passed",  color: .green)
-            badge("\(failed) failed",  color: failed > 0 ? .red : .secondary)
-            if skipped > 0 {
-                badge("\(skipped) skipped", color: .orange)
-            }
-            Text("of \(results.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-            if !appState.modelLoaded {
-                Label("No model loaded", systemImage: "exclamationmark.triangle")
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                badge("\(passed) passed",  color: .green)
+                badge("\(failed) failed",  color: failed > 0 ? .red : .secondary)
+                if skipped > 0 {
+                    badge("\(skipped) skipped", color: .orange)
+                }
+                Text("of \(results.count)")
                     .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !appState.modelLoaded {
+                    Label("No model loaded", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+            // Python E2E tests share one native session that can't be truly
+            // reset between independent turns (SDK limitation — only one
+            // session per engine lifetime), so the real KV-cache fills up
+            // and a handful of Python E2E tests can start failing partway
+            // through a run even with a freshly-loaded model. Not a
+            // regression signal — surfaced here so it isn't mistaken for one.
+            if failed > 0 {
+                Text("Running lots of tests in a row can make some fail on their own — that's expected, not a sign the app is broken.")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.orange)
             }
         }
@@ -1026,12 +1039,20 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
     private func evaluate(_ r: TestResult, kind: ResultKind, detail: String) {
         let tc = r.testCase
 
+        // Pass/fail detection below always runs on the raw `detail` (tool
+        // errors are `{"error":"..."}` JSON the model relies on, and the
+        // shape itself is part of what's being tested). `display` is the
+        // human-facing variant shown in `r.detail` — same unwrap ChatView
+        // uses for tool bubbles, so a raw error envelope never reaches the
+        // test UI verbatim.
+        let display = ToolResult.humanReadable(detail)
+
         // Error markers in detail
         if detail.hasPrefix("{\"error\"") ||
            detail.contains("Traceback (most recent call last)") ||
            detail.hasPrefix("Error:") {
             r.status = .failed
-            r.detail = detail.prefix(400).description
+            r.detail = display.prefix(400).description
             // Print start (first 300) and end (last 300) so we see both the
             // import chain AND the actual exception at the bottom of the traceback.
             let start = detail.prefix(300)
@@ -1051,7 +1072,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
                     expected = "\(tc.expectedKind)"
                 }
                 r.status = .failed
-                r.detail = "Expected \(expected), got \(kind).\n\(detail.prefix(200))"
+                r.detail = "Expected \(expected), got \(kind).\n\(display.prefix(200))"
                 print("[TEST FAIL] \(tc.id): Expected \(expected), got \(kind). detail=\(detail.prefix(300))")
                 logFailure(tc, reason: "Expected \(expected), got \(kind).\nFull response:\n\(detail)")
                 return
@@ -1063,7 +1084,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         for kw in tc.mustContain {
             if !lower.contains(kw.lowercased()) {
                 r.status = .failed
-                r.detail = "Expected \"\(kw)\" not found in:\n\(detail)"
+                r.detail = "Expected \"\(kw)\" not found in:\n\(display)"
                 print("[TEST FAIL] \(tc.id): keyword \"\(kw)\" not found. detail=\(detail.prefix(300))")
                 logFailure(tc, reason: "Expected \"\(kw)\" not found.\nFull response:\n\(detail)")
                 return
@@ -1074,7 +1095,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         for kw in tc.mustNotContain {
             if lower.contains(kw.lowercased()) {
                 r.status = .failed
-                r.detail = "Unexpected \"\(kw)\" found in:\n\(detail)"
+                r.detail = "Unexpected \"\(kw)\" found in:\n\(display)"
                 print("[TEST FAIL] \(tc.id): unexpected \"\(kw)\" found. detail=\(detail.prefix(300))")
                 logFailure(tc, reason: "Unexpected \"\(kw)\" found.\nFull response:\n\(detail)")
                 return
@@ -1092,7 +1113,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         }
 
         r.status = .passed
-        r.detail = detail.count > 300 ? "\(detail.prefix(300))…" : detail
+        r.detail = display.count > 300 ? "\(display.prefix(300))…" : display
         print("[TEST PASS] \(tc.id)")
     }
 

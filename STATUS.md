@@ -13,11 +13,46 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-07-28, from the macOS/mobile machine.
+Last updated: 2026-07-29, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-07-29) — tagged `v2.16-json-leak-settings`
+- **Tool-error JSON leak on Settings → Developer → Inference Tests screens — fixed, both
+  platforms.** Same class of bug as the chat-bubble fix: `TestView.swift`'s and
+  `PythonTestScreen.kt`'s `evaluate()` reused one raw string for both pass/fail detection
+  (must stay raw — that's what's being tested) and for what's displayed. Fix: detection stays
+  on the raw string; a separate humanized variant (`ToolResult.humanReadable()`) is used
+  everywhere the result is actually rendered. Android also got iOS's existing "no model
+  loaded" warning (disabled Run button + banner) — a misleading "12 failed" turned out to
+  just mean no model was loaded.
+- **Found a real, deep architectural limitation — partially mitigated, not fully fixed.**
+  iOS's non-multimodal (text-only) `LiteRtLmEngine` session can only exist once per engine
+  lifetime (SDK constraint) — `resetConversation()` can't give it a true fresh start, so the
+  real native KV-cache keeps every "reset" turn's tokens forever. Enough independent
+  conversations/tests on one loaded text-only model (e.g. E4B) eventually exhaust the real
+  context ceiling and every `generate_content` call starts failing — confirmed via native log.
+  Not test-only: this can hit real users hitting "New Chat" repeatedly. **Fixed**: broadened
+  `ChatView.swift`'s existing auto-recovery (force-unload + reload) to also catch this
+  error string, not just the multimodal one, so text-only models get the same safety net.
+  **Attempted and reverted**: reloading the model before every Inference-Tests E2E test made
+  things worse via a different failure (climbing resident memory across reload cycles,
+  eventually failing even a freshly-recreated engine) — reverted to the original behavior.
+  Confirmed via a force-kill + fresh relaunch that this is pure within-run accumulation, not
+  leftover state from a prior run — identical 5 E2E failures every time regardless. Also
+  found `chat()`'s `maxTokens` param (`LiteRtLmEngine.swift:866`) is dead code — never
+  referenced in the function body, so tuning it does nothing; the real per-turn output cap is
+  a hardcoded 2048 set once at `load()` time. **Decision: stop here, treat as a known/expected
+  limitation** — a real fix means either touching the production-shared 2048 cap or only
+  partially delaying the failure, and that trade-off wasn't worth chasing further today.
+  Whether `unload()` genuinely leaks native memory needs Instruments/memory-graph profiling to
+  answer; not diagnosable from source alone. Instead added a plain-language note under the
+  Inference Tests summary bar, both platforms, shown whenever a test fails, so a partial-run
+  failure doesn't read as a regression. **Verified 2026-07-29 from a clean device restart:
+  full 27-test suite — 26 passed, 1 skipped, 0 failed.** Full writeup in local memory
+  `project_gemma4pilot.md`, not this repo.
 
 ### Recently completed (2026-07-28, later)
 - **New Help tab, both platforms** — new bottom-nav tab explaining EcoInference's
