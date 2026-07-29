@@ -19,11 +19,18 @@ Last updated: 2026-07-28, from the macOS/mobile machine.
 
 ## Mobile (iOS + Android)
 
-### Pending — Help tab (deferred to next session)
-User wants a new bottom-nav Help tab explaining EcoInference's features to end users. Placement
-decided (new tab, not buried in Settings). A feature inventory was gathered but is already
-partly stale (see below — `use tool` went from broken to working the same session it was
-inventoried) — re-verify anything load-bearing before writing copy from it. Not started.
+### Recently completed (2026-07-28, later)
+- **New Help tab, both platforms** — new bottom-nav tab explaining EcoInference's
+  model-interaction features (automatic tool-calling, the `use tool` command, images,
+  local/cloud routing + how to set up a free Gemini API key). Deliberately scoped to
+  model-interaction only, not general app chrome (Settings/Models are self-explanatory UI).
+  `use tool` examples are tappable cards that pre-fill the chat input via the existing
+  deep-link mechanism. **Found and fixed a real pre-existing gap on Android**: its deep-link
+  handling only ever switched tabs, never actually read `prefill`/`autoSend` — meaning
+  `ecoinference://chat?message=...` had silently done nothing on Android since it was added.
+  Also fixed on Android: text hardcoded to a fixed color instead of the theme-aware color the
+  rest of the app uses (poor contrast in light mode), two missing experimental-API opt-ins,
+  and a low-contrast link color — all found via live device testing, not just compiling clean.
 
 ### Recently completed (2026-07-28)
 - **Tool-error JSON leaking into chat bubbles — fixed, both platforms.** Tool errors are
