@@ -700,16 +700,26 @@ struct ChatView: View {
             } catch {
                 chatLog.error("  chat() error turn=\(turnIndex): \(error.localizedDescription)")
                 let errText = error.localizedDescription
-                // If send_message returned nil the C engine may be in a corrupted
-                // state — even subsequent text turns will fail until a full reload.
-                // Unload now so the UI correctly reflects the invalid engine state.
+                // If send_message/generate_content returned nil the C engine may be
+                // in a corrupted state — even subsequent text turns will fail until a
+                // full reload. Unload now so the UI correctly reflects the invalid
+                // engine state. Covers both the multimodal Conversation API
+                // ("conversation_send_message returned nil") and the non-multimodal
+                // Session API ("generate_content returned nil") — the latter can also
+                // genuinely corrupt/exhaust the session's KV-cache, since
+                // resetConversation() can't recreate a session for text-only models
+                // (the SDK allows only one per engine lifetime — see
+                // LiteRtLmEngine.resetConversation()'s doc comment), so repeated
+                // resets silently accumulate real tokens until the model's compiled
+                // context ceiling is exhausted.
                 //
                 // This is also how a user-requested Stop surfaces: the local chat
                 // call is non-streaming/blocking, so cancelActiveSession()'s native
                 // cancel_process() call makes send_message itself return nil rather
                 // than the Swift Task's cancellation short-circuiting anything. Don't
                 // show that expected case as an alarming error.
-                let needsUnload = errText.contains("conversation_send_message returned nil")
+                let needsUnload = errText.contains("conversation_send_message returned nil") ||
+                                  errText.contains("generate_content returned nil")
                 let wasUserStop = userRequestedStop && needsUnload
                 await MainActor.run {
                     if let sid = streamingId,
