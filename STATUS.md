@@ -154,14 +154,15 @@ Last updated: 2026-07-29, from the macOS/mobile machine.
   S9-class hardware is now explicitly out of scope.
 
 ### Deferred / not started
-- **Tool error messages leak raw internal JSON into chat bubbles** — confirmed on iOS
-  `PythonTools.swift`'s `run_python` (e.g. `{"error":"'code' parameter is required"}` shown
-  as-is in the tool-result bubble). Low severity, cosmetic. Likely affects other tools
-  (`ChartTools`, `ImageEditTools`) and both platforms — worth an audit pass, not a one-tool
-  patch, when picked up.
 - Mobile model downloads still go through the presigned-URL Firebase Function round-trip, not
   the direct public-CDN pattern desktop now uses. Not broken, just the older/costlier path.
 - Sharing prompts / friending — future feature, no design yet.
+- **MLX Swift explored as a possible fix for iOS's disabled E4B vision — deferred, not
+  started.** MLX (Apple's on-device ML framework, Metal-native) could potentially run vision
+  on `gemma-4-e4b-it-4bit` (5.18 GB on `mlx-community`) where LiteRT-LM currently can't
+  (SigLIP ops not XNNPack-delegatable). Target device discussed: iPad Pro M5, 16GB. No
+  prototype built yet — explicit "hold off, return to later." Full model shortlist and
+  reasoning in local memory `project_gemma4pilot.md`, not this repo.
 
 ---
 
