@@ -13,11 +13,20 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-07-29, from the macOS/mobile machine.
+Last updated: 2026-07-30, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-07-30)
+- **Android: fixed "Provided less images than expected" crash on the turn after any image
+  turn.** Android rebuilds its whole conversation from scratch every local turn (unlike iOS's
+  one persistent Conversation, which only ever sends the new uncommitted turn) — the local
+  history builder was re-attaching a past turn's image bytes on every rebuild, which the
+  engine (`maxNumImages=1`) doesn't handle the way a live turn's image does. Fix: only the
+  current turn keeps its image; past turns keep the text, drop the bytes. iOS needed no
+  change — confirmed unaffected by both code review and a live test. `1b5dd77`.
 
 ### Recently completed (2026-07-29) — tagged `v2.16-json-leak-settings`
 - **Tool-error JSON leak on Settings → Developer → Inference Tests screens — fixed, both
