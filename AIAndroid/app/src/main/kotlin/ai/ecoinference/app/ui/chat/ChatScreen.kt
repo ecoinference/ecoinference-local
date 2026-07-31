@@ -329,8 +329,26 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                                 "Looking at the attached image, ${msg.text} Answer directly from what " +
                                     "you see — you already have full vision of the image and do not need any tool for this."
                             else msg.text
+                            // historySource only drops the trailing empty assistant
+                            // placeholder appended above -- the brand-new user turn
+                            // (with its image, if any) is still historySource's last
+                            // element, so it reaches this loop too. Every OTHER local
+                            // turn creates a fresh Conversation and replays the whole
+                            // history via initialMessages (unlike iOS's one
+                            // persistent Conversation), and the engine
+                            // (maxNumImages=1) / the SDK's initialMessages seeding
+                            // don't handle a REPLAYED past turn's image the way a
+                            // live sendMessageAsync() turn does -- re-attaching an
+                            // old turn's image bytes here throws a native "Provided
+                            // less images than expected in the prompt" error on the
+                            // NEXT message (confirmed live, 2026-07-30). But the
+                            // current turn's own image must stay attached, or the
+                            // model has nothing to look at on THIS turn (also
+                            // confirmed live) -- only strip bytes from genuinely past
+                            // turns, i.e. every entry except the last.
+                            val isCurrentTurn = i == historySource.lastIndex
                             add(InferenceMessage(role = msg.role, text = sendText,
-                                imageBytes = msg.imageBytes))
+                                imageBytes = if (isCurrentTurn) msg.imageBytes else null))
                         }
                         i++
                     }
