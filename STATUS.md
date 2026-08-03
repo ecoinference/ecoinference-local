@@ -19,7 +19,7 @@ Last updated: 2026-07-30, from the macOS/mobile machine.
 
 ## Mobile (iOS + Android)
 
-### Recently completed (2026-07-30)
+### Recently completed (2026-07-30) — tagged `v2.17-android-image-history-fix`
 - **Android: fixed "Provided less images than expected" crash on the turn after any image
   turn.** Android rebuilds its whole conversation from scratch every local turn (unlike iOS's
   one persistent Conversation, which only ever sends the new uncommitted turn) — the local
