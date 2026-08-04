@@ -1,6 +1,0 @@
-// Local.xcconfig.sample
-// Copy this file to Local.xcconfig for any local, machine-specific build settings.
-// Local.xcconfig is gitignored — never commit it.
-//
-// (No settings currently required — model files are downloaded unauthenticated
-// from our own server, not HuggingFace.)
