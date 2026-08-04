@@ -120,7 +120,7 @@ struct SettingsView: View {
                     VStack(spacing: 6) {
                         Text("🌿")
                             .font(.system(size: 40))
-                        Text("EcoInference")
+                        Text("EcoInference™")
                             .font(.headline)
                         Text("Local AI, offline and private.")
                             .font(.caption)

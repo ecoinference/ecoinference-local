@@ -324,7 +324,7 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text("🌿", style = MaterialTheme.typography.displaySmall)
-                Text("EcoInference",
+                Text("EcoInference™",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Text("Local AI, offline and private.",

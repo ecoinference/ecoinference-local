@@ -34,7 +34,7 @@ export default function AuthScreen(): JSX.Element {
       <div style={styles.card}>
         <div style={styles.logo}>
           <span style={styles.logoLeaf}>🌿</span>
-          <span style={styles.logoText}>EcoInference</span>
+          <span style={styles.logoText}>EcoInference&trade;</span>
         </div>
         <p style={styles.tagline}>Local AI, offline and private</p>
 

@@ -20,7 +20,7 @@ struct SignInView: View {
                         Image(systemName: "cpu.fill")
                             .font(.system(size: 56))
                             .foregroundStyle(EcoColors.green)
-                        Text("EcoInference")
+                        Text("EcoInference™")
                             .font(.largeTitle.bold())
                         Text("On-device AI")
                             .font(.subheadline)

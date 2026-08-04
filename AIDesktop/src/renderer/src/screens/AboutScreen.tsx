@@ -10,7 +10,7 @@ export default function AboutScreen(): JSX.Element {
   return (
     <div style={s.wrap}>
       <div style={s.logo}>🌿</div>
-      <h1 style={s.title}>EcoInference</h1>
+      <h1 style={s.title}>EcoInference&trade;</h1>
       <p style={s.version}>{version ? `Version ${version}` : 'Loading…'}</p>
       <p style={s.tagline}>Local AI, offline and private.</p>
       <div style={s.meta}>

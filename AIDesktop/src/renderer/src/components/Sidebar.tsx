@@ -84,7 +84,7 @@ export default function Sidebar(): JSX.Element {
     <div style={styles.sidebar}>
       <div style={styles.logo}>
         <span style={styles.logoLeaf}>🌿</span>
-        <span style={styles.logoText}>EcoInference</span>
+        <span style={styles.logoText}>EcoInference&trade;</span>
       </div>
 
       <nav style={styles.nav}>
