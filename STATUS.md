@@ -19,6 +19,19 @@ Last updated: 2026-07-30, from the macOS/mobile machine.
 
 ## Mobile (iOS + Android)
 
+### Recently completed (2026-07-30, later) — open-sourcing prep
+- **Licensed under MPL 2.0**, plus `CONTRIBUTING.md` (with CLA rationale) and `TRADEMARK.md`.
+  MPL over Apache/GPL deliberately: file-level copyleft keeps changes to our files open
+  without blocking commercial use, and unlike the GPL family it has no App Store conflict.
+  Trademark — not the licence — is what protects the project name. README now states plainly
+  that the assembled app isn't uniformly MPL (Gemma weights carry their own use restrictions).
+- **Repo audit ahead of going public.** Removed the dead `AIServer/` Flutter tree (archived
+  separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
+  since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
+  unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
+  remain in git history, get Firestore/Storage rules into the repo, verify third-party binary
+  redistribution terms, and get the CLA legally reviewed. Details in local memory.
+
 ### Recently completed (2026-07-30) — tagged `v2.17-android-image-history-fix`
 - **Android: fixed "Provided less images than expected" crash on the turn after any image
   turn.** Android rebuilds its whole conversation from scratch every local turn (unlike iOS's
