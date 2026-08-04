@@ -1,114 +1,108 @@
-# Gemma 4 Pilot
+# EcoInference
 
-On-device Gemma 4 inference with a local REST API — two Flutter apps for Android & iOS.
+Privacy-first, on-device AI. Most questions are answered entirely on your own hardware —
+nothing leaves the device — with an automatic fallback to a cloud model only for the
+things a small local model genuinely handles poorly.
+
+The motivation is environmental as much as it is about privacy: inference that runs on
+hardware you already own doesn't spin up a datacenter GPU, and doesn't consume the energy
+and water that comes with one.
+
+> **Repo status:** private and not currently licensed for redistribution. Note that the
+> app bundles third-party components under their own terms (Google's LiteRT-LM runtime,
+> Gemma model weights under the Gemma Terms of Use, llama.cpp on desktop) — these are not
+> covered by any license granted here.
+
+---
+
+## Layout
 
 ```
-AIServer/   Inference server  — downloads & runs Gemma 4, exposes localhost REST API
-AIClient/   Chat client       — Flutter/Dart UI that calls AIServer's REST API
+AIiOS/       iOS app        — Swift / SwiftUI, LiteRT-LM, embedded Python 3.10
+AIAndroid/   Android app    — Kotlin / Compose, LiteRT-LM via JNI, Chaquopy Python
+AIDesktop/   Desktop app    — Electron + React, llama.cpp (see also: separate repo docs)
+functions/   Firebase Functions — presigned model-download URLs, avatar uploads
+tests/       Cross-platform test assets
 ```
 
----
+The three clients are **independent native implementations that share a backend**, not a
+shared codebase. They deliberately mirror each other's features and UX, so a change to one
+usually needs porting to the other — but they do not share code, and desktop doesn't even
+share an inference runtime.
 
-## Architecture
+## Inference
 
-```
-AIServer (Flutter + native bridge)
- ├─ Setup wizard: Kaggle creds → model picker → download
- ├─ Native inference: Google AI Edge LLM Inference API (MediaPipe Tasks GenAI)
- │    Android → Kotlin InferencePlugin.kt
- │    iOS     → Swift  InferencePlugin.swift
- └─ shelf REST server on localhost (port configurable, default 8080)
+| | Runtime | Models |
+|---|---|---|
+| **iOS / Android** | LiteRT-LM (`.litertlm`) | Gemma 4 E2B (~2.5 GB), Gemma 4 E4B (~3.6 GB) |
+| **Desktop** | llama.cpp (GGUF) | Gemma 4 E4B (~5 GB), Gemma 4 12B (~6.7 GB) |
+| **Desktop (Snapdragon)** | GenieX (NPU) | Qwen3 8B, Qwen3-VL 4B — self-caching, no app-side download |
 
-AIClient (Flutter / setState — FlutterFlow compatible)
- ├─ Connection screen: host + port entry, health check
- └─ Chat screen: full conversation history, system-prompt support
-```
+Model weights are **not** in this repo. They're fetched at runtime from a Backblaze B2
+bucket fronted by Cloudflare CDN.
 
----
+### Platform differences that bite
 
-## REST API (AIServer)
+Vision support is **not** uniform, and findings do not transfer between platforms:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Server status + model info |
-| GET | `/v1/models` | Loaded model list |
-| POST | `/v1/models/load` | `{ "model_id": "..." }` |
-| POST | `/v1/chat/completions` | OpenAI-compatible chat |
-| POST | `/v1/completions` | OpenAI-compatible text completion |
+- **iOS** — vision works on E2B only. It's explicitly disabled on E4B: its larger SigLIP
+  encoder has ops that aren't XNNPack-delegatable in the current native LiteRT-LM build.
+- **Android** — vision works on both E2B and E4B; the Kotlin SDK has no equivalent gap.
+- **Desktop** — different runtime entirely, with its own independent constraints.
 
-All responses are JSON. Schema matches the OpenAI API so any OpenAI-compatible client works.
+## Routing
 
----
+Every prompt goes through a rules engine that picks a tier — **local** or **cloud** (Gemini).
+Cloud handles current events, very long creative work, and images the local model can't
+process. Users can also force a second opinion with *Try with Cloud* on any reply, and tap
+the tier badge under a response to see why it routed where it did.
 
-## AIServer Setup Flow
+Rules ship bundled (`default_router_rules.json`, identical across platforms) and can be
+updated live via Firebase Remote Config (`router_rules`) without an app release.
 
-1. Launch AIServer on device.
-2. Enter your **Kaggle username** and **API key** (kaggle.com → Account → API → Create Token).
-3. Select model variant:
-   - **Gemma 4 1B INT4** (~650 MB) — best for all devices
-   - **Gemma 4 4B INT4** (~2.5 GB) — better quality, needs ≥6 GB RAM
-4. Download completes → model loads → server starts.
-5. Home screen shows the base URL and available endpoints.
+Cloud answers require the user's own Gemini API key, entered in Settings. No key ships with
+the app, and local inference always works without one.
 
----
+## Tool calling
 
-## AIClient Usage
+The model can call ~18 device and compute tools on its own, no special phrasing required:
 
-1. Launch AIServer first (same device or same local network).
-2. Open AIClient, enter host (`127.0.0.1`) and port (`8080`).
-3. Tap **Connect** — AIClient checks `/health` and navigates to the chat screen.
-4. Chat away.
+`get_battery` · `show_map` · `toggle_torch` · `send_sms` · `send_sos` ·
+`get_moon_phase` · `get_sun_times` · `get_dawn_dusk` ·
+`compute_stats` · `compute_geometry` · `fit_curve` · `run_fft` ·
+`plot_line` · `plot_bar` · `plot_scatter` · `generate_qr` · `edit_image` · `run_python`
 
----
+Beyond that fixed list, typing **`use tool <request>`** has the model write real Python and
+execute it on-device immediately — an actual result, not a code preview. `list tools` shows
+what's available.
+
+Tool results are wrapped in nonce-delimited untrusted-content markers and length-capped
+before reaching the model, as a defense against indirect prompt injection — `run_python`
+has network access.
+
+## Backend
+
+Firebase project `ecoinference-28c31`, shared by all three clients:
+
+- **Auth** — email/password only (deliberate: social sign-in triggers extra App Store review)
+- **Firestore** — `users/{uid}` profiles, `usernames/{username}` uniqueness reservations
+- **Remote Config** — `router_rules`, `available_models` allowlist
+- **Functions** — presigned B2 download URLs, avatar uploads
 
 ## Requirements
 
-### AIServer — Android
-- Android 8.0+ (API 26), 64-bit device
-- MediaPipe Tasks GenAI `0.10.22`
+- **iOS** — 17.0+, Xcode. Run `AIiOS/download_frameworks.sh` to fetch the LiteRT-LM
+  xcframeworks (~91 MB, not tracked). Embedded-Python artifacts are built by `setup.sh`.
+- **Android** — API 30+ (`.litertlm` fails to load the native lib below this; API 29
+  devices are out of scope). Gradle needs an explicit `JAVA_HOME`, e.g. Android Studio's
+  bundled JBR.
+- **Desktop** — Node + Electron; a `llama-server` binary is bundled per platform.
 
-### AIServer — iOS
-- iOS 16.0+, A12 Bionic or later
-- MediaPipeTasksGenAI + MediaPipeTasksGenAIIOS pods `0.10.22`
+## Development
 
-### AIClient — Android & iOS
-- Android 5.0+ / iOS 12+ (standard Flutter requirements)
+`STATUS.md` is the cross-machine status board — read it before starting work, and update it
+after. This repo is worked on from three machines (macOS for mobile, two Windows machines
+for the desktop builds), so `git log` is often ahead of any one session's assumptions.
 
----
-
-## Build
-
-```bash
-# AIServer
-cd AIServer && flutter pub get && flutter run
-
-# AIClient
-cd AIClient && flutter pub get && flutter run
-```
-
-For iOS, run `pod install` inside `AIServer/ios/` before building.
-
----
-
-## Model URLs
-
-Model `.task` files are downloaded from Kaggle Models:
-
-| Variant | Kaggle path |
-|---------|-------------|
-| 1B INT4 | `google/gemma-4/tfLite/gemma4-1b-it-gpu-int4/1` |
-| 4B INT4 | `google/gemma-4/tfLite/gemma4-4b-it-gpu-int4/1` |
-
-> **Note:** Kaggle may update model versions. If a download fails, check
-> `AIServer/lib/constants/model_catalog.dart` and update the URL/version number.
-
----
-
-## FlutterFlow Integration
-
-AIClient uses plain `setState` with no external state management, making it
-straightforward to import into FlutterFlow:
-
-- Copy `lib/models/` and `lib/services/api_service.dart` into your FlutterFlow
-  custom code.
-- Call `ApiService(config).chatCompletion(messages: ...)` from any action.
+Both mobile apps have a **Settings → Developer → Inference Tests** screen that runs the
+smoke-test suite (inference, Python, cloud, router, vision) directly on-device.
