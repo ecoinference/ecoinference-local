@@ -8,10 +8,32 @@ The motivation is environmental as much as it is about privacy: inference that r
 hardware you already own doesn't spin up a datacenter GPU, and doesn't consume the energy
 and water that comes with one.
 
-> **Repo status:** private and not currently licensed for redistribution. Note that the
-> app bundles third-party components under their own terms (Google's LiteRT-LM runtime,
-> Gemma model weights under the Gemma Terms of Use, llama.cpp on desktop) — these are not
-> covered by any license granted here.
+## Licence
+
+The code in this repository is licensed under the **Mozilla Public License 2.0** — see
+[LICENSE](LICENSE). MPL is file-level copyleft: modifications to these files stay open, but
+you can build proprietary work alongside them.
+
+The **name and brand are handled separately** — see [TRADEMARK.md](TRADEMARK.md). Short
+version: fork freely, just call your fork something else.
+
+### The assembled app is not all under one licence
+
+Worth being upfront about, because "the code is MPL" does not mean "the product is freely
+usable for anything." Running the app involves several components with their own terms:
+
+| Component | Terms | Notes |
+|---|---|---|
+| This source code | MPL 2.0 | What the LICENSE file covers |
+| Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source licence — includes a prohibited-use policy |
+| LiteRT-LM runtime | Google's terms | Prebuilt binaries, fetched separately, not in this repo |
+| llama.cpp (desktop) | MIT | Bundled per-platform binaries |
+| Qwen models (NPU) | see model card | Upstream Qwen3 is Apache 2.0, but desktop consumes Qualcomm's GenieX-hosted variant (`qualcomm/Qwen3-8B`) — confirm its terms before relying on them |
+
+The practical upshot: the Gemma terms travel with the model regardless of what this
+repository is licensed under, so the app as a whole carries use restrictions the code alone
+does not. If that matters for your use case, read the Gemma Terms of Use directly rather
+than assuming the MPL covers everything.
 
 ---
 
