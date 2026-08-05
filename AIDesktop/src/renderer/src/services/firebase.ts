@@ -1,5 +1,11 @@
 import { initializeApp, FirebaseApp } from 'firebase/app'
-import { getAuth, Auth } from 'firebase/auth'
+import {
+  initializeAuth,
+  getAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  Auth,
+} from 'firebase/auth'
 import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config'
 
 const firebaseConfig = {
@@ -22,7 +28,34 @@ export function getFirebaseApp(): FirebaseApp {
 }
 
 export function firebaseAuth(): Auth {
-  if (!_auth) _auth = getAuth(getFirebaseApp())
+  // Persistence is set EXPLICITLY rather than using getAuth()'s auto-detection.
+  //
+  // In production the renderer is loaded via mainWindow.loadFile(), so the page
+  // origin is file:// — not a normal http(s) origin. getAuth() probes the
+  // available storage backends and silently falls back to in-memory persistence
+  // when it can't confirm one works. In-memory means the session is discarded on
+  // every app quit, so the user has to sign in again on each launch. Online that
+  // just looks like an annoyance; offline it's fatal, because signing in requires
+  // reaching Firebase — the app is stuck on the auth screen with no way past it.
+  // Dev builds hid this: they load over http:// from Vite, where storage probing
+  // succeeds and the session persists normally.
+  //
+  // Passing an explicit array makes the SDK try each in order and keep the first
+  // that works, instead of quietly degrading to in-memory.
+  if (!_auth) {
+    try {
+      _auth = initializeAuth(getFirebaseApp(), {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+      })
+    } catch {
+      // initializeAuth throws if auth was already initialised for this app. That
+      // can happen under Vite HMR in dev, where this module's `_auth` is reset
+      // but the underlying Firebase app instance survives. Fall back to the
+      // existing instance rather than crashing the renderer — persistence was
+      // already configured by the first call.
+      _auth = getAuth(getFirebaseApp())
+    }
+  }
   return _auth
 }
 
