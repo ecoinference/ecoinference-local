@@ -88,6 +88,28 @@ export const ModelCatalog: ModelInfo[] = [
     downloaded:         false,
     loaded:             false,
   },
+  {
+    // Independently compiled by a community publisher (piffie), not Qualcomm's own AI
+    // Hub pipeline — only importable via GenieX's `--model-hub localfs` path (`--model-hub
+    // hf` doesn't recognize raw genie/QAIRT bundles at all, see project memory), so it must
+    // already be present in the local GenieX cache before this entry will load — there's
+    // no `geniex pull` fallback the app can trigger on demand like the other geniex models.
+    // Real 16k context (confirmed: verified with an actual >4096-token prompt), at the cost
+    // of much lower throughput (~9 tok/s vs ~21 tok/s for Qwen3-8B) — a genuine capability
+    // vs. speed tradeoff, not a bug.
+    id:                 'llama32-3b-16k-npu',
+    displayName:        'Llama 3.2 3B 16K (NPU)',
+    fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
+    fileName:           'piffie/Llama-3.2-3B-Instruct-Genie-Snapdragon-X2-Elite-v81-16k',
+    licenseUrl:         'https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct',
+    platform:           'desktop',
+    supportsVision:     false,
+    supportsImageInput: false,
+    maxContextTokens:   16384,
+    backend:            'geniex',
+    downloaded:         false,
+    loaded:             false,
+  },
 ]
 
 export function findModel(id: string): ModelInfo | undefined {
