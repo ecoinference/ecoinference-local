@@ -69,14 +69,14 @@ fun ProfileScreen() {
                 },
             )
 
-            HorizontalDivider(color = EcoColors.CardBorder)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
             if (!profile?.bio.isNullOrBlank()) {
                 ListItem(
                     overlineContent  = { Text("Bio", color = ecoAccent) },
                     headlineContent  = { Text(profile!!.bio) },
                 )
-                HorizontalDivider(color = EcoColors.CardBorder)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             }
 
             ListItem(
@@ -89,7 +89,7 @@ fun ProfileScreen() {
             )
 
             if (!profile?.phoneNumber.isNullOrBlank()) {
-                HorizontalDivider(color = EcoColors.CardBorder)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                 ListItem(
                     headlineContent = { Text("Phone") },
                     trailingContent = {
@@ -99,7 +99,7 @@ fun ProfileScreen() {
                 )
             }
 
-            HorizontalDivider(color = EcoColors.CardBorder)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
             // ── Impact section ────────────────────────────────────────────────
             val total = localCount + cloudCount
@@ -146,7 +146,7 @@ fun ProfileScreen() {
                 )
             }
 
-            HorizontalDivider(color = EcoColors.CardBorder)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
             ListItem(
                 headlineContent = {

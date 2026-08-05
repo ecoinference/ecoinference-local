@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import ai.ecoinference.app.router.RouterTier
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoAccent
 
 /**
  * A single chat message.
@@ -92,7 +93,7 @@ fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) 
                         bottomEnd   = 18.dp,
                     )
                 )
-                .background(if (isUser) EcoColors.Green else EcoColors.CardDark)
+                .background(if (isUser) EcoColors.Green else MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
@@ -138,7 +139,7 @@ fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) 
                     text       = message.text,
                     color      = if (isUser) EcoColors.DarkInner
                                  else if (isTool) MaterialTheme.colorScheme.onSurfaceVariant
-                                 else EcoColors.NearWhite,
+                                 else MaterialTheme.colorScheme.onSurface,
                     fontSize   = if (isTool) 12.sp else 15.sp,
                     lineHeight = if (isTool) 17.sp else 22.sp,
                     fontFamily = if (isCode) FontFamily.Monospace else FontFamily.Default,
@@ -149,7 +150,7 @@ fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) 
             if (message.isStreaming && message.text.isEmpty()) {
                 CircularProgressIndicator(
                     modifier    = Modifier.size(18.dp),
-                    color       = EcoColors.DimGreen,
+                    color       = ecoAccent,
                     strokeWidth = 2.dp,
                 )
             }

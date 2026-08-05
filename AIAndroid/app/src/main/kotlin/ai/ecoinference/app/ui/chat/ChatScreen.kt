@@ -563,14 +563,14 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 shape  = MaterialTheme.shapes.small,
                 color  = when {
                     isModelLoading -> MaterialTheme.colorScheme.surface
-                    modelLoaded    -> EcoColors.CardDark
+                    modelLoaded    -> MaterialTheme.colorScheme.surface
                     else           -> MaterialTheme.colorScheme.surface
                 },
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp, when {
                         isModelLoading -> EcoColors.Green.copy(alpha = 0.3f)
                         modelLoaded    -> EcoColors.Green.copy(alpha = 0.5f)
-                        else           -> EcoColors.CardBorder
+                        else           -> MaterialTheme.colorScheme.outline
                     }
                 ),
             ) {
@@ -593,13 +593,12 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                             else           -> "No model"
                         },
                         style    = MaterialTheme.typography.labelSmall,
-                        // These branches must track the Surface colour chosen above:
-                        // the modelLoaded branch paints EcoColors.CardDark (dark in
-                        // both themes) so DimGreen is right there, while the other two
-                        // use colorScheme.surface and so need theme-aware colours.
+                        // All three Surface branches above now use
+                        // colorScheme.surface, so every branch here needs a
+                        // theme-aware colour.
                         color    = when {
                             isModelLoading -> ecoAccent
-                            modelLoaded    -> EcoColors.DimGreen
+                            modelLoaded    -> ecoAccent
                             else           -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                         },
                         maxLines = 1,
@@ -608,7 +607,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 }
             }
         }
-        HorizontalDivider(color = EcoColors.CardBorder, thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
 
         // ── Message list ──────────────────────────────────────────────────────
         LazyColumn(
@@ -630,9 +629,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         if (!modelReady) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color    = if (isModelLoading)
-                               EcoColors.CardDark
-                           else MaterialTheme.colorScheme.surface,
+                color    = MaterialTheme.colorScheme.surface,
             ) {
                 Row(
                     modifier          = Modifier
@@ -650,7 +647,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         Spacer(Modifier.width(10.dp))
                         Text("Loading model, please wait…",
                             style = MaterialTheme.typography.bodySmall,
-                            color = EcoColors.DimGreen)
+                            color = ecoAccent)
                     } else {
                         // This branch's Surface is colorScheme.surface (the isModelLoading
                         // branch above is CardDark, which is why its DimGreen stays).
@@ -683,7 +680,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
         }
 
         // ── Input bar ─────────────────────────────────────────────────────────
-        HorizontalDivider(color = EcoColors.CardBorder, thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
         Row(
             modifier          = Modifier
                 .fillMaxWidth()
@@ -714,8 +711,8 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 maxLines      = 5,
                 colors        = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor    = EcoColors.Green,
-                    unfocusedBorderColor  = EcoColors.CardBorder,
-                    disabledBorderColor   = EcoColors.CardBorder.copy(alpha = 0.4f),
+                    unfocusedBorderColor  = MaterialTheme.colorScheme.outline,
+                    disabledBorderColor   = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                     disabledTextColor     = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                 ),

@@ -213,8 +213,8 @@ private fun ExampleCard(text: String, onTry: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(EcoColors.CardDark)
-            .border(1.dp, EcoColors.CardBorder, RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
             .clickable { onTry(text) }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,

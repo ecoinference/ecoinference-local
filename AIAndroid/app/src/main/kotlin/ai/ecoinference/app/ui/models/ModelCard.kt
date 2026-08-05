@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.models.ModelInfo
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoAccent
 
 @Composable
 fun ModelCard(
@@ -70,25 +71,25 @@ fun ModelCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = EcoColors.CardDark),
-        border = BorderStroke(1.dp, EcoColors.CardBorder),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(model.displayName, style = MaterialTheme.typography.titleMedium,
-                        color = EcoColors.NearWhite)
+                        color = MaterialTheme.colorScheme.onSurface)
                     if (model.description.isNotBlank()) {
                         Text(model.description, style = MaterialTheme.typography.bodySmall,
-                            color = EcoColors.NearWhite.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             fontSize = 12.sp)
                     }
                 }
                 Spacer(Modifier.width(8.dp))
                 // Size label
                 Text(model.sizeLabel, style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.DimGreen)
+                    color = ecoAccent)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -110,7 +111,7 @@ fun ModelCard(
                     progress     = { downloadProgress / 100f },
                     modifier     = Modifier.fillMaxWidth(),
                     color        = EcoColors.Green,
-                    trackColor   = EcoColors.CardBorder,
+                    trackColor   = MaterialTheme.colorScheme.outline,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -120,9 +121,9 @@ fun ModelCard(
                         append("${downloadProgress.toInt()}%")
                         if (downloadSpeedText.isNotEmpty()) append("  ·  $downloadSpeedText")
                     }
-                    Text(leading, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                    Text(leading, style = MaterialTheme.typography.bodySmall, color = ecoAccent)
                     if (downloadEtaText.isNotEmpty()) {
-                        Text(downloadEtaText, style = MaterialTheme.typography.bodySmall, color = EcoColors.DimGreen)
+                        Text(downloadEtaText, style = MaterialTheme.typography.bodySmall, color = ecoAccent)
                     }
                 }
             }
@@ -160,7 +161,7 @@ fun ModelCard(
                         OutlinedButton(
                             onClick = onUnload,
                             colors  = ButtonDefaults.outlinedButtonColors(
-                                contentColor = EcoColors.DimGreen),
+                                contentColor = ecoAccent),
                             border  = BorderStroke(1.dp, EcoColors.Green.copy(alpha = 0.5f)),
                         ) {
                             Icon(Icons.Default.Eject, contentDescription = null,
@@ -219,10 +220,10 @@ fun ModelCard(
 private fun StatusChip(label: String) {
     Surface(
         shape  = MaterialTheme.shapes.small,
-        color  = EcoColors.CardDark,
-        border = BorderStroke(1.dp, EcoColors.CardBorder),
+        color  = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Text(label, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall, color = EcoColors.DimGreen)
+            style = MaterialTheme.typography.labelSmall, color = ecoAccent)
     }
 }

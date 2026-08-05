@@ -96,7 +96,7 @@ fun SettingsScreen(
                 },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor   = EcoColors.Green,
-                    unfocusedBorderColor = EcoColors.CardBorder,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
             )
             Text(
@@ -117,7 +117,7 @@ fun SettingsScreen(
                 }
             }
 
-            Divider(color = EcoColors.CardBorder)
+            Divider(color = MaterialTheme.colorScheme.outline)
 
             // ── System Prompt ─────────────────────────────────────────────────
             SectionLabel("System Prompt")
@@ -129,7 +129,7 @@ fun SettingsScreen(
                 maxLines      = 6,
                 colors        = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor   = EcoColors.Green,
-                    unfocusedBorderColor = EcoColors.CardBorder,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
             )
             Button(
@@ -138,7 +138,7 @@ fun SettingsScreen(
                     contentColor = EcoColors.DarkInner),
             ) { Text("Save Prompt") }
 
-            Divider(color = EcoColors.CardBorder)
+            Divider(color = MaterialTheme.colorScheme.outline)
 
             // ── Max Tokens ────────────────────────────────────────────────────
             SectionLabel("Max Output Tokens: $maxTokens")
@@ -162,7 +162,7 @@ fun SettingsScreen(
                     activeTrackColor = EcoColors.Green),
             )
 
-            Divider(color = EcoColors.CardBorder)
+            Divider(color = MaterialTheme.colorScheme.outline)
 
             // ── GPU toggle ────────────────────────────────────────────────────
             Row(
@@ -186,7 +186,7 @@ fun SettingsScreen(
                 )
             }
 
-            Divider(color = EcoColors.CardBorder)
+            Divider(color = MaterialTheme.colorScheme.outline)
 
             // ── Unload model ──────────────────────────────────────────────────
             if (modelLoaded) {
@@ -204,7 +204,7 @@ fun SettingsScreen(
 
             // ── Developer ────────────────────────────────────────────────────
             if (onOpenTests != null) {
-                Divider(color = EcoColors.CardBorder)
+                Divider(color = MaterialTheme.colorScheme.outline)
                 SectionLabel("Developer")
 
                 val context = LocalContext.current
@@ -318,7 +318,7 @@ fun SettingsScreen(
             }
 
             // ── About ────────────────────────────────────────────────────────
-            Divider(color = EcoColors.CardBorder)
+            Divider(color = MaterialTheme.colorScheme.outline)
             SectionLabel("About")
             Column(
                 modifier = Modifier.fillMaxWidth(),

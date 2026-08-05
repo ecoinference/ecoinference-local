@@ -34,8 +34,11 @@ object EcoColors {
     val LightOuter  = Color(0xFFBBF7D0)
     val NearWhite   = Color(0xFFF0FDF4)
     val DarkText    = Color(0xFF0F321E)
-    val CardDark    = Color(0xFF0F2415)
-    val CardBorder  = Color(0xFF1A3A22)
+    val CardDark    = Color(0xFF0F2415)   // card surface — DARK THEME ONLY
+    val CardBorder  = Color(0xFF1A3A22)   // card border  — DARK THEME ONLY
+    // Light-theme counterpart to CardBorder. Prefer MaterialTheme.colorScheme.outline
+    // over either constant so the right one is picked automatically.
+    val LightBorder = Color(0xFF86EFAC)
 }
 
 private val DarkColors = darkColorScheme(
@@ -52,14 +55,21 @@ private val DarkColors = darkColorScheme(
     outline          = EcoColors.CardBorder,
 )
 
+// Mirrors DarkColors slot-for-slot. The surface/background pair keeps the same
+// relationship in both themes — cards (surface) sit lighter than the page
+// (background) — so components can just use colorScheme.surface and get
+// EcoColors.CardDark in dark and EcoColors.LightInner in light automatically.
 private val LightColors = lightColorScheme(
-    primary    = EcoColors.Green,
-    onPrimary  = Color.White,
-    secondary  = EcoColors.Teal,
-    background = EcoColors.LightOuter,
-    surface    = EcoColors.LightInner,
-    onBackground = EcoColors.DarkText,
-    onSurface  = EcoColors.DarkText,
+    primary          = EcoColors.Green,
+    onPrimary        = Color.White,
+    secondary        = EcoColors.Teal,
+    background       = EcoColors.LightOuter,
+    surface          = EcoColors.LightInner,
+    surfaceVariant   = EcoColors.LightInner,
+    onBackground     = EcoColors.DarkText,
+    onSurface        = EcoColors.DarkText,
+    onSurfaceVariant = EcoColors.DeepGreen,
+    outline          = EcoColors.LightBorder,
 )
 
 /**
