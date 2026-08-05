@@ -46,6 +46,7 @@ import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.ToolResult
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoAccent
 import ai.ecoinference.app.ui.theme.EcoWordmark
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.map
@@ -582,7 +583,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         CircularProgressIndicator(
                             modifier    = Modifier.size(10.dp),
                             strokeWidth = 1.5.dp,
-                            color       = EcoColors.DimGreen,
+                            color       = ecoAccent,
                         )
                     }
                     Text(
@@ -592,10 +593,14 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                             else           -> "No model"
                         },
                         style    = MaterialTheme.typography.labelSmall,
+                        // These branches must track the Surface colour chosen above:
+                        // the modelLoaded branch paints EcoColors.CardDark (dark in
+                        // both themes) so DimGreen is right there, while the other two
+                        // use colorScheme.surface and so need theme-aware colours.
                         color    = when {
-                            isModelLoading -> EcoColors.DimGreen
+                            isModelLoading -> ecoAccent
                             modelLoaded    -> EcoColors.DimGreen
-                            else           -> EcoColors.NearWhite.copy(alpha = 0.4f)
+                            else           -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                         },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -647,9 +652,11 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                             style = MaterialTheme.typography.bodySmall,
                             color = EcoColors.DimGreen)
                     } else {
+                        // This branch's Surface is colorScheme.surface (the isModelLoading
+                        // branch above is CardDark, which is why its DimGreen stays).
                         Text("No model loaded — go to the Models tab to load one",
                             style = MaterialTheme.typography.bodySmall,
-                            color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                 }
             }
@@ -661,7 +668,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 modifier          = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("📎 Image attached", color = EcoColors.DimGreen,
+                Text("📎 Image attached", color = ecoAccent,
                     style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.width(8.dp))
                 TextButton(onClick = {
@@ -709,8 +716,8 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     focusedBorderColor    = EcoColors.Green,
                     unfocusedBorderColor  = EcoColors.CardBorder,
                     disabledBorderColor   = EcoColors.CardBorder.copy(alpha = 0.4f),
-                    disabledTextColor     = EcoColors.NearWhite.copy(alpha = 0.3f),
-                    disabledPlaceholderColor = EcoColors.NearWhite.copy(alpha = 0.3f),
+                    disabledTextColor     = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                 ),
             )
 

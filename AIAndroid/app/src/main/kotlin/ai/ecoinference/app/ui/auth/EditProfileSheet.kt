@@ -64,9 +64,12 @@ fun EditProfileSheet(onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismiss) { Text("Cancel", color = EcoColors.NearWhite.copy(alpha = 0.6f)) }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                }
                 Text("Edit Profile", style = MaterialTheme.typography.titleMedium,
-                    color = EcoColors.NearWhite)
+                    color = MaterialTheme.colorScheme.onSurface)
                 TextButton(
                     onClick  = {
                         scope.launch {

@@ -21,6 +21,7 @@ import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.services.UserProfileService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoAccent
 import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,14 +73,14 @@ fun ProfileScreen() {
 
             if (!profile?.bio.isNullOrBlank()) {
                 ListItem(
-                    overlineContent  = { Text("Bio", color = EcoColors.DimGreen) },
+                    overlineContent  = { Text("Bio", color = ecoAccent) },
                     headlineContent  = { Text(profile!!.bio) },
                 )
                 HorizontalDivider(color = EcoColors.CardBorder)
             }
 
             ListItem(
-                overlineContent  = { Text("Account", color = EcoColors.DimGreen) },
+                overlineContent  = { Text("Account", color = ecoAccent) },
                 headlineContent  = { Text("Email") },
                 trailingContent  = {
                     Text(AuthService.email ?: "",
@@ -104,7 +105,7 @@ fun ProfileScreen() {
             val total = localCount + cloudCount
             val pct   = if (total > 0) (localCount * 100 / total) else 0
             ListItem(
-                overlineContent = { Text("Impact", color = EcoColors.DimGreen) },
+                overlineContent = { Text("Impact", color = ecoAccent) },
                 headlineContent = { Text("On-device responses") },
                 trailingContent = {
                     Text("$localCount", color = EcoColors.Green,

@@ -82,7 +82,7 @@ fun SignInScreen() {
                             Icon(
                                 if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (showPassword) "Hide password" else "Show password",
-                                tint = EcoColors.NearWhite.copy(alpha = 0.6f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             )
                         }
                     },

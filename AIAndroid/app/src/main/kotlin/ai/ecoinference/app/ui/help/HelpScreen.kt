@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoAccent
 
 /**
  * Explains EcoInference's model-interaction features — the ones users
@@ -178,7 +179,7 @@ private fun HelpRowCloudSetup(icon: ImageVector, title: String) {
                     LinkAnnotation.Url(
                         "https://aistudio.google.com/apikey",
                         TextLinkStyles(style = SpanStyle(
-                            color = EcoColors.DimGreen,
+                            color = ecoAccent,
                             fontWeight = FontWeight.SemiBold,
                             textDecoration = TextDecoration.Underline,
                         )),

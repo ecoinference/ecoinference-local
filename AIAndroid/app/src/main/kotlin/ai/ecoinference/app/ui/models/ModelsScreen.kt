@@ -63,7 +63,8 @@ fun ModelsScreen(appState: AppState, modifier: Modifier = Modifier) {
                 modifier            = Modifier.fillMaxSize().padding(padding),
                 contentAlignment    = Alignment.Center,
             ) {
-                Text("No models available", color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                Text("No models available",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         } else {
             LazyColumn(

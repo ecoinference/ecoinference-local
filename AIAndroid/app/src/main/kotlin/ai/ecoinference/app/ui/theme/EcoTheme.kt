@@ -62,6 +62,22 @@ private val LightColors = lightColorScheme(
     onSurface  = EcoColors.DarkText,
 )
 
+/**
+ * Brand-green accent for text and icons sitting on a **theme-coloured** surface
+ * (`colorScheme.surface`/`background`, a ListItem, a bare Row, a TextField…).
+ *
+ * Use this instead of [EcoColors.DimGreen] in those places. DimGreen is a pale
+ * accent picked for the dark scheme's near-black surfaces; on the light scheme's
+ * pale-green surfaces it falls to roughly 1.5:1 contrast and reads as washed out.
+ *
+ * Do NOT use this for content on a hardcoded dark surface — anything inside a
+ * `EcoColors.CardDark` card or an `EcoColors.Green` button stays dark in both
+ * themes, so plain [EcoColors.DimGreen] is already correct there and swapping it
+ * would make dark-on-dark text.
+ */
+val ecoAccent: Color
+    @Composable get() = if (isSystemInDarkTheme()) EcoColors.DimGreen else EcoColors.DeepGreen
+
 @Composable
 fun EcoInferenceTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
