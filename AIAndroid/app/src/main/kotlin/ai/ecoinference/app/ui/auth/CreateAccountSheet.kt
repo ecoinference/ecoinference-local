@@ -18,6 +18,7 @@ import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.services.UserProfileService
 import ai.ecoinference.app.services.UsernameValidator
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -107,7 +108,7 @@ fun CreateAccountSheet(onDismiss: () -> Unit) {
                 )
                 when (val s = usernameStatus) {
                     is UsernameStatus.Available -> Text("Username is available",
-                        style = MaterialTheme.typography.bodySmall, color = EcoColors.Green)
+                        style = MaterialTheme.typography.bodySmall, color = ecoBrand)
                     is UsernameStatus.Taken     -> Text("Username is already taken",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     is UsernameStatus.Checking  -> Text("Checking…",

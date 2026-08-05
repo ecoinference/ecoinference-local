@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.EcoWordmark
 import kotlinx.coroutines.launch
 
@@ -128,11 +129,11 @@ fun SignInScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 TextButton(onClick = { showForgot = true }) {
-                    Text("Forgot Password?", color = EcoColors.Green,
+                    Text("Forgot Password?", color = ecoBrand,
                         style = MaterialTheme.typography.bodySmall)
                 }
                 TextButton(onClick = { showCreate = true }) {
-                    Text("Create Account", color = EcoColors.Green,
+                    Text("Create Account", color = ecoBrand,
                         style = MaterialTheme.typography.bodySmall)
                 }
             }

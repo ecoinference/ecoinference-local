@@ -21,6 +21,7 @@ import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.services.UserProfileService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.ecoAccent
 import androidx.compose.ui.platform.LocalContext
 
@@ -43,7 +44,7 @@ fun ProfileScreen() {
                     containerColor = MaterialTheme.colorScheme.background),
                 actions = {
                     TextButton(onClick = { showEdit = true }) {
-                        Text("Edit", color = EcoColors.Green)
+                        Text("Edit", color = ecoBrand)
                     }
                 },
             )
@@ -108,7 +109,7 @@ fun ProfileScreen() {
                 overlineContent = { Text("Impact", color = ecoAccent) },
                 headlineContent = { Text("On-device responses") },
                 trailingContent = {
-                    Text("$localCount", color = EcoColors.Green,
+                    Text("$localCount", color = ecoBrand,
                         style = MaterialTheme.typography.titleMedium)
                 },
             )
@@ -125,7 +126,7 @@ fun ProfileScreen() {
                     headlineContent = { Text("On-device rate") },
                     trailingContent = {
                         Text("$pct%",
-                            color = if (pct >= 80) EcoColors.Green else MaterialTheme.colorScheme.onSurface,
+                            color = if (pct >= 80) ecoBrand else MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.titleMedium)
                     },
                 )
@@ -134,7 +135,7 @@ fun ProfileScreen() {
                     headlineContent = { Text("Share my stats") },
                     leadingContent  = {
                         Icon(Icons.Default.Share, contentDescription = null,
-                            tint = EcoColors.Green)
+                            tint = ecoBrand)
                     },
                     modifier = Modifier.clickable {
                         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -201,7 +202,7 @@ fun AvatarImage(urlString: String?, size: Dp) {
         Icon(
             Icons.Default.Person,
             contentDescription = "Avatar",
-            tint     = EcoColors.Green,
+            tint     = ecoBrand,
             modifier = Modifier.size(size),
         )
     }

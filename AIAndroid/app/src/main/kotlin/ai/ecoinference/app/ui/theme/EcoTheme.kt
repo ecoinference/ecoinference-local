@@ -88,6 +88,22 @@ private val LightColors = lightColorScheme(
 val ecoAccent: Color
     @Composable get() = if (isSystemInDarkTheme()) EcoColors.DimGreen else EcoColors.DeepGreen
 
+/**
+ * Brand green for **foreground content** — text, icons, progress indicators — drawn
+ * on a theme-coloured surface. Resolves to [EcoColors.Green] in dark (unchanged) and
+ * [EcoColors.DeepGreen] in light.
+ *
+ * [EcoColors.Green] itself is fine as a *fill* — button backgrounds, slider tracks,
+ * switch tracks, borders — because those pair it with their own dark content colour.
+ * As foreground on a light surface it only reaches about 2.2:1, below the 4.5:1 WCAG
+ * AA needs for text and the 3:1 for UI components. Use this instead in those places.
+ *
+ * Distinct from [ecoAccent], which is the DimGreen-based secondary accent; this one
+ * keeps the stronger primary brand green in dark mode.
+ */
+val ecoBrand: Color
+    @Composable get() = if (isSystemInDarkTheme()) EcoColors.Green else EcoColors.DeepGreen
+
 @Composable
 fun EcoInferenceTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

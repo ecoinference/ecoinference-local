@@ -40,6 +40,7 @@ import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.ToolResult
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -804,7 +805,7 @@ internal fun PythonTestScreen(
                             CircularProgressIndicator(
                                 modifier    = Modifier.size(28.dp),
                                 strokeWidth = 2.5.dp,
-                                color       = EcoColors.Green,
+                                color       = ecoBrand,
                             )
                         }
                     } else {
@@ -816,7 +817,7 @@ internal fun PythonTestScreen(
                             Icon(
                                 Icons.Default.PlayCircleOutline,
                                 contentDescription = "Run all tests",
-                                tint               = if (modelLoaded) EcoColors.Green
+                                tint               = if (modelLoaded) ecoBrand
                                                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                 modifier           = Modifier.size(36.dp),
                             )
@@ -938,13 +939,13 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
     val (catLabel, catColor) = when {
         tc.isModelState      -> "Model"     to Color(0xFF42A5F5)  // blue
         tc.isInferenceDirect -> "Inference" to Color(0xFFAB47BC)  // purple
-        tc.isPythonE2E       -> "Python"    to EcoColors.Green
-        else                 -> "Python"    to EcoColors.Green
+        tc.isPythonE2E       -> "Python"    to ecoBrand
+        else                 -> "Python"    to ecoBrand
     }
 
     val (icon, iconColor) = when (state.status) {
         TestStatus.Pending -> Icons.Default.RadioButtonUnchecked to Color.Gray
-        TestStatus.Running -> Icons.Default.HourglassTop         to EcoColors.Green
+        TestStatus.Running -> Icons.Default.HourglassTop         to ecoBrand
         TestStatus.Passed  -> Icons.Default.CheckCircle          to Color(0xFF4CAF50)
         TestStatus.Failed  -> Icons.Default.Cancel               to MaterialTheme.colorScheme.error
         TestStatus.Skipped -> Icons.Default.RemoveCircleOutline  to Color(0xFFFFA000)
@@ -977,7 +978,7 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
                     CircularProgressIndicator(
                         modifier    = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color       = EcoColors.Green,
+                        color       = ecoBrand,
                     )
                 } else {
                     Icon(icon, contentDescription = null, tint = iconColor,
@@ -1041,7 +1042,7 @@ private fun TestTile(state: TestState, isRunning: Boolean) {
                     Text(
                         if (expanded) "▲" else "▼",
                         style    = MaterialTheme.typography.labelSmall,
-                        color    = EcoColors.Green,
+                        color    = ecoBrand,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.models.ModelInfo
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.ecoAccent
 
 @Composable
@@ -110,7 +111,7 @@ fun ModelCard(
                 LinearProgressIndicator(
                     progress     = { downloadProgress / 100f },
                     modifier     = Modifier.fillMaxWidth(),
-                    color        = EcoColors.Green,
+                    color        = ecoBrand,
                     trackColor   = MaterialTheme.colorScheme.outline,
                 )
                 Row(

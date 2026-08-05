@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.AppState
 import ai.ecoinference.app.DeepLinkAction
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.ecoAccent
 
 /**
@@ -152,7 +153,7 @@ private fun HelpSection(title: String, content: @Composable ColumnScope.() -> Un
 @Composable
 private fun HelpRow(icon: ImageVector, title: String, body: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = EcoColors.Green,
+        Icon(icon, contentDescription = null, tint = ecoBrand,
             modifier = Modifier.size(22.dp).padding(top = 2.dp))
         Column {
             Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
@@ -168,7 +169,7 @@ private fun HelpRow(icon: ImageVector, title: String, body: String) {
 @Composable
 private fun HelpRowCloudSetup(icon: ImageVector, title: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = EcoColors.Green,
+        Icon(icon, contentDescription = null, tint = ecoBrand,
             modifier = Modifier.size(22.dp).padding(top = 2.dp))
         Column {
             Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
@@ -227,6 +228,6 @@ private fun ExampleCard(text: String, onTry: (String) -> Unit) {
             modifier = Modifier.weight(1f),
         )
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Try it",
-            tint = EcoColors.Green, modifier = Modifier.size(18.dp))
+            tint = ecoBrand, modifier = Modifier.size(18.dp))
     }
 }

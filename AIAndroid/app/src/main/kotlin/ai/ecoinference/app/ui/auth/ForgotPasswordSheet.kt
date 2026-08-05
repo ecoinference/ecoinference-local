@@ -13,6 +13,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +42,7 @@ fun ForgotPasswordSheet(onDismiss: () -> Unit) {
 
             if (sent) {
                 Icon(Icons.Default.MarkEmailRead, contentDescription = null,
-                    tint = EcoColors.Green, modifier = Modifier.size(56.dp))
+                    tint = ecoBrand, modifier = Modifier.size(56.dp))
                 Text("Check your email", style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
                 Text("A reset link was sent to $email.",

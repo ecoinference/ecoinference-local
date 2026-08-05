@@ -26,6 +26,7 @@ import ai.ecoinference.app.services.AuthService
 import ai.ecoinference.app.services.StorageService
 import ai.ecoinference.app.services.UserProfileService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +99,7 @@ fun EditProfileSheet(onDismiss: () -> Unit) {
                         }
                     },
                     enabled = !isLoading && displayName.isNotBlank(),
-                ) { Text("Save", color = EcoColors.Green) }
+                ) { Text("Save", color = ecoBrand) }
             }
 
             // ── Avatar picker ─────────────────────────────────────────────────
@@ -116,7 +117,7 @@ fun EditProfileSheet(onDismiss: () -> Unit) {
                     Box(Modifier.clickable { imagePicker.launch("image/*") })
                 }
                 Icon(Icons.Default.Edit, contentDescription = "Pick avatar",
-                    tint = EcoColors.Green,
+                    tint = ecoBrand,
                     modifier = Modifier.size(24.dp)
                         .clickable { imagePicker.launch("image/*") })
             }
@@ -151,7 +152,7 @@ fun EditProfileSheet(onDismiss: () -> Unit) {
                     color = MaterialTheme.colorScheme.error)
             }
             if (isLoading) {
-                CircularProgressIndicator(color = EcoColors.Green)
+                CircularProgressIndicator(color = ecoBrand)
             }
         }
     }

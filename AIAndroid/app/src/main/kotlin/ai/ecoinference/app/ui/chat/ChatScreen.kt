@@ -46,6 +46,7 @@ import ai.ecoinference.app.tools.ToolRegistry
 import ai.ecoinference.app.tools.ToolResult
 import ai.ecoinference.app.tools.runAgentLoop
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.ecoAccent
 import ai.ecoinference.app.ui.theme.EcoWordmark
 import kotlinx.coroutines.Job
@@ -553,7 +554,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     Icon(
                         Icons.Default.DeleteSweep,
                         contentDescription = "Clear chat",
-                        tint     = EcoColors.Green,
+                        tint     = ecoBrand,
                         modifier = Modifier.size(26.dp),
                     )
                 }
@@ -642,7 +643,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         CircularProgressIndicator(
                             modifier    = Modifier.size(14.dp),
                             strokeWidth = 2.dp,
-                            color       = EcoColors.Green,
+                            color       = ecoBrand,
                         )
                         Spacer(Modifier.width(10.dp))
                         Text("Loading model, please wait…",
@@ -692,7 +693,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     imagePicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
                 }) {
                     Icon(Icons.Default.AttachFile, contentDescription = "Attach image",
-                        tint = EcoColors.Green)
+                        tint = ecoBrand)
                 }
             }
 
@@ -748,7 +749,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 ) {
                     Icon(Icons.Default.Send, contentDescription = "Send",
                         tint = if (modelReady && (inputText.isNotBlank() || pendingImageBytes != null))
-                                   EcoColors.Green
+                                   ecoBrand
                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
                 }
             }

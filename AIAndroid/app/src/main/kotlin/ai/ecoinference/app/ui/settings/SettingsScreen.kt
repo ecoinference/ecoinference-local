@@ -30,6 +30,7 @@ import ai.ecoinference.app.BuildConfig
 import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.services.SettingsService
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -224,7 +225,7 @@ fun SettingsScreen(
                     ListItem(
                         leadingContent  = {
                             Icon(Icons.Default.Science, contentDescription = null,
-                                tint = EcoColors.Green)
+                                tint = ecoBrand)
                         },
                         headlineContent = {
                             Text("Inference Tests",
@@ -261,7 +262,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Icon(Icons.Default.Cloud, contentDescription = null,
-                                tint = EcoColors.Green, modifier = Modifier.size(20.dp))
+                                tint = ecoBrand, modifier = Modifier.size(20.dp))
                             Text("Router Rules",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface)
@@ -273,7 +274,7 @@ fun SettingsScreen(
                             Text(refreshMsg,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (refreshMsg.startsWith("Updated"))
-                                    EcoColors.Green
+                                    ecoBrand
                                 else
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                         }

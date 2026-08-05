@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import ai.ecoinference.app.router.RouterTier
 import ai.ecoinference.app.ui.theme.EcoColors
+import ai.ecoinference.app.ui.theme.ecoBrand
 import ai.ecoinference.app.ui.theme.ecoAccent
 
 /**
@@ -199,7 +200,7 @@ private fun TierBadge(tier: RouterTier, reason: String? = null) {
         // #5E5CE6 — Apple's systemIndigo (dark variant), matching iOS's Color.indigo
         // as it resolves in this app's dark theme. Keep in sync with ChatView.swift.
         RouterTier.CLOUD -> Triple("Cloud", Icons.Default.Cloud, Color(0xFF5E5CE6))
-        RouterTier.LOCAL -> Triple("Local", Icons.Default.Memory, EcoColors.Green)
+        RouterTier.LOCAL -> Triple("Local", Icons.Default.Memory, ecoBrand)
     }
     var showReason by remember { mutableStateOf(false) }
 
