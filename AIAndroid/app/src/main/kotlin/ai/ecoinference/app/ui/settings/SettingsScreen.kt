@@ -1,6 +1,7 @@
 package ai.ecoinference.app.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
@@ -189,7 +190,8 @@ fun SettingsScreen(
 
             // ── Unload model ──────────────────────────────────────────────────
             if (modelLoaded) {
-                Text("Loaded: ${loadedModelId ?: ""}", color = EcoColors.DimGreen,
+                Text("Loaded: ${loadedModelId ?: ""}",
+                    color = if (isSystemInDarkTheme()) EcoColors.DimGreen else EcoColors.DeepGreen,
                     style = MaterialTheme.typography.bodySmall)
                 OutlinedButton(
                     onClick = { appState.unloadModel() },
@@ -346,5 +348,12 @@ fun SettingsScreen(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelLarge, color = EcoColors.DimGreen)
+    // DimGreen only works on the dark scheme's near-black surfaces; on the light
+    // scheme it's pale-green-on-pale-green. Mirrors the isDark branch EcoTheme
+    // already uses for inferenceColor.
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (isSystemInDarkTheme()) EcoColors.DimGreen else EcoColors.DeepGreen,
+    )
 }

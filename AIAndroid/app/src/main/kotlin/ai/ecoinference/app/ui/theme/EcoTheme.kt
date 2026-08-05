@@ -20,7 +20,13 @@ import androidx.compose.ui.Alignment
 
 object EcoColors {
     val Green       = Color(0xFF22C55E)   // main brand green
-    val DimGreen    = Color(0xFF4ADE80)   // lighter accent
+    val DimGreen    = Color(0xFF4ADE80)   // lighter accent — DARK THEME ONLY (see DeepGreen)
+    // Light-theme counterpart to DimGreen. DimGreen is a pale accent picked to sit on the
+    // dark scheme's near-black surfaces; on the light scheme's pale-green surfaces it drops
+    // to roughly 1.5:1 contrast and is effectively unreadable. This is the same hue family
+    // but dark enough to pass WCAG AA on both light surfaces (~6.4:1 on LightInner, ~5.9:1
+    // on LightOuter), so accent text stays green rather than falling back to plain body text.
+    val DeepGreen   = Color(0xFF166534)
     val Teal        = Color(0xFF14B8A6)   // teal / .ai suffix
     val DarkInner   = Color(0xFF0A160E)   // radial centre / scaffold bg
     val DarkOuter   = Color(0xFF040806)   // radial edge
