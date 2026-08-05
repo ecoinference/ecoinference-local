@@ -25,15 +25,19 @@ usable for anything." Running the app involves several components with their own
 | Component | Terms | Notes |
 |---|---|---|
 | This source code | MPL 2.0 | What the LICENSE file covers |
-| Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source licence — includes a prohibited-use policy |
+| Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source licence — includes a prohibited-use policy. Redistribution requires providing the terms and a Notice file (see [NOTICE](NOTICE)) |
 | LiteRT-LM runtime | Google's terms | Prebuilt binaries, fetched separately, not in this repo |
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
-| Qwen models (NPU) | see model card | Upstream Qwen3 is Apache 2.0, but desktop consumes Qualcomm's GenieX-hosted variant (`qualcomm/Qwen3-8B`) — confirm its terms before relying on them |
+| Qwen3 8B / Qwen3-VL 4B (NPU) | **Apache 2.0** | Confirmed — upstream Qwen3 weights are Apache 2.0, permissive |
+| Llama 3.2 3B 16K (NPU) | **Llama 3.2 Community License** | Requires "Built with Llama" attribution and a Notice file (both present, see [NOTICE](NOTICE)) and compliance with [Meta's Acceptable Use Policy](https://www.llama.com/llama3_2/use-policy) |
+| GenieX (NPU orchestration CLI) | BSD 3-Clause | GenieX's own code and NOTICE file are permissive and don't cover QAIRT below |
+| **QAIRT / Qualcomm AI Engine Direct SDK** | **Unresolved** | The proprietary NPU runtime binaries GenieX downloads and runs. No publicly published redistribution license text was found — terms are gated behind Qualcomm's developer-portal click-through. **Do not assume redistribution rights are permissive** until this is confirmed directly with Qualcomm |
 
-The practical upshot: the Gemma terms travel with the model regardless of what this
-repository is licensed under, so the app as a whole carries use restrictions the code alone
-does not. If that matters for your use case, read the Gemma Terms of Use directly rather
-than assuming the MPL covers everything.
+The practical upshot: several models' and tools' terms travel with them regardless of what
+this repository is licensed under, so the app as a whole carries use restrictions and
+attribution obligations the code alone does not. If that matters for your use case, read
+each component's terms directly (linked above, plus [NOTICE](NOTICE)) rather than assuming
+the MPL covers everything — and treat the QAIRT SDK row as an open item, not a settled one.
 
 ---
 

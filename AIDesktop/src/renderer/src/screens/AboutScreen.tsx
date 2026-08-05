@@ -15,6 +15,7 @@ export default function AboutScreen(): JSX.Element {
       <p style={s.tagline}>Local AI, offline and private.</p>
       <div style={s.meta}>
         <p style={s.metaLine}>Local inference powered by llama.cpp</p>
+        <p style={s.metaLine}>Built with Llama</p>
         <p style={s.metaLine}>© {new Date().getFullYear()} EcoInference</p>
       </div>
     </div>
