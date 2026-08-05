@@ -102,7 +102,7 @@ fun SettingsScreen(
                 "Used by the router for requests that need a more capable cloud model. " +
                     "Local on-device inference always works without this key.",
                 style = MaterialTheme.typography.bodySmall,
-                color = EcoColors.NearWhite.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
@@ -329,14 +329,14 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface)
                 Text("Local AI, offline and private.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.NearWhite.copy(alpha = 0.6f))
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                 Spacer(Modifier.height(8.dp))
                 Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                     style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 Text("Local inference: Google LiteRT-LM",
                     style = MaterialTheme.typography.bodySmall,
-                    color = EcoColors.NearWhite.copy(alpha = 0.5f))
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
             Spacer(Modifier.height(16.dp))
         }
