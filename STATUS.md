@@ -43,10 +43,24 @@ Last updated: 2026-08-04, from the macOS/mobile machine.
   separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
   since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
   unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
-  remain in git history, get Firestore/Storage rules into the repo (now the biggest genuine
-  blocker — they're console-only today, so unreviewable and unversioned, and they're the
-  whole boundary protecting the project once its ID is public), and get the CLA legally
-  reviewed plus a CLA bot wired up. Details in local memory.
+  remain in git history, and get the CLA legally reviewed plus a CLA bot wired up. (Security
+  rules — previously the biggest blocker — are done; see below.) Details in local memory.
+- **Firestore + Storage security rules — written, committed and deployed (`49b9a43`).** They
+  were console-only before, so unreviewable and unversioned, and they're the whole boundary
+  protecting the project once its ID is public. Now in `firestore.rules` / `storage.rules`,
+  declared in `firebase.json`, derived from what the clients actually do (default deny; only
+  `users/{uid}` and `usernames/{username}` opened). Profiles are owner-only because they hold
+  `phoneNumber`; `usernames/` allows signed-out reads because sign-up checks availability
+  before the account exists; Storage now enforces the 4 MB / JPEG limits server-side rather
+  than only in `StorageService`.
+  **Deploying revealed that neither backend existed.** The CLI logged
+  `Creating the new Firestore database (default)…` — the database had never been created, which
+  is why `UserProfileService` was failing on every launch, silently. Storage's bucket likewise
+  had to be provisioned. **So profile sync and avatar upload have never worked.** Both need a
+  real end-to-end test. Note any account created before 2026-08-04 has an auth user but no
+  `users/{uid}` document.
+  CLI note: Storage has no `:rules` sub-target — use `--only firestore:rules` but plain
+  `--only storage`.
 - **Third-party licensing — all three resolved (`5b727d6`, `5c917ca`, `df6386e`).** None was
   a blocker; each had looked worse than it was.
   **LiteRT-LM is Apache 2.0** — confirmed from the upstream LICENSE and the published Android
