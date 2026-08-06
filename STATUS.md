@@ -43,11 +43,12 @@ Last updated: 2026-08-04, from the macOS/mobile machine.
   separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
   since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
   unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
-  remain in git history, get Firestore/Storage rules into the repo, verify Chaquopy's terms
-  (Android's Python runtime — the last unchecked third-party licence), and get the CLA
-  legally reviewed. Details in local memory.
-- **Third-party binary licensing — two of three resolved (`5b727d6`, `5c917ca`).** Neither
-  was a blocker; both had looked worse than they were.
+  remain in git history, get Firestore/Storage rules into the repo (now the biggest genuine
+  blocker — they're console-only today, so unreviewable and unversioned, and they're the
+  whole boundary protecting the project once its ID is public), and get the CLA legally
+  reviewed plus a CLA bot wired up. Details in local memory.
+- **Third-party licensing — all three resolved (`5b727d6`, `5c917ca`, `df6386e`).** None was
+  a blocker; each had looked worse than it was.
   **LiteRT-LM is Apache 2.0** — confirmed from the upstream LICENSE and the published Android
   POM — so binary redistribution is permitted. The real gap was attribution, now in
   [NOTICE](NOTICE) (upstream ships no NOTICE file of its own, so §4(d) doesn't apply).
@@ -56,6 +57,12 @@ Last updated: 2026-08-04, from the macOS/mobile machine.
   runtime from Qualcomm itself. That only becomes a constraint if anyone bundles GenieX or
   QAIRT into the installer — confirm rights with Qualcomm *before* starting that. The GenieX
   setup requirement is now documented in the README; without it the NPU models won't load.
+  **Chaquopy is MIT** — open source since 12.0.1, no licence key needed. It surfaced a wider
+  gap though: both apps embed CPython plus ~10 Python packages (29 resolved distributions on
+  iOS) that NOTICE didn't mention. All permissive, and the attribution requirement turns out
+  to be met already — every bundled distribution ships its own licence in its `.dist-info/`
+  directory. NOTICE now records that rather than duplicating ~30 licence texts that would go
+  stale on every rebuild.
 
 ### Recently completed (2026-07-30) — tagged `v2.17-android-image-history-fix`
 - **Android: fixed "Provided less images than expected" crash on the turn after any image
