@@ -1,8 +1,9 @@
 This repository (source code) is licensed under the Mozilla Public License 2.0 — see
-LICENSE. Several AI models fetched and run by the apps carry their own, separate license
-terms that travel with the model regardless of this repository's own license. This file
-exists to satisfy those models' own attribution/notice requirements; see README.md for
-the full breakdown of every component's terms.
+LICENSE. Several AI models fetched and run by the apps, and some third-party software
+distributed with or alongside them, carry their own separate license terms that travel
+with the component regardless of this repository's own license. This file exists to
+satisfy those components' attribution/notice requirements; see README.md for the full
+breakdown of every component's terms.
 
 ## Gemma models (Gemma 4 E4B, Gemma 4 12B — mac / Windows x64 desktop, iOS, Android)
 
@@ -22,3 +23,29 @@ https://www.llama.com/llama3_2/use-policy
 ## Qwen models (Qwen3 8B, Qwen3-VL 4B — Windows ARM64 desktop, via GenieX)
 
 Upstream Qwen3 weights are released by Alibaba Cloud under the Apache License 2.0.
+
+## LiteRT-LM (on-device inference runtime — iOS and Android)
+
+Copyright The LiteRT-LM Authors.
+
+Licensed under the Apache License, Version 2.0. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Source: https://github.com/google-ai-edge/LiteRT-LM
+
+How it reaches each platform:
+
+  - Android — the official Google artifact
+    `com.google.ai.edge.litertlm:litertlm-android`, resolved by Gradle at build time.
+    Not redistributed by this repository.
+  - iOS — prebuilt arm64 dylibs (libLiteRtLm, libGemmaModelConstraintProvider,
+    libLiteRtMetalAccelerator, libStreamProxy), fetched by AIiOS/download_frameworks.sh
+    and rewrapped as xcframeworks so Xcode can embed and sign them. The binaries
+    themselves are unmodified; only their packaging changes. These are currently sourced
+    from a third-party redistribution (the flutter_gemma project's release assets) rather
+    than from Google directly — permitted under the Apache 2.0 license, and noted here
+    for provenance.
+
+Apache 2.0 section 4(d) requires passing along an upstream NOTICE file where one exists.
+LiteRT-LM does not publish one, so there is no upstream notice text to reproduce.
