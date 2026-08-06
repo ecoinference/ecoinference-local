@@ -30,14 +30,27 @@ usable for anything." Running the app involves several components with their own
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
 | Qwen3 8B / Qwen3-VL 4B (NPU) | **Apache 2.0** | Confirmed — upstream Qwen3 weights are Apache 2.0, permissive |
 | Llama 3.2 3B 16K (NPU) | **Llama 3.2 Community License** | Requires "Built with Llama" attribution and a Notice file (both present, see [NOTICE](NOTICE)) and compliance with [Meta's Acceptable Use Policy](https://www.llama.com/llama3_2/use-policy) |
-| GenieX (NPU orchestration CLI) | BSD 3-Clause | GenieX's own code and NOTICE file are permissive and don't cover QAIRT below |
-| **QAIRT / Qualcomm AI Engine Direct SDK** | **Unresolved** | The proprietary NPU runtime binaries GenieX downloads and runs. No publicly published redistribution license text was found — terms are gated behind Qualcomm's developer-portal click-through. **Do not assume redistribution rights are permissive** until this is confirmed directly with Qualcomm |
+| GenieX (NPU orchestration CLI) | BSD 3-Clause | **Not bundled** — the user installs it themselves, and use is also subject to [Qualcomm's Terms of Use](https://www.qualcomm.com/site/terms-of-use), which they accept directly |
+| QAIRT / Qualcomm AI Engine Direct | Qualcomm's terms | **Not bundled, and not redistributed by this project** — GenieX downloads the runtime from Qualcomm's own infrastructure onto the user's machine. See the note below before changing that |
 
 The practical upshot: several models' and tools' terms travel with them regardless of what
 this repository is licensed under, so the app as a whole carries use restrictions and
 attribution obligations the code alone does not. If that matters for your use case, read
 each component's terms directly (linked above, plus [NOTICE](NOTICE)) rather than assuming
-the MPL covers everything — and treat the QAIRT SDK row as an open item, not a settled one.
+the MPL covers everything.
+
+> **Note on the Qualcomm NPU path.** Nothing from Qualcomm ships in this app. The packaged
+> Windows ARM64 build contains exactly one binary (`llama-server.exe`); `GenieXServer` simply
+> invokes `geniex` from `PATH`, the way a tool might shell out to `ffmpeg`. The user installs
+> GenieX from Qualcomm's own installer, and GenieX then fetches the QAIRT runtime from
+> Qualcomm's release and S3 infrastructure directly. So no redistribution happens here, and
+> QAIRT's redistribution terms don't currently bind this project.
+>
+> **That changes the moment anyone bundles GenieX or QAIRT into the installer** — a tempting
+> idea, since it would remove a manual setup step for users. Don't start that work before
+> confirming redistribution rights with Qualcomm: the terms are behind a developer-portal
+> click-through with no publicly published text, and they could rule the approach out
+> entirely.
 
 ---
 
@@ -123,6 +136,13 @@ Firebase project `ecoinference-28c31`, shared by all three clients:
   devices are out of scope). Gradle needs an explicit `JAVA_HOME`, e.g. Android Studio's
   bundled JBR.
 - **Desktop** — Node + Electron; a `llama-server` binary is bundled per platform.
+- **Desktop on Windows ARM64 / Snapdragon** — additionally requires
+  **[GenieX](https://github.com/qualcomm/GenieX) installed separately**, with `geniex` on
+  `PATH`. This platform runs the NPU-backed models instead of llama.cpp ones (llama.cpp's own
+  GPU backends don't work correctly on Adreno), and the app shells out to `geniex serve`
+  rather than bundling it — so **without it, the NPU models won't load**. Grab the Windows
+  ARM64 installer from GenieX's releases page; it pulls the QAIRT runtime itself on first
+  use. Use of GenieX is subject to [Qualcomm's Terms of Use](https://www.qualcomm.com/site/terms-of-use).
 
 ## Development
 
