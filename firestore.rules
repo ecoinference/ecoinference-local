@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// EcoInference Firestore security rules.
+//
+// Deliberately restrictive: this is the entire boundary between the public and
+// the project's user data, and the project ID is published in the apps' Firebase
+// config. Default is deny; only the two collections the apps actually use are
+// opened, and only for the exact operations they perform.
+//
+// Data model (see UserProfileService on either mobile client):
+//   users/{uid}            profile — id, username, displayName, bio, avatarURL?,
+//                          phoneNumber?, createdAt, updatedAt
+//   usernames/{username}   reservation doc, holding only { uid }, used to enforce
+//                          username uniqueness
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function unchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────────────────────
+    //
+    // Private to the owner. Profiles hold phoneNumber, so they are NOT world
+    // readable — if a public-profile or friending feature ever lands, add a
+    // separate collection holding only the fields meant to be public rather
+    // than loosening this one.
+    match /users/{uid} {
+
+      allow get: if isOwner(uid);
+      // No enumeration of the user base, ever.
+      allow list: if false;
+
+      allow create: if isOwner(uid)
+                    && request.resource.data.id == uid
+                    && request.resource.data.username is string
+                    && request.resource.data.username.size() >= 4
+                    && request.resource.data.username.size() <= 16
+                    && request.resource.data.username.matches('^[a-z0-9_]+$');
+
+      // The clients only ever edit displayName, bio, phoneNumber and avatarURL
+      // (plus updatedAt, injected by updateProfile). username and createdAt are
+      // pinned: username has a matching reservation doc in usernames/, and
+      // letting it drift here would desync the two and could strand or hijack a
+      // reservation. The UI has no username-edit affordance, so this only
+      // constrains a client that bypasses it.
+      allow update: if isOwner(uid)
+                    && unchanged('id')
+                    && unchanged('username')
+                    && unchanged('createdAt');
+
+      allow delete: if isOwner(uid);
+    }
+
+    // ── usernames/{username} ─────────────────────────────────────────────────
+    //
+    // Uniqueness reservations. Each doc holds only { uid }.
+    match /usernames/{username} {
+
+      // Readable while signed OUT, deliberately: the sign-up form checks
+      // availability before the account exists, so requiring auth here would
+      // break registration.
+      //
+      // Tradeoff, accepted knowingly: anyone can test whether a username is
+      // taken (inherent to any sign-up flow) and read the uid it maps to. A
+      // Firebase uid is an identifier, not a credential — every other read here
+      // is owner-gated, so learning one grants nothing. `list` stays closed, so
+      // the reservation table can't be dumped or enumerated. If username→uid
+      // linkage later becomes sensitive (e.g. once profiles are public), move
+      // this check behind a Cloud Function that returns only a boolean.
+      allow get: if true;
+      allow list: if false;
+
+      // Claim a name only for yourself, and only the uid field.
+      // `create` already fails if the doc exists, so this can't steal a name.
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['uid']);
+
+      // Reservations are immutable — release by deleting, then re-create.
+      allow update: if false;
+
+      // Only the holder can release their own reservation.
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Everything else ──────────────────────────────────────────────────────
+    // Any collection not named above is closed. New features must add their own
+    // explicit rule rather than inheriting access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
