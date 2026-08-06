@@ -73,6 +73,63 @@ read plainly to someone who doesn't know how the app works. Save the detail for 
 device where the change is device-dependent. Inference behaviour in particular often can't
 be trusted from a simulator.
 
+## Colours and theming (Android)
+
+Both themes are supported, and light mode is easy to break without noticing — the app was
+built dark-first, and a colour that looks right in dark mode is often invisible in light.
+Every one of these has happened:
+
+- Text hardcoded to `EcoColors.NearWhite` — correct in dark, where `onSurface` *is*
+  NearWhite; near-white on near-white in light.
+- Labels hardcoded to `EcoColors.DimGreen` — a pale accent meant for near-black surfaces;
+  about 1.5:1 on the light theme's pale-green ones.
+- `EcoColors.Green` used as text or an icon tint — about 2.2:1 in light, under the 4.5:1
+  WCAG AA wants for text and the 3:1 for UI components.
+
+### The rule
+
+**Anything drawn on a theme-coloured surface must resolve per-theme.** Reach for, in order:
+
+| Need | Use |
+|---|---|
+| Body text, icons | `MaterialTheme.colorScheme.onSurface` (`.copy(alpha=…)` to mute) |
+| Secondary accent (section labels, chips) | `ecoAccent` — DimGreen in dark, DeepGreen in light |
+| Brand green foreground (links, stats, active icons) | `ecoBrand` — Green in dark, DeepGreen in light |
+| Card / sheet background | `MaterialTheme.colorScheme.surface` |
+| Page background | `MaterialTheme.colorScheme.background` |
+| Dividers, borders | `MaterialTheme.colorScheme.outline` |
+
+`ecoAccent` and `ecoBrand` live in `ui/theme/EcoTheme.kt`. Both schemes are filled in
+slot-for-slot, so `colorScheme.surface` already gives `EcoColors.CardDark` in dark and
+`EcoColors.LightInner` in light — you rarely need a raw palette constant.
+
+### When a raw `EcoColors.*` constant *is* correct
+
+Two cases, and they're worth understanding rather than pattern-matching:
+
+**Fills.** `EcoColors.Green` as a button `containerColor`, slider thumb/track, switch track,
+or focused border is fine. Those pair it with their own content colour, so there's no
+contrast problem — only *foreground* uses are.
+
+**Content on a surface that's dark in both themes.** The user chat bubble is
+`EcoColors.Green` in both themes, so its `EcoColors.DarkInner` text is correct and must
+stay. Swapping that for a theme-aware colour would produce dark-on-dark in light mode.
+
+This is why a blanket find-and-replace is the wrong instinct here. **Background and
+foreground have to move together** — converting a card to a themed surface without
+converting its text turns "looks slightly off" into "unreadable", and vice versa.
+
+### Check both themes before you push
+
+```
+adb shell cmd uimode night no    # light
+adb shell cmd uimode night yes   # dark
+adb shell cmd uimode night auto  # restore
+```
+
+Screenshot both. Dark mode is the one that already worked, so it's the one a careless
+theming change silently regresses.
+
 ## Testing
 
 Both mobile apps have a **Settings → Developer → Inference Tests** screen that runs the
