@@ -13,11 +13,25 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-07-30, from the macOS/mobile machine.
+Last updated: 2026-08-04, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-08-04)
+- **Android light theme — fixed across five commits.** The app was built dark-first, so
+  colours picked for dark surfaces were hardcoded throughout and light mode ranged from
+  washed-out to fully invisible: text, section headers, cards, chat bubbles, dividers and
+  brand-green icons. Added `ecoAccent` / `ecoBrand` helpers plus `DeepGreen` / `LightBorder`,
+  and filled in the light scheme so it mirrors dark slot-for-slot. Dark mode is unchanged —
+  regression-checked by screenshot. **The convention is now documented in
+  [CONTRIBUTING.md](CONTRIBUTING.md)**, including the two cases where a hardcoded palette
+  colour is still correct (fills, and content on surfaces that are dark in both themes) —
+  worth reading before touching colours, since a blanket find-and-replace breaks those.
+- **Added `SECURITY.md`** — `CONTRIBUTING.md` had linked to it without it existing. Covers
+  reporting plus where the real attack surface is (on-device execution of model-generated
+  Python with network access, tool results as an injection vector, locally stored keys).
 
 ### Recently completed (2026-07-30, later) — open-sourcing prep
 - **Licensed under MPL 2.0**, plus `CONTRIBUTING.md` (with CLA rationale) and `TRADEMARK.md`.
@@ -29,8 +43,19 @@ Last updated: 2026-07-30, from the macOS/mobile machine.
   separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
   since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
   unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
-  remain in git history, get Firestore/Storage rules into the repo, verify third-party binary
-  redistribution terms, and get the CLA legally reviewed. Details in local memory.
+  remain in git history, get Firestore/Storage rules into the repo, verify Chaquopy's terms
+  (Android's Python runtime — the last unchecked third-party licence), and get the CLA
+  legally reviewed. Details in local memory.
+- **Third-party binary licensing — two of three resolved (`5b727d6`, `5c917ca`).** Neither
+  was a blocker; both had looked worse than they were.
+  **LiteRT-LM is Apache 2.0** — confirmed from the upstream LICENSE and the published Android
+  POM — so binary redistribution is permitted. The real gap was attribution, now in
+  [NOTICE](NOTICE) (upstream ships no NOTICE file of its own, so §4(d) doesn't apply).
+  **QAIRT/Qualcomm isn't redistributed at all** — the ARM64 build ships one binary
+  (`llama-server.exe`) and shells out to a user-installed `geniex` on PATH, which fetches the
+  runtime from Qualcomm itself. That only becomes a constraint if anyone bundles GenieX or
+  QAIRT into the installer — confirm rights with Qualcomm *before* starting that. The GenieX
+  setup requirement is now documented in the README; without it the NPU models won't load.
 
 ### Recently completed (2026-07-30) — tagged `v2.17-android-image-history-fix`
 - **Android: fixed "Provided less images than expected" crash on the turn after any image
@@ -191,6 +216,15 @@ Last updated: 2026-07-30, from the macOS/mobile machine.
 ## Desktop (Electron)
 
 ### Recently completed
+- **Offline use after first login — fixed, NEEDS VERIFYING ON WINDOWS (`614e7aa`).** Reported
+  as "doesn't function without internet; seems to require Firebase auth every time". Root
+  cause: the packaged app loads its renderer via `loadFile()`, so the origin is `file://`, and
+  `getAuth()` silently falls back to **in-memory** persistence when it can't confirm a storage
+  backend — throwing the session away on every quit. Online that's just an annoyance; offline
+  it's fatal, since signing in needs the network. `npm run dev` hid it entirely (http:// from
+  Vite persists fine). Fixed by calling `initializeAuth()` with an explicit persistence chain.
+  **Build-verified only — could not be reproduced from macOS.** Please test on the Windows
+  machine: sign in online, quit, disconnect, relaunch — you should land straight in the app.
 - **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `74410ae`)** — second
   GenieX/NPU model alongside the existing Qwen3-8B, confirmed working via the same backend
   architecture (Snapdragon X2 chip) with zero changes needed to `AppContext`/`ModelsScreen`.
