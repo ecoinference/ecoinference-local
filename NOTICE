@@ -49,3 +49,31 @@ How it reaches each platform:
 
 Apache 2.0 section 4(d) requires passing along an upstream NOTICE file where one exists.
 LiteRT-LM does not publish one, so there is no upstream notice text to reproduce.
+
+## Embedded Python runtime and packages (iOS and Android)
+
+Both mobile apps embed a CPython 3.10 runtime and a set of third-party Python packages, so
+that model-requested tool calls (`run_python`, charting, QR codes, astronomy, image editing)
+execute on-device rather than on a server.
+
+CPython and its standard library are used under the Python Software Foundation License.
+
+On Android the runtime is provided by **Chaquopy**, © Chaquo Ltd and contributors, licensed
+under the MIT License (https://github.com/chaquo/chaquopy). Chaquopy has been open source
+since version 12.0.1; no licence key is required. Packages are declared in
+`AIAndroid/app/build.gradle.kts` and installed at build time: numpy, pandas, scipy,
+matplotlib, plotly, astral, folium, shapely, qrcode and sympy, plus their dependencies.
+
+On iOS the runtime is built separately (mobile-forge) and embedded as `Python.xcframework`
+with packages under `app_packages/` — 29 distributions covering the same feature set, minus
+scipy and shapely.
+
+All of these packages are under permissive licences — BSD 2- and 3-Clause, MIT, MIT-CMU,
+Apache 2.0, and the PSF and matplotlib licences. None restricts commercial or private use.
+
+**Each package's own licence text ships alongside it**, in its `.dist-info/` directory inside
+the app bundle (for example `numpy-*.dist-info/LICENSE.txt`; matplotlib additionally carries
+eleven separate licence files for its bundled fonts and colour maps). That is how the
+retain-the-copyright-notice condition these licences impose is satisfied at distribution time
+— the notices travel with the binaries rather than being reproduced here, since the exact set
+and versions change whenever the dependency set is rebuilt.
