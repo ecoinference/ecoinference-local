@@ -13,11 +13,26 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-04, from the macOS/mobile machine.
+Last updated: 2026-08-10, from the macOS/mobile machine.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-08-10)
+- **`use tool` was broken for anything location- or time-dependent — fixed (`b502d69`).** The
+  Help screen's own moon-phase example failed. Four stacked bugs, the main one being that the
+  location preamble was passed to the code-gen *prompt* but never prepended to the code that
+  actually runs — so `user_latitude` and friends never existed at runtime, on both platforms.
+  Both Inference Tests screens always prepended it correctly, which is why the Python tests
+  passed while the feature was broken. Also: neither preamble bound `datetime` unaliased;
+  Android's `user_timezone` was a string where the prompt (and iOS) promised a tzinfo; and the
+  astral guidance had the wrong signature and no phase-name mapping — now derived from the
+  bundled astral 3.2 source and verified across a full lunar cycle. Verified on device: the
+  example returns the correct phase.
+- **Generated Python now collapsed behind a "Show Python" toggle (`40f4a0a`, Android).** The
+  snippet used to run longer than the screen with the answer off-view. **Build-verified only —
+  not yet eyeballed, and not yet ported to iOS.**
 
 ### Recently completed (2026-08-04)
 - **Android light theme — fixed across five commits.** The app was built dark-first, so
