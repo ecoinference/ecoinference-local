@@ -455,8 +455,17 @@ struct ChatView: View {
                 // or the interpreter faults), but the user must never be left
                 // staring at a stuck spinner indefinitely — see the earlier
                 // stuck-keyboard lesson this session on always having a way out.
+                // The preamble must be prepended to the code that actually RUNS, not
+                // just described to the model. buildToolPrompt() only tells the model
+                // that user_latitude/user_longitude/user_timezone are predefined —
+                // without this they never exist at runtime, so every location- or
+                // time-dependent `use tool` request died with "NameError: name
+                // 'user_latitude' is not defined". TestView always did this correctly,
+                // which is why its Python tests passed while the feature was broken.
+                // The displayed code bubble stays preamble-free: it's plumbing.
+                let runnableCode = (locPreamble.map { $0 + "\n" } ?? "") + code
                 let result: ToolResult = await withTaskGroup(of: ToolResult?.self) { group in
-                    group.addTask { await PythonRunner.execute(code: code) }
+                    group.addTask { await PythonRunner.execute(code: runnableCode) }
                     group.addTask {
                         try? await Task.sleep(nanoseconds: 30_000_000_000)
                         return nil

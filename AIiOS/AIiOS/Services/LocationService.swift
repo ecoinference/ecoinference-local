@@ -18,6 +18,7 @@ struct LocationResult {
 user_latitude = \(String(format: "%.6f", latitude))
 user_longitude = \(String(format: "%.6f", longitude))
 user_timezone_offset = \(String(format: "%.1f", offsetHours))
+import datetime
 import datetime as _dt
 user_timezone = _dt.timezone(_dt.timedelta(hours=\(String(format: "%.1f", offsetHours))))
 

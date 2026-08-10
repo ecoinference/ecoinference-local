@@ -173,7 +173,18 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 // user must never be left staring at a stuck spinner
                 // indefinitely (see the earlier stuck-keyboard lesson this
                 // session on always having a way out).
-                val result = withTimeoutOrNull(30_000) { PythonRunner.execute(code) }
+                // The preamble must be prepended to the code that actually RUNS, not
+                // just described to the model. buildToolPrompt() only tells the model
+                // that user_latitude/user_longitude/user_timezone are predefined —
+                // without this line they never exist at runtime, so every
+                // location- or time-dependent `use tool` request died with
+                // "NameError: name 'user_latitude' is not defined". The Inference
+                // Tests screen always did this correctly, which is why its Python
+                // tests passed while the user-facing feature was broken.
+                // Displayed code stays preamble-free: it's plumbing, not the answer.
+                val result = withTimeoutOrNull(30_000) {
+                    PythonRunner.execute(locPreamble + "\n" + code)
+                }
                     ?: ToolResult.Text("⚠️ Execution is taking longer than expected (30s+) — it may still be running in the background, but won't be shown here.")
                 messages = messages.dropLast(1) + when (result) {
                     is ToolResult.Image -> ChatMessage(role = "assistant", text = result.caption, chartBytes = result.bytes)

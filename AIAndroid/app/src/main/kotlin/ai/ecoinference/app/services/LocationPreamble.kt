@@ -44,8 +44,34 @@ object LocationPreamble {
             }
         }
 
-    fun build(lat: Double, lon: Double, tzId: String, tzOffset: Double) =
-        "user_latitude = $lat\nuser_longitude = $lon\nuser_timezone = \"$tzId\"\nuser_timezone_offset = $tzOffset\n"
+    /**
+     * Python preamble prepended to every generated snippet. Must stay in sync with
+     * iOS's LocationService.pythonPreamble — the code-gen prompt describes one
+     * contract to the model and both platforms have to honour it.
+     *
+     * Two things here are load-bearing:
+     *
+     *  - `datetime` is imported *unaliased*. The prompt tells the model to call
+     *    `datetime.date.today()`, and models routinely emit that without also
+     *    emitting `import datetime` — which used to fail with
+     *    "NameError: name 'datetime' is not defined" (seen live on E4B for the
+     *    Help screen's moon-phase example). Binding it here makes the generated
+     *    code work whether or not the model remembers the import.
+     *  - `user_timezone` is a real tzinfo, not a string. The prompt documents it
+     *    as `tzinfo` and astral is called as `sun(..., tzinfo=user_timezone)`;
+     *    this used to emit the zone *name* as a string, so any such call broke on
+     *    Android while working on iOS. Built from the raw offset rather than
+     *    zoneinfo, which needs tzdata that isn't bundled.
+     */
+    fun build(lat: Double, lon: Double, tzId: String, tzOffset: Double) = """
+        user_latitude = $lat
+        user_longitude = $lon
+        user_timezone_offset = $tzOffset
+        user_timezone_name = "$tzId"
+        import datetime
+        import datetime as _dt
+        user_timezone = _dt.timezone(_dt.timedelta(hours=$tzOffset))
+    """.trimIndent() + "\n"
 
     fun default() =
         build(41.8450, -91.7026, "America/Chicago", -6.0)
