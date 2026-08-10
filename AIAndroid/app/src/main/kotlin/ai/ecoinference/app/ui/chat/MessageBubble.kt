@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -136,15 +138,52 @@ fun MessageBubble(message: ChatMessage, onRetryWithCloud: (() -> Unit)? = null) 
 
             // ── Text ───────────────────────────────────────────────────────
             if (message.text.isNotEmpty()) {
-                Text(
-                    text       = message.text,
-                    color      = if (isUser) EcoColors.DarkInner
-                                 else if (isTool) MaterialTheme.colorScheme.onSurfaceVariant
-                                 else MaterialTheme.colorScheme.onSurface,
-                    fontSize   = if (isTool) 12.sp else 15.sp,
-                    lineHeight = if (isTool) 17.sp else 22.sp,
-                    fontFamily = if (isCode) FontFamily.Monospace else FontFamily.Default,
-                )
+                if (isCode && !message.isStreaming) {
+                    // Generated Python is collapsed by default. It's how the answer
+                    // was reached, not the answer — and a full snippet dwarfs the
+                    // result underneath it. Still one tap away for anyone who wants
+                    // to check the working.
+                    var expanded by remember(message.text) { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier
+                            .clickable { expanded = !expanded }
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint     = ecoAccent,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            if (expanded) "Hide Python" else "Show Python",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = ecoAccent,
+                        )
+                    }
+                    if (expanded) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text       = message.text,
+                            color      = MaterialTheme.colorScheme.onSurface,
+                            fontSize   = 13.sp,
+                            lineHeight = 19.sp,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
+                } else {
+                    Text(
+                        text       = message.text,
+                        color      = if (isUser) EcoColors.DarkInner
+                                     else if (isTool) MaterialTheme.colorScheme.onSurfaceVariant
+                                     else MaterialTheme.colorScheme.onSurface,
+                        fontSize   = if (isTool) 12.sp else 15.sp,
+                        lineHeight = if (isTool) 17.sp else 22.sp,
+                        fontFamily = if (isCode) FontFamily.Monospace else FontFamily.Default,
+                    )
+                }
             }
 
             // ── Streaming indicator ────────────────────────────────────────
