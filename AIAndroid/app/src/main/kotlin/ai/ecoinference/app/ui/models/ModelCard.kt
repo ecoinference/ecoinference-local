@@ -1,5 +1,7 @@
 package ai.ecoinference.app.ui.models
 
+import android.app.ActivityManager
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.ecoinference.app.models.ModelInfo
@@ -36,6 +39,45 @@ fun ModelCard(
 ) {
     var showGpuDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showRamWarning by remember { mutableStateOf(false) }
+
+    // Total installed RAM, rounded to MB. Read once — it can't change at runtime.
+    val context = LocalContext.current
+    val deviceRamMb = remember {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val mi = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+        (mi.totalMem / (1024 * 1024)).toInt()
+    }
+    val ramShortfall = model.minRamMb > 0 && deviceRamMb < model.minRamMb
+
+    // Deliberately a warning, not a hard block: E4B genuinely does load and run on
+    // an 8 GB-class device — it just does so by evicting most of the OS. Someone
+    // testing on purpose should be able to proceed; someone tapping Load casually
+    // should be told first, because the failure mode (other apps dying, screen
+    // blanking) looks like a device fault rather than a deliberate trade.
+    if (showRamWarning) {
+        AlertDialog(
+            onDismissRequest = { showRamWarning = false },
+            title            = { Text("${model.displayName} may not fit") },
+            text             = {
+                Text(
+                    "This model wants about ${model.minRamMb / 1000} GB of RAM and this " +
+                    "device has ${"%.1f".format(deviceRamMb / 1000f)} GB.\n\n" +
+                    "It will probably still load, but it can push other apps out of memory — " +
+                    "you may see them restart, or the screen briefly go blank. A smaller " +
+                    "model will run more comfortably here."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showRamWarning = false; showGpuDialog = true }) {
+                    Text("Load anyway")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRamWarning = false }) { Text("Cancel") }
+            },
+        )
+    }
 
     if (showDeleteConfirm) {
         AlertDialog(
@@ -184,7 +226,7 @@ fun ModelCard(
                     else -> {
                         // Downloaded, not loaded
                         Button(
-                            onClick  = { showGpuDialog = true },
+                            onClick  = { if (ramShortfall) showRamWarning = true else showGpuDialog = true },
                             enabled  = !isLoading && !isOtherLoading,
                             colors   = ButtonDefaults.buttonColors(containerColor = EcoColors.Green,
                                 contentColor = EcoColors.DarkInner),

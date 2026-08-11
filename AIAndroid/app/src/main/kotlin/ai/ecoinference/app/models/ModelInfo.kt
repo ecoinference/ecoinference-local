@@ -26,6 +26,22 @@ data class ModelInfo(
     @SerialName("supports_image_input") val supportsImageInput: Boolean = supportsVision,
     /** KV-cache token budget. Must not exceed the model's compiled limit. */
     @SerialName("max_context_tokens") val maxContextTokens: Int = 4096,
+
+    /**
+     * Total device RAM, in MB, below which this model is impractical.
+     *
+     * This is *installed* RAM, not free RAM — the check is a coarse "is this class
+     * of device suitable at all", not a moment-in-time availability test. Measured
+     * on a 7.6 GB Lenovo TB336FU (2026-08-11): E4B loads and runs, but sits at
+     * ~5.15 GB resident, leaves ~1 GB free, pushes 2.3 GB into swap, and provokes
+     * the system memory killer into terminating essentially every other app on the
+     * device — the user saw the screen blank when the launcher was killed. It
+     * "works" only by evicting everything else, which isn't a configuration worth
+     * shipping. 8 GB installed is the practical floor.
+     *
+     * 0 means no constraint.
+     */
+    @SerialName("min_ram_mb") val minRamMb: Int = 0,
     // Live state — populated by AppState before presenting to the UI.
     val downloaded: Boolean = false,
     val loaded: Boolean = false,

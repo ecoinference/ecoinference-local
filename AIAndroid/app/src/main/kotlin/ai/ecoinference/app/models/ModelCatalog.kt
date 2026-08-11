@@ -31,10 +31,12 @@ object ModelCatalog {
         id               = "gemma4-e4b-it",
         displayName      = "Gemma 4 E4B",
         description      = "Gemma 4 effective-4B, instruction-tuned. " +
-                           "Best quality; needs ≥6 GB RAM and ~3.7 GB storage.",
+                           "Best quality, but needs a high-end device: 8 GB+ RAM and " +
+                           "~3.7 GB storage. On 8 GB devices it can crowd out other apps.",
         parameterCount   = "E4B",
         fileSizeMb       = 3659,
         fileName         = "gemma-4-E4B-it.litertlm",
+        minRamMb         = 8_000,
         licenseUrl       = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm",
         platform         = "android",
         gemmaVersion     = 4,
