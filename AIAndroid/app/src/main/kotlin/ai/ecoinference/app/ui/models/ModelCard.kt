@@ -99,7 +99,21 @@ fun ModelCard(
         AlertDialog(
             onDismissRequest = { showGpuDialog = false },
             title            = { Text("Load ${model.displayName}") },
-            text             = { Text("Use GPU acceleration?") },
+            // GPU isn't reliably the faster choice. Measured on a Mali-G57 MC2
+            // tablet: the GPU path held ~2.6 GB versus ~0.75 GB on CPU for the
+            // same model — the weights get copied into GPU memory instead of
+            // being mapped from the file — and it produced GPU fence timeouts
+            // under load. Big Adreno parts do benefit; small GPUs often don't.
+            // Steer the unsure user to the safer default rather than presenting
+            // two equal-looking options.
+            text             = {
+                Text(
+                    "Use GPU acceleration?\n\n" +
+                    "If you're not sure, start with CPU. It uses noticeably less " +
+                    "memory, and on devices with a smaller graphics chip it's often " +
+                    "the faster of the two anyway. You can always reload and compare."
+                )
+            },
             confirmButton    = {
                 TextButton(onClick = { showGpuDialog = false; onLoad(true)  }) { Text("GPU") }
             },
