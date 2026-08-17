@@ -109,9 +109,9 @@ fun ModelCard(
             text             = {
                 Text(
                     "Use GPU acceleration?\n\n" +
-                    "If you're not sure, start with CPU. It uses noticeably less " +
-                    "memory, and on devices with a smaller graphics chip it's often " +
-                    "the faster of the two anyway. You can always reload and compare."
+                    "If you're not sure, start with CPU. It uses much less memory, " +
+                    "which leaves more room for other apps. GPU may start answering " +
+                    "sooner on some devices — you can reload and compare."
                 )
             },
             confirmButton    = {

@@ -64,6 +64,7 @@ AIAndroid/   Android app    — Kotlin / Compose, LiteRT-LM via JNI, Chaquopy Py
 AIDesktop/   Desktop app    — Electron + React, llama.cpp (see also: separate repo docs)
 functions/   Firebase Functions — presigned model-download URLs, avatar uploads
 tests/       Cross-platform test assets
+docs/        Engineering notes and device-testing guide
 ```
 
 The three clients are **independent native implementations that share a backend**, not a
@@ -148,9 +149,20 @@ Firebase project `ecoinference-28c31`, shared by all three clients:
 
 ## Development
 
-`STATUS.md` is the cross-machine status board — read it before starting work, and update it
-after. This repo is worked on from three machines (macOS for mobile, two Windows machines
-for the desktop builds), so `git log` is often ahead of any one session's assumptions.
+Start here, in this order:
+
+| Doc | What it's for |
+|---|---|
+| [STATUS.md](STATUS.md) | Cross-machine status board — what's done, when, and by which commit. Read before starting, update after. |
+| [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md) | **Why the code looks the way it does.** Inference constraints, tool-calling contracts, theming rules, and the decisions that look arbitrary without context. Read before touching any of those. |
+| [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) | Build, install and debug commands per platform, the traps in each, measured performance numbers. |
+| [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) | Open items, parity gaps, deferred work, and known limitations that are *not* bugs. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution process, CLA, and the Android theming convention. |
+
+This repo is worked on from three machines (macOS for mobile, two Windows machines for the
+desktop builds), so `git log` is often ahead of any one session's assumptions — pull first.
 
 Both mobile apps have a **Settings → Developer → Inference Tests** screen that runs the
-smoke-test suite (inference, Python, cloud, router, vision) directly on-device.
+smoke-test suite (inference, Python, cloud, router, vision) directly on-device. Note that a
+green run doesn't prove a feature works end-to-end — see
+[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) for why.

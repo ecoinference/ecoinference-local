@@ -175,9 +175,9 @@ fun SettingsScreen(
                     Text("GPU Acceleration",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface)
-                    Text("Takes effect on next model load. If you're not sure, " +
-                         "leave this off — CPU uses less memory and is often faster " +
-                         "on devices with a smaller graphics chip.",
+                    Text("Takes effect on next model load. If you're not sure, leave " +
+                         "this off — CPU uses much less memory. GPU may start answering " +
+                         "sooner on some devices.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 }

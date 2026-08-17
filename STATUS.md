@@ -13,11 +13,45 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-10, from the macOS/mobile machine.
+Last updated: 2026-08-17, from the macOS/mobile machine.
+
+**Companion docs.** This file is *what happened and when*. Two others cover *why things are
+the way they are* — read them before touching inference, tool calling, theming or device
+work:
+- **[docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md)** — architecture, hard-won
+  constraints, and the reasoning behind decisions that look arbitrary from the code alone.
+- **[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md)** — build/install/debug commands per
+  platform, the traps in each, and measured performance numbers.
+- **[FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md)** — everything known to be incomplete,
+  deferred, or blocking.
 
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-08-17)
+- **Device-capability guardrails on Android, driven by real measurements on a Lenovo TB336FU
+  tablet (7.6 GB RAM, Mali-G57 MC2).** Loading E4B there caused the screen to blank and other
+  apps to be killed — the tablet was under genuine memory pressure, not faulting. E4B needs
+  roughly 8 GB *usable*, which an 8 GB-class device doesn't have once the OS takes its share.
+  Added `ModelInfo.minRamMb`, set E4B to 8000, and gated the Load button behind a warning
+  dialog that reads total device RAM. **Deliberately a warning, not a hard block** — E4B does
+  load and run there; it just does so by evicting the rest of the system, and someone testing
+  on purpose should be allowed to. E4B's catalog description now says so plainly too.
+- **CPU/GPU guidance corrected.** Same tablet, same model (E2B): **GPU held 2,589 MB PSS vs
+  CPU's 753 MB** — the weights are copied into GPU memory rather than mapped from the file —
+  and decode throughput was effectively identical (5.2 vs 5.1 chunks/s). GPU *did* reach first
+  token sooner (29.7 s vs 47.9 s). The load dialog and Settings now steer an unsure user to
+  CPU **on the memory argument only**. An earlier draft of this text claimed CPU is often
+  faster; that contradicted our own 2026-07-23 benchmark and was wrong — corrected before
+  shipping. Note this device is slow either way; the lever there is a smaller model, not
+  backend choice.
+- **Documentation migration — `docs/` created.** Durable engineering knowledge that had lived
+  only in a local assistant memory store (~1,900 lines, machine-local, not portable) is now in
+  the repo: `docs/ENGINEERING_NOTES.md` and `docs/DEVICE_TESTING.md`.
+  `FUTURE_ENHANCEMENTS.md` was rewritten — it had still described a Morse-code receiver for
+  the Flutter version of the app, referencing `pubspec.yaml` and a `camera` plugin that no
+  longer exist. Prior STATUS entries pointing at "local memory" now point at `docs/` instead.
 
 ### Recently completed (2026-08-10)
 - **`use tool` was broken for anything location- or time-dependent — fixed (`b502d69`).** The
@@ -59,7 +93,8 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
   since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
   unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
   remain in git history, and get the CLA legally reviewed plus a CLA bot wired up. (Security
-  rules — previously the biggest blocker — are done; see below.) Details in local memory.
+  rules — previously the biggest blocker — are done; see below.) Full list in
+  [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
 - **Firestore + Storage security rules — written, committed and deployed (`49b9a43`).** They
   were console-only before, so unreviewable and unversioned, and they're the whole boundary
   protecting the project once its ID is public. Now in `firestore.rules` / `storage.rules`,
@@ -134,8 +169,8 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
   answer; not diagnosable from source alone. Instead added a plain-language note under the
   Inference Tests summary bar, both platforms, shown whenever a test fails, so a partial-run
   failure doesn't read as a regression. **Verified 2026-07-29 from a clean device restart:
-  full 27-test suite — 26 passed, 1 skipped, 0 failed.** Full writeup in local memory
-  `project_gemma4pilot.md`, not this repo.
+  full 27-test suite — 26 passed, 1 skipped, 0 failed.** Full writeup in
+  [docs/ENGINEERING_NOTES.md §2](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-28, later)
 - **New Help tab, both platforms** — new bottom-nav tab explaining EcoInference's
@@ -171,8 +206,8 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
   execution timeout and non-code/truncation detection so a bad generation never leaves the user
   stuck or executes obvious garbage. Full port to Android (`use tool`/`list tools` detection,
   compact prompt, execution, new "code"/"tool" message-bubble styles) worked on the first
-  live-device attempt, since all the hard debugging happened on iOS first. Full writeup with
-  exact log evidence in local memory `project_gemma4pilot.md`, not this repo.
+  live-device attempt, since all the hard debugging happened on iOS first. Full writeup in
+  [docs/ENGINEERING_NOTES.md §3](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-27)
 - **About section on Settings screen, both platforms** — replaces iOS's bare version-only row
@@ -212,7 +247,7 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
   as dangling history on the next send (no paired assistant reply), causing a native
   "Provided less images than expected in the prompt" error — fixed by dropping the whole
   cancelled (user, assistant) pair from history, not just the empty assistant half. Full
-  writeup with exact log evidence in local memory `project_gemma4pilot.md`, not this repo.
+  writeup in [docs/ENGINEERING_NOTES.md §2](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-24)
 - Delete confirmation dialog on Models screen, both platforms (`83f2dbb`).
@@ -244,8 +279,8 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
   started.** MLX (Apple's on-device ML framework, Metal-native) could potentially run vision
   on `gemma-4-e4b-it-4bit` (5.18 GB on `mlx-community`) where LiteRT-LM currently can't
   (SigLIP ops not XNNPack-delegatable). Target device discussed: iPad Pro M5, 16GB. No
-  prototype built yet — explicit "hold off, return to later." Full model shortlist and
-  reasoning in local memory `project_gemma4pilot.md`, not this repo.
+  prototype built yet — explicit "hold off, return to later." See
+  [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
 
 ---
 
@@ -294,7 +329,8 @@ Last updated: 2026-08-10, from the macOS/mobile machine.
 - Two real bugs found in PocketPal AI itself via hands-on testing (interrupted-generation
   repetition loop on backgrounding; GPU/Adreno decode hang) — not yet filed upstream, user
   opted to hold for now.
-- Full writeup: local memory `reference_pocketpal_ai.md` (not part of this repo).
+- Both are upstream's bugs, not ours. The transferable lessons (backgrounding behaviour,
+  Adreno GPU decode) are folded into [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md).
 
 ## Reference: AIFlutter viability test (untracked in this repo, `AIFlutter/`)
 
