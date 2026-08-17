@@ -64,7 +64,7 @@ AIAndroid/   Android app    — Kotlin / Compose, LiteRT-LM via JNI, Chaquopy Py
 AIDesktop/   Desktop app    — Electron + React, llama.cpp (see also: separate repo docs)
 functions/   Firebase Functions — presigned model-download URLs, avatar uploads
 tests/       Cross-platform test assets
-docs/        Engineering notes and device-testing guide
+docs/        Engineering notes, case studies, infrastructure, prior art
 ```
 
 The three clients are **independent native implementations that share a backend**, not a
@@ -156,8 +156,9 @@ Start here, in this order:
 | [STATUS.md](STATUS.md) | Cross-machine status board — what's done, when, and by which commit. Read before starting, update after. |
 | [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md) | **Why the code looks the way it does.** Inference constraints, tool-calling contracts, theming rules, and the decisions that look arbitrary without context. Read before touching any of those. |
 | [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) | Build, install and debug commands per platform, the traps in each, measured performance numbers. |
+| [docs/](docs/) | Six more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale. See the [index](docs/README.md). |
 | [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) | Open items, parity gaps, deferred work, and known limitations that are *not* bugs. |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution process, CLA, and the Android theming convention. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution process, CLA, project conventions, Android theming. |
 
 This repo is worked on from three machines (macOS for mobile, two Windows machines for the
 desktop builds), so `git log` is often ahead of any one session's assumptions — pull first.

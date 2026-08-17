@@ -73,6 +73,46 @@ read plainly to someone who doesn't know how the app works. Save the detail for 
 device where the change is device-dependent. Inference behaviour in particular often can't
 be trusted from a simulator.
 
+## Project conventions
+
+Small standing decisions that are easy to violate by accident, each with a reason.
+
+**`default_router_rules.json` must be byte-identical on iOS and Android.** iOS carries it as a
+bundle resource, Android in `assets/`. Copy it; don't let the two drift. The same prompt should
+route the same way on both platforms, and a diverged rule set produces confusing,
+hard-to-attribute differences.
+
+**Send the Gemini API key as an `x-goog-api-key` header, never a URL query parameter.** Query
+strings show up in logs, proxies and server-side request records. This applies to any new
+Google API integration.
+
+**Badge and brand colours must match across platforms exactly, by hex.** The cloud badge is
+`#5E5CE6` — Apple's systemIndigo dark variant, which SwiftUI's `Color.indigo` resolves to. Not
+Tailwind indigo (`#6366F1`); the near-miss was noticed. The local badge is `EcoColors.Green`.
+When adding any element that appears on both platforms, compare hex values rather than using
+rough equivalents.
+
+**Don't re-add a HuggingFace token.** Models are served from this project's own
+B2/Cloudflare infrastructure, not HuggingFace. `DownloadService` keeps an unused
+`authToken: String? = null` parameter as a seam if server auth is ever needed — wire through
+that rather than reintroducing user-facing token config.
+
+**Auth stays email/password only.** Adding Google or Apple sign-in triggers additional App
+Store review requirements. Usernames are `^[a-z0-9_]{4,16}$`.
+
+**Android builds need an explicit `JAVA_HOME`.** There's no system JDK on the primary dev
+machine — only Android Studio's bundled JBR:
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+```
+
+**Tags follow `v{semver}-{feature-slug}`**, e.g. `v1.9-auth-gemini-router`. Commit, push and
+tag are treated as one step when tagging a checkpoint.
+
+**`STATUS.md` gets updated as part of finishing work**, not as a separate favour. This repo is
+worked from three machines and it's the only sync mechanism between them.
+
 ## Colours and theming (Android)
 
 Both themes are supported, and light mode is easy to break without noticing — the app was
