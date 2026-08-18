@@ -61,6 +61,10 @@ patterns into another.
 port it to the other or say explicitly in the PR why it doesn't apply. Silent divergence
 between iOS and Android is the single most common source of bugs here.
 
+This rule governs **iOS ↔ Android within this repository only**. It does not extend to
+EcoInference Remote, which is a separate product with a different premise — see
+[docs/RELATED_PROJECTS.md](docs/RELATED_PROJECTS.md).
+
 **Explain non-obvious code in comments.** A lot of this codebase deals with native SDK
 quirks that look arbitrary without context — why a conversation is rebuilt a certain way,
 why an image is only attached to one turn, why a token limit is what it is. If you worked
@@ -69,9 +73,22 @@ something out the hard way, write down what you learned so the next person doesn
 **Don't put technical language in user-facing strings.** Error messages and UI copy should
 read plainly to someone who doesn't know how the app works. Save the detail for comments.
 
-**Verify before claiming it works.** Check the actual build output, and test on a real
-device where the change is device-dependent. Inference behaviour in particular often can't
-be trusted from a simulator.
+**Verify before claiming it works.** Grep the build tool's own literal marker —
+`BUILD SUCCESSFUL` / `BUILD SUCCEEDED` — rather than trusting an exit code or a "done"
+summary. And note that a Gradle run reporting `BUILD SUCCESSFUL in 1s` right after you edited
+a file compiled nothing; it found everything up to date. Both traps have already produced a
+"fixed" report against a stale artifact. Details in
+[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md#verifying-a-build-actually-built).
+
+Test on a real device where the change is device-dependent. Inference behaviour in particular
+can't be trusted from a simulator — and the simulator has a coordinate-scale trap of its own.
+
+**When something that worked breaks, isolate the change before theorising.** Ask what
+actually differs between last-known-good and now, revert that one thing, and rebuild to
+confirm or rule it out — one candidate at a time, since that also tells you which one was
+responsible. The instinct to reach for a plausible, larger explanation (an SDK upgrade, a
+toolchain change, a config rewrite) is usually wrong and always more expensive. There are
+several worked examples in [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md).
 
 ## Project conventions
 

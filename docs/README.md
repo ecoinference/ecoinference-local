@@ -12,6 +12,9 @@ establish and cheap to lose.
 | [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | B2, Cloudflare, DNS, Firebase, Remote Config, and the IAM state | Before touching storage, the CDN, or anything in the GCP console |
 | [PRIOR_ART.md](PRIOR_ART.md) | Why the clients are separate native implementations; what PocketPal AI taught us | Before proposing a shared codebase, or touching GPU backend selection |
 | [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md) | Why MPL, why a CLA, third-party licence findings, trademark strategy | Before revisiting the licence, or acting on trademark |
+| [MODEL_EVALUATIONS.md](MODEL_EVALUATIONS.md) | Models tested and *not* adopted, with numbers — 12B via LiteRT-LM, MLX Swift for iOS vision | Before asking "has anyone tried X?" or proposing a new runtime |
+| [RELATED_PROJECTS.md](RELATED_PROJECTS.md) | What else carries the EcoInference name, and the standing rule that features don't flow between them | Before porting anything in from another EcoInference product |
+| [ROADMAP_FINETUNING.md](ROADMAP_FINETUNING.md) | Planned domain models and what they'll need from this repo's Remote Config, Models tab and Firestore | Before changing the model catalog schema |
 
 Elsewhere in the repo:
 
@@ -21,6 +24,22 @@ Elsewhere in the repo:
   work, and known limitations that are not bugs.
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — process, CLA, project conventions, Android theming
   rules.
+
+## What's deliberately not here
+
+These docs were assembled partly by migrating a machine-local assistant memory store. Some of
+what was in there was left out on purpose, and it's worth saying which, so nobody goes looking
+for it or re-adds it:
+
+- **Personal working preferences** — how the maintainer likes to be communicated with, when to
+  ask before acting, which of his devices are personal daily drivers rather than test rigs.
+  That's a working relationship, not project documentation, and this repository is headed for
+  publication.
+- **Unrelated projects.** The same memory store covers work with no connection to this
+  codebase. None of it belongs here.
+- **Secret values.** `FUTURE_ENHANCEMENTS.md` names two HuggingFace tokens that remain live in
+  git history, by prefix and by commit, so they can be found and revoked. The full values are
+  deliberately not written down anywhere in this repo.
 
 ## A note on how these are written
 

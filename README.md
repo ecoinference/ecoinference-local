@@ -156,7 +156,7 @@ Start here, in this order:
 | [STATUS.md](STATUS.md) | Cross-machine status board — what's done, when, and by which commit. Read before starting, update after. |
 | [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md) | **Why the code looks the way it does.** Inference constraints, tool-calling contracts, theming rules, and the decisions that look arbitrary without context. Read before touching any of those. |
 | [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) | Build, install and debug commands per platform, the traps in each, measured performance numbers. |
-| [docs/](docs/) | Six more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale. See the [index](docs/README.md). |
+| [docs/](docs/) | Nine more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale, model evaluations, related projects, fine-tuning roadmap. See the [index](docs/README.md). |
 | [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) | Open items, parity gaps, deferred work, and known limitations that are *not* bugs. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution process, CLA, project conventions, Android theming. |
 

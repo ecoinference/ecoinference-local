@@ -22,8 +22,9 @@ work:
   constraints, and the reasoning behind decisions that look arbitrary from the code alone.
 - **[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md)** — build/install/debug commands per
   platform, the traps in each, and measured performance numbers.
-- **[docs/](docs/README.md)** — five more: case studies of expensive bugs, desktop/Electron,
-  infrastructure (B2/Cloudflare/Firebase/IAM), prior art, licensing rationale.
+- **[docs/](docs/README.md)** — eight more: case studies of expensive bugs, desktop/Electron,
+  infrastructure (B2/Cloudflare/Firebase/IAM), prior art, licensing rationale, model
+  evaluations, related projects, and the fine-tuning roadmap.
 - **[FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md)** — everything known to be incomplete,
   deferred, or blocking.
 
@@ -50,13 +51,20 @@ work:
   backend choice.
 - **Documentation migration — `docs/` created.** Durable engineering knowledge that had lived
   only in a local assistant memory store (~1,900 lines, machine-local, not portable) is now in
-  the repo under `docs/` — seven files, indexed in [docs/README.md](docs/README.md). Beyond the
+  the repo under `docs/` — ten files, indexed in [docs/README.md](docs/README.md). Beyond the
   engineering notes and device guide, a second pass added `CASE_STUDIES.md` (ten bugs written up
   as narratives, including the wrong turns), `DESKTOP.md` (Electron, the static `llama-server`
   build recipe, release process), `INFRASTRUCTURE.md` (B2/Cloudflare/DNS/Firebase and the IAM
   incident), `PRIOR_ART.md` (why the clients are separate native implementations; the PocketPal
   analysis) and `LICENSING_RATIONALE.md` (why MPL, why a CLA, trademark strategy).
   Standing conventions that had lived only in memory are now in `CONTRIBUTING.md`.
+  A third pass added `MODEL_EVALUATIONS.md` (Gemma 4 12B on LiteRT-LM measured at 0.61 tok/s
+  and shelved; the MLX Swift shortlist), `RELATED_PROJECTS.md` (the boundary between this repo,
+  EcoInference Remote, the website and the fine-tuning work — including the standing rule that
+  Remote features are never back-ported here) and `ROADMAP_FINETUNING.md`. Build-verification
+  and simulator coordinate-scale traps went into `DEVICE_TESTING.md`. **Deliberately not
+  migrated:** personal working preferences and anything about the maintainer's own devices —
+  see the note in `docs/README.md`.
   `FUTURE_ENHANCEMENTS.md` was rewritten — it had still described a Morse-code receiver for
   the Flutter version of the app, referencing `pubspec.yaml` and a `camera` plugin that no
   longer exist. Prior STATUS entries pointing at "local memory" now point at `docs/` instead.
