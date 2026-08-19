@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-17, from the macOS/mobile machine.
+Last updated: 2026-08-18, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -337,6 +337,20 @@ work:
 - Vision support for Gemma 4 12B (an `mmproj` file exists upstream, wiring deferred when 12B
   was added).
 - RAM/VRAM detection + model recommendation UI — not started.
+
+---
+
+## Infrastructure
+
+### Recently completed (2026-08-18)
+- **CDN access check — `cdn.ecoinference.ai` and `releases.ecoinference.ai` are still
+  gated behind a Cloudflare Access login.** First found in the 2026-08-18 repo audit and
+  re-verified by live probe the same day: both hosts 302-redirect to
+  `round-salad-4639.cloudflareaccess.com`, so anonymous model downloads and
+  `electron-updater` release checks fail. The B2 origin (`f005.backblazeb2.com`) is still
+  publicly reachable. Fix lives in the Cloudflare Zero Trust console — remove these hosts
+  from the Access application or add a bypass policy. **Open question before fixing:
+  confirm whether the gating was deliberate.**
 
 ---
 
