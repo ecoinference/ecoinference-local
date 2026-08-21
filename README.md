@@ -8,20 +8,47 @@ The motivation is environmental as much as it is about privacy: inference that r
 hardware you already own doesn't spin up a datacenter GPU, and doesn't consume the energy
 and water that comes with one.
 
-## Licence — MIT
+---
 
-**[MIT](LICENSE).** Take it. Fork it, strip it, rebrand it, ship it commercially, never
-mention this project again. You owe nothing beyond keeping the copyright notice.
+## 🍴 Fork it — pull requests are not accepted
 
-**This project does not accept pull requests** — it's maintained by one person without the
-capacity to review them well. It's published as a finished thing you can take, not a project
-to join. That's a feature for you: no CLA, no review queue, no waiting, no permission needed.
+**Please fork this.** It's the intended way to use the project, and you need no permission.
 
-👉 **[FORKING.md](FORKING.md)** — everything hardcoded to this deployment that you'll need to
-point at your own. It's a short list.
+**Pull requests will not be reviewed or merged.** They're closed automatically with a pointer
+back to [FORKING.md](FORKING.md). That isn't hostility, and it isn't a judgement on your code
+— it's one person being straight about capacity. Reviewing patches properly means reading the
+change, testing it on real hardware, checking cross-platform parity, and owning the
+maintenance forever. I can't do that well, and leaving PRs open to go stale would be worse
+than saying so upfront.
+
+**Which is good news for you.** Your fork is yours the moment you make it:
+
+- No CLA to sign
+- No maintainer to convince, and no review queue to wait in
+- No risk of rejection after you've already done the work
+- [MIT licensed](LICENSE) — rename it, strip it, ship it commercially, owe nothing
+
+### → **[FORKING.md](FORKING.md)**
+
+Everything hardcoded to *this* deployment that you'll need to point at your own — Firebase
+config, model storage, bundle identifiers, per-platform setup traps. It's a short list, and
+it's the whole list.
+
+**Issues are off as well.** The one exception is **security reports**, which are genuinely
+welcome — please send those privately via [SECURITY.md](SECURITY.md) rather than in public.
+
+If you build something with this, I'd honestly like to hear about it: **info@ecoinference.ai**.
+That's an invitation, not a support channel.
+
+---
+
+## Licence
+
+**[MIT](LICENSE).** One condition: keep the copyright notice. Take it and do as you like.
 
 The **name and logo are handled separately** ([TRADEMARK.md](TRADEMARK.md)): fork freely, just
-call your fork something else, so users can tell whose software they're running.
+call your fork something else, so users can tell whose software they're actually running.
+Renaming is the only thing this project asks of you.
 
 ### The assembled app is not all under one licence
 
@@ -156,14 +183,17 @@ Firebase project `ecoinference-28c31`, shared by all three clients:
 
 ## Development
 
-Start here, in this order:
+**Forking? Start with [FORKING.md](FORKING.md)**, then come back here. Everything below
+applies whether you're working in your own fork or just reading — the docs are written for
+someone who has to maintain this code, not just skim it.
 
 | Doc | What it's for |
 |---|---|
+| [FORKING.md](FORKING.md) | **Start here if you're taking this.** What to reconfigure, what to read first, what's incomplete. |
 | [STATUS.md](STATUS.md) | Cross-machine status board — what's done, when, and by which commit. Read before starting, update after. |
 | [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md) | **Why the code looks the way it does.** Inference constraints, tool-calling contracts, theming rules, and the decisions that look arbitrary without context. Read before touching any of those. |
 | [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) | Build, install and debug commands per platform, the traps in each, measured performance numbers. |
-| [docs/](docs/) | Eight more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale, model evaluations, related projects, fine-tuning roadmap. See the [index](docs/README.md). |
+| [docs/](docs/) | Nine more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale, model evaluations, related projects, fine-tuning roadmap. See the [index](docs/README.md). |
 | [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) | Open items, parity gaps, deferred work, and known limitations that are *not* bugs. |
 | [docs/CODE_CONVENTIONS.md](docs/CODE_CONVENTIONS.md) | Standing decisions — cross-platform parity, Android theming (easy to break), verification discipline. |
 
@@ -174,3 +204,9 @@ Both mobile apps have a **Settings → Developer → Inference Tests** screen th
 smoke-test suite (inference, Python, cloud, router, vision) directly on-device. Note that a
 green run doesn't prove a feature works end-to-end — see
 [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) for why.
+
+---
+
+*A reminder, since it's the thing people most often miss: **this project takes no pull
+requests.** Fork it instead — [FORKING.md](FORKING.md). The code is [MIT](LICENSE); it's yours
+to take.*
