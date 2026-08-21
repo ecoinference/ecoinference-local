@@ -1,0 +1,53 @@
+# This project does not accept pull requests — see FORKING.md.
+#
+# GitHub has no native switch to disable PRs on a public repository (Issues can be
+# turned off in Settings → Features; PRs cannot). So this workflow closes them
+# politely and explains why, rather than leaving contributors waiting on a review
+# that is never coming.
+name: Close pull requests
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              "Thanks for taking the time to write this — genuinely.",
+              "",
+              "**This project doesn't accept pull requests**, so I'm closing it. That's not a",
+              "judgement on the change: it's maintained by one person without the capacity to",
+              "review patches properly, and leaving PRs open to go stale would be worse than",
+              "being upfront.",
+              "",
+              "**Your work isn't wasted.** The project is MIT licensed, so your fork is already",
+              "yours to do anything with — ship it, rename it, build a product on it. No CLA, no",
+              "permission needed, nothing owed. [FORKING.md](../blob/main/FORKING.md) covers",
+              "everything hardcoded to this deployment that you'd want to point at your own.",
+              "",
+              "If you've built something with it, I'd honestly like to hear about it:",
+              "**info@ecoinference.ai**.",
+              "",
+              "One exception: **security issues** are welcome and should go privately via",
+              "[SECURITY.md](../blob/main/SECURITY.md) rather than a public PR."
+            ].join("\n");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              state: "closed",
+            });

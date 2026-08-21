@@ -146,7 +146,9 @@ maintenance burden it creates. Doing that badly is worse than not doing it: it l
 contributors waiting and ships code nobody has genuinely vetted.
 
 So this repository is published as a **finished artefact you can take**, rather than a project
-you can join. Issues and PRs are closed.
+you can join. Issues are turned off, and a workflow closes pull requests automatically with a
+pointer back here — that's a courtesy, not a brush-off. GitHub has no switch to disable PRs on
+a public repo, and leaving them open to rot would be worse than saying so.
 
 **What this means for you, practically:** your fork is yours immediately. No CLA to sign, no
 maintainer to convince, no waiting on review, no risk your work is rejected after you've done
