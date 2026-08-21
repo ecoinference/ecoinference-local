@@ -29,8 +29,12 @@ This was previously the plan's biggest piece of unfinished legal work, and it ev
 
 A CLA exists to preserve the ability to relicense later. Without one, relicensing needs
 agreement from every past contributor — in practice, never. **But with no pull requests, no
-third-party copyright ever enters the codebase.** The copyright holder retains 100% ownership
-and can relicense at will, permanently, with no paperwork from anyone.
+third-party copyright ever enters the codebase.**
+
+Copyright is held by **Many Rivers Iowa, LLC** (see `LICENSE`), and with no outside
+contributions it stays 100% held there. That means the licence can be changed at will,
+permanently, with no paperwork from anyone — the thing a CLA exists to buy, obtained for free
+by not accepting patches.
 
 So "no PRs" bought the exact thing the CLA was for, and removed a legal review, a bot, and a
 piece of friction in front of every would-be forker.
