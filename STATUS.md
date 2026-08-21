@@ -144,7 +144,7 @@ work:
   longer exist. Prior STATUS entries pointing at "local memory" now point at `docs/` instead.
 
 ### Recently completed (2026-08-10)
-- **`use tool` was broken for anything location- or time-dependent — fixed (`4e92053`).** The
+- **`use tool` was broken for anything location- or time-dependent — fixed (`38f5162`).** The
   Help screen's own moon-phase example failed. Four stacked bugs, the main one being that the
   location preamble was passed to the code-gen *prompt* but never prepended to the code that
   actually runs — so `user_latitude` and friends never existed at runtime, on both platforms.
@@ -154,7 +154,7 @@ work:
   astral guidance had the wrong signature and no phase-name mapping — now derived from the
   bundled astral 3.2 source and verified across a full lunar cycle. Verified on device: the
   example returns the correct phase.
-- **Generated Python now collapsed behind a "Show Python" toggle (`137d43d`, Android).** The
+- **Generated Python now collapsed behind a "Show Python" toggle (`9926dfa`, Android).** The
   snippet used to run longer than the screen with the answer off-view. **Build-verified only —
   not yet eyeballed, and not yet ported to iOS.**
 
@@ -187,7 +187,7 @@ work:
   item was dropped 2026-08-20 — fork-only means no CLA is needed.)* (Security
   rules — previously the biggest blocker — are done; see below.) Full list in
   [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
-- **Firestore + Storage security rules — written, committed and deployed (`4a9a2ab`).** They
+- **Firestore + Storage security rules — written, committed and deployed (`6a3a3b7`).** They
   were console-only before, so unreviewable and unversioned, and they're the whole boundary
   protecting the project once its ID is public. Now in `firestore.rules` / `storage.rules`,
   declared in `firebase.json`, derived from what the clients actually do (default deny; only
@@ -203,7 +203,7 @@ work:
   `users/{uid}` document.
   CLI note: Storage has no `:rules` sub-target — use `--only firestore:rules` but plain
   `--only storage`.
-- **Third-party licensing — all three resolved (`565d10d`, `f57782e`, `2c18153`).** None was
+- **Third-party licensing — all three resolved (`91ad779`, `db7a877`, `c2ee063`).** None was
   a blocker; each had looked worse than it was.
   **LiteRT-LM is Apache 2.0** — confirmed from the upstream LICENSE and the published Android
   POM — so binary redistribution is permitted. The real gap was attribution, now in
@@ -227,7 +227,7 @@ work:
   history builder was re-attaching a past turn's image bytes on every rebuild, which the
   engine (`maxNumImages=1`) doesn't handle the way a live turn's image does. Fix: only the
   current turn keeps its image; past turns keep the text, drop the bytes. iOS needed no
-  change — confirmed unaffected by both code review and a live test. `91e47f4`.
+  change — confirmed unaffected by both code review and a live test. `f6af101`.
 
 ### Recently completed (2026-07-29) — tagged `v2.16-json-leak-settings`
 - **Tool-error JSON leak on Settings → Developer → Inference Tests screens — fixed, both
@@ -342,25 +342,25 @@ work:
   writeup in [docs/ENGINEERING_NOTES.md §2](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-24)
-- Delete confirmation dialog on Models screen, both platforms (`2b249a5`).
+- Delete confirmation dialog on Models screen, both platforms (`7c3f795`).
 - Storage pre-flight check before starting a model download, both platforms — throws a clear
-  "needs ~X MB, only Y MB free" error instead of failing mid-download (`9076a17`).
+  "needs ~X MB, only Y MB free" error instead of failing mid-download (`ec49670`).
 - Budget-exhausted forced-final turn in `AgentLoop`, both platforms — when the tool-call
   iteration cap is hit, injects a "answer now using only what you have" nudge and forces one
-  final no-tools turn, instead of just breaking the loop (`9076a17`).
-- Download speed + ETA shown in Models screen UI, both platforms (`bc79b64`).
+  final no-tools turn, instead of just breaking the loop (`ec49670`).
+- Download speed + ETA shown in Models screen UI, both platforms (`10d1ea9`).
 - Tool-result security hardening: `wrapUntrusted()` (nonce-delimited markers around tool
   results, defends against indirect prompt injection via e.g. `run_python`'s network access)
-  and `truncateToolResult()` (6000-char cap), both platforms (`bc79b64`, plus earlier
+  and `truncateToolResult()` (6000-char cap), both platforms (`10d1ea9`, plus earlier
   `run_python` findings).
 - First-ever test coverage on either platform: iOS `AIiOSTests` (standalone target, no host
   app), Android `src/test/kotlin` JUnit source set. Both cover `AgentLoop` tool-call parsing,
-  `wrapUntrusted`, `truncateToolResult` (`bc79b64`).
+  `wrapUntrusted`, `truncateToolResult` (`10d1ea9`).
 - iPad blank-screen bug fixed (`UITextEffectsWindow` system overlay was getting the same
-  opaque-background treatment as app windows) (`12008f9`).
-- iOS model-download timeout + tool-call parse fallback fixes (`d8fbb74`).
+  opaque-background treatment as app windows) (`fd48ffc`).
+- iOS model-download timeout + tool-call parse fallback fixes (`c746a13`).
 - Android `minSdk` bumped 26 → 30 — `.litertlm` models require API 30+; a Galaxy S9 (Android
-  10/API 29) was confirmed to hard-fail loading the native `libLiteRtLm.so` (`2cd1411`).
+  10/API 29) was confirmed to hard-fail loading the native `libLiteRtLm.so` (`4ab5aa7`).
   S9-class hardware is now explicitly out of scope.
 
 ### Deferred / not started
@@ -379,7 +379,7 @@ work:
 ## Desktop (Electron)
 
 ### Recently completed
-- **Offline use after first login — fixed, NEEDS VERIFYING ON WINDOWS (`0b8e0fe`).** Reported
+- **Offline use after first login — fixed, NEEDS VERIFYING ON WINDOWS (`322fa47`).** Reported
   as "doesn't function without internet; seems to require Firebase auth every time". Root
   cause: the packaged app loads its renderer via `loadFile()`, so the origin is `file://`, and
   `getAuth()` silently falls back to **in-memory** persistence when it can't confirm a storage
@@ -388,7 +388,7 @@ work:
   Vite persists fine). Fixed by calling `initializeAuth()` with an explicit persistence chain.
   **Build-verified only — could not be reproduced from macOS.** Please test on the Windows
   machine: sign in online, quit, disconnect, relaunch — you should land straight in the app.
-- **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `157d89b`)** — second
+- **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `4f340e9`)** — second
   GenieX/NPU model alongside the existing Qwen3-8B, confirmed working via the same backend
   architecture (Snapdragon X2 chip) with zero changes needed to `AppContext`/`ModelsScreen`.
   Also wires up real image-attach support in `ChatScreen.tsx`, gated on a new
