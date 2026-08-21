@@ -10,7 +10,7 @@ This page exists to draw the boundaries.
 
 ## What's in *this* repo
 
-**EcoInference** — on-device AI. Three independent native clients (iOS, Android, Electron
+**EcoInference Local** (`ecoinference/ecoinference-local`) — on-device AI. Three independent native clients (iOS, Android, Electron
 desktop) that share a Firebase backend and a B2/Cloudflare model CDN. Inference runs on the
 user's own hardware; a cloud tier exists only as an explicit fallback the user can see and
 override.
@@ -21,6 +21,9 @@ The three clients mirror each other's features deliberately but share no code. S
 ---
 
 ## EcoInference Remote — separate repo
+
+The counterpart this repo's name is set against: **local** runs the model on the user's
+hardware, **remote** never does.
 
 A **pure API client. No local model ever runs.** Two OpenAI-compatible backends behind one
 code path (different base URL, key and model name): a self-hosted vLLM server, and Qwen 3.8

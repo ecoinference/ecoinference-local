@@ -34,6 +34,15 @@ work:
 
 ### Recently completed (2026-08-20) — history rewritten for public release
 
+- **Repo renamed `gemma4-pilot` → `ecoinference-local`**, published at
+  `github.com/ecoinference/ecoinference-local`. The old name undersold it: "pilot" reads as an
+  abandoned experiment, and "gemma4" pins it to one model family when desktop already runs Qwen
+  and Llama. The new name pairs with **EcoInference Remote** — local runs on your device,
+  remote calls an API — so the split is obvious to anyone browsing the org. See
+  [docs/RELATED_PROJECTS.md](docs/RELATED_PROJECTS.md).
+  *(The `gemma4-pilot-*` names below are on-disk backup filenames from before the rename, not
+  repo references.)*
+
 - **All 256 commits re-authored to `EcoInference <info@ecoinference.ai>`.** 208 of them
   carried a personal Gmail address, which would have become public with the repo. The
   repo-local git config was already correct; the history predated it. Commit *messages* were

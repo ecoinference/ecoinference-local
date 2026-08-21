@@ -20,7 +20,7 @@ before considering a build good.
 
 ## Project structure
 
-- Repo: `https://github.com/ecoinference/gemma4-pilot.git`, branch `main`
+- Repo: `https://github.com/ecoinference/ecoinference-local.git`, branch `main`
 - Desktop app: `AIDesktop/` — Electron 35 + electron-vite + React 18 + TypeScript
 - Sibling projects in the same repo: `AIiOS/` (Swift), `AIAndroid/` (Kotlin), `functions/`
   (Firebase Functions, TypeScript) — not relevant to Windows build work, ignore unless asked
