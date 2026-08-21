@@ -9,22 +9,34 @@ Ordered roughly by whether it blocks something.
 
 ## Blocking: before this repo goes public
 
-- **Revoke two HuggingFace tokens still live in git history.**
-  `hf_eLEvJKgES…` (was in `AIiOS/Local.xcconfig`, commits `251a25b`, `683b6ef`) and
-  `hf_mJjDwmaeN…` (was in the since-removed `AIServer/lib/services/settings_service.dart`,
-  commits `6b09fec`, `f25319b`). **The fix is revoking them at
-  huggingface.co/settings/tokens, not rewriting history** — scrubbing can't recall copies
-  that already exist. Worth doing whether or not the repo is ever published.
+**Nothing.** Both items that used to sit here are closed.
 
-  Everything else scanned clean: no `.env`, `.pem`, service-account, AWS, Slack or GitHub
-  credentials were ever committed. The `AIza…` hits are Firebase *client* config, which is
-  designed to ship publicly and is not a leak.
+- **The two HuggingFace tokens are dead.** A 2026-07-30 audit found `hf_eLEvJKgE…OEWB` (in
+  `AIiOS/Local.xcconfig`) and `hf_mJjDwmae…UUsj` (in the since-removed Flutter
+  `settings_service.dart`) live in git history, and recorded them as unrevoked. Verified
+  2026-08-20 against `https://huggingface.co/api/whoami-v2`: **both return 401.** They are
+  revoked or deleted and authenticate nothing.
 
-> **The CLA blocker is gone.** It existed only to preserve the ability to relicense later,
-> which required agreement from every past contributor. Since the project accepts no pull
-> requests, no third-party copyright ever enters the codebase — the copyright holder retains
-> the right to relicense at will, permanently. No CLA, no CLA bot, nothing to review.
-> (2026-08-20, when the licence moved to MIT.)
+  The blobs are still in history — they were never in the binary purge — but they carry no
+  live credential. To re-check any suspect token yourself:
+
+  ```bash
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    -H "Authorization: Bearer <token>" https://huggingface.co/api/whoami-v2
+  ```
+
+  `200` means live (and the body names the owning account); `401` means dead. Note that
+  HuggingFace's token list masks the **last** four characters while leaked values are usually
+  recorded by their **first** — you cannot match them by eye, which is exactly what made this
+  look unresolved for three weeks.
+
+  Nothing in the apps authenticates to HuggingFace any more; models come from the project's own
+  B2/Cloudflare CDN. The `authToken` parameter on `DownloadService` is an unused seam.
+
+- **The CLA is not needed.** It existed only to preserve the ability to relicense later, which
+  otherwise requires agreement from every past contributor. With no pull requests, no
+  third-party copyright ever enters the codebase, so that right is retained permanently with no
+  paperwork. Dropped 2026-08-20 when the licence moved to MIT.
 
 ---
 

@@ -88,7 +88,12 @@ work:
   only to preserve the ability to relicense later, which otherwise needs agreement from every
   past contributor. With no PRs, no third-party copyright ever enters the codebase, so the
   copyright holder keeps that right permanently with no paperwork. No legal review, no bot.
-  **The only remaining blocker is revoking the two HuggingFace tokens.**
+  **And the other supposed blocker turned out not to be one:** the two HuggingFace tokens
+  flagged as unrevoked by the 2026-07-30 audit both return **401** from
+  `huggingface.co/api/whoami-v2` — checked 2026-08-20. They are dead and authenticate nothing.
+  The audit recorded them as live and nobody re-tested for three weeks; the token list masks
+  the *last* four characters while the leak was recorded by its *first*, so they could not be
+  matched by eye. **There are now no blockers to making the repo public.**
 - **New [FORKING.md](FORKING.md)** — the practical guide that decides whether a fork succeeds:
   every value hardcoded to this deployment (Firebase config in 5 files, CDN/bucket names in 3,
   bundle and namespace identifiers), the per-platform setup traps, and a plain statement of why
