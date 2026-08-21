@@ -32,6 +32,40 @@ work:
 
 ## Mobile (iOS + Android)
 
+### Recently completed (2026-08-20) — history rewritten for public release
+
+- **All 256 commits re-authored to `EcoInference <info@ecoinference.ai>`.** 208 of them
+  carried a personal Gmail address, which would have become public with the repo. The
+  repo-local git config was already correct; the history predated it. Commit *messages* were
+  scrubbed too — they referenced a personal dynamic-DNS home-server hostname and a personal
+  GitHub account.
+- **~150 MB of vendored binaries purged from every commit**: `AIiOS/Frameworks/` (plus dead
+  `.xcframework.old/` duplicates), `AIiOS/litertlm_official_extract/`, the iOS `.tar.gz`
+  archives, and `AIDesktop/resources/bin/`. 47 files removed, **zero source files touched** —
+  verified by diffing the tracked-file list against a pre-rewrite backup bundle.
+
+  | | Before | After |
+  |---|---|---|
+  | Pack size | 55.6 MB | **3.0 MB** |
+  | Tracked in HEAD | 310.6 MB | **2.1 MB** |
+
+  A 310 MB clone was working against the whole point of publishing this.
+- **Found and fixed a false claim in the docs.** README and FORKING.md both said the iOS
+  xcframeworks were "not tracked" and told forkers to run `download_frameworks.sh`. They
+  *were* tracked — the `.gitignore` rules were added after the files had already been
+  committed, and gitignore doesn't untrack anything. The claim is now true. `.gitignore` also
+  gained the two paths it was missing, verified with `git add --dry-run`.
+- **Binaries preserved locally** at `gemma4-pilot-BINARIES-20260820/` beside the repo, and a
+  full pre-rewrite bundle at `gemma4-pilot-BACKUP-20260820-212859.bundle`. iOS frameworks are
+  re-fetchable via `download_frameworks.sh`; desktop binaries are built or downloaded per
+  `docs/DESKTOP.md`.
+- **All 21 commit SHAs cited in the docs were remapped** to their post-rewrite equivalents and
+  verified to resolve. (The one that doesn't is `571d0d5`, an upstream llama.cpp commit.)
+
+> **If you are reading this on another machine:** the remote history was replaced. `git pull`
+> will not work. Re-clone, or `git fetch origin && git reset --hard origin/main` — and check
+> for uncommitted work first, because it will be lost.
+
 ### Recently completed (2026-08-20) — licence changed to MIT, fork-only
 
 - **Relicensed MPL 2.0 → MIT, and the project no longer accepts pull requests.** The goal
@@ -96,7 +130,7 @@ work:
   longer exist. Prior STATUS entries pointing at "local memory" now point at `docs/` instead.
 
 ### Recently completed (2026-08-10)
-- **`use tool` was broken for anything location- or time-dependent — fixed (`b502d69`).** The
+- **`use tool` was broken for anything location- or time-dependent — fixed (`4e92053`).** The
   Help screen's own moon-phase example failed. Four stacked bugs, the main one being that the
   location preamble was passed to the code-gen *prompt* but never prepended to the code that
   actually runs — so `user_latitude` and friends never existed at runtime, on both platforms.
@@ -106,7 +140,7 @@ work:
   astral guidance had the wrong signature and no phase-name mapping — now derived from the
   bundled astral 3.2 source and verified across a full lunar cycle. Verified on device: the
   example returns the correct phase.
-- **Generated Python now collapsed behind a "Show Python" toggle (`40f4a0a`, Android).** The
+- **Generated Python now collapsed behind a "Show Python" toggle (`137d43d`, Android).** The
   snippet used to run longer than the screen with the answer off-view. **Build-verified only —
   not yet eyeballed, and not yet ported to iOS.**
 
@@ -139,7 +173,7 @@ work:
   item was dropped 2026-08-20 — fork-only means no CLA is needed.)* (Security
   rules — previously the biggest blocker — are done; see below.) Full list in
   [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
-- **Firestore + Storage security rules — written, committed and deployed (`49b9a43`).** They
+- **Firestore + Storage security rules — written, committed and deployed (`4a9a2ab`).** They
   were console-only before, so unreviewable and unversioned, and they're the whole boundary
   protecting the project once its ID is public. Now in `firestore.rules` / `storage.rules`,
   declared in `firebase.json`, derived from what the clients actually do (default deny; only
@@ -155,7 +189,7 @@ work:
   `users/{uid}` document.
   CLI note: Storage has no `:rules` sub-target — use `--only firestore:rules` but plain
   `--only storage`.
-- **Third-party licensing — all three resolved (`5b727d6`, `5c917ca`, `df6386e`).** None was
+- **Third-party licensing — all three resolved (`565d10d`, `f57782e`, `2c18153`).** None was
   a blocker; each had looked worse than it was.
   **LiteRT-LM is Apache 2.0** — confirmed from the upstream LICENSE and the published Android
   POM — so binary redistribution is permitted. The real gap was attribution, now in
@@ -179,7 +213,7 @@ work:
   history builder was re-attaching a past turn's image bytes on every rebuild, which the
   engine (`maxNumImages=1`) doesn't handle the way a live turn's image does. Fix: only the
   current turn keeps its image; past turns keep the text, drop the bytes. iOS needed no
-  change — confirmed unaffected by both code review and a live test. `1b5dd77`.
+  change — confirmed unaffected by both code review and a live test. `91e47f4`.
 
 ### Recently completed (2026-07-29) — tagged `v2.16-json-leak-settings`
 - **Tool-error JSON leak on Settings → Developer → Inference Tests screens — fixed, both
@@ -294,25 +328,25 @@ work:
   writeup in [docs/ENGINEERING_NOTES.md §2](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-24)
-- Delete confirmation dialog on Models screen, both platforms (`83f2dbb`).
+- Delete confirmation dialog on Models screen, both platforms (`2b249a5`).
 - Storage pre-flight check before starting a model download, both platforms — throws a clear
-  "needs ~X MB, only Y MB free" error instead of failing mid-download (`205705a`).
+  "needs ~X MB, only Y MB free" error instead of failing mid-download (`9076a17`).
 - Budget-exhausted forced-final turn in `AgentLoop`, both platforms — when the tool-call
   iteration cap is hit, injects a "answer now using only what you have" nudge and forces one
-  final no-tools turn, instead of just breaking the loop (`205705a`).
-- Download speed + ETA shown in Models screen UI, both platforms (`667ebe6`).
+  final no-tools turn, instead of just breaking the loop (`9076a17`).
+- Download speed + ETA shown in Models screen UI, both platforms (`bc79b64`).
 - Tool-result security hardening: `wrapUntrusted()` (nonce-delimited markers around tool
   results, defends against indirect prompt injection via e.g. `run_python`'s network access)
-  and `truncateToolResult()` (6000-char cap), both platforms (`667ebe6`, plus earlier
+  and `truncateToolResult()` (6000-char cap), both platforms (`bc79b64`, plus earlier
   `run_python` findings).
 - First-ever test coverage on either platform: iOS `AIiOSTests` (standalone target, no host
   app), Android `src/test/kotlin` JUnit source set. Both cover `AgentLoop` tool-call parsing,
-  `wrapUntrusted`, `truncateToolResult` (`667ebe6`).
+  `wrapUntrusted`, `truncateToolResult` (`bc79b64`).
 - iPad blank-screen bug fixed (`UITextEffectsWindow` system overlay was getting the same
-  opaque-background treatment as app windows) (`b622d8b`).
-- iOS model-download timeout + tool-call parse fallback fixes (`71bf594`).
+  opaque-background treatment as app windows) (`12008f9`).
+- iOS model-download timeout + tool-call parse fallback fixes (`d8fbb74`).
 - Android `minSdk` bumped 26 → 30 — `.litertlm` models require API 30+; a Galaxy S9 (Android
-  10/API 29) was confirmed to hard-fail loading the native `libLiteRtLm.so` (`54d2d9f`).
+  10/API 29) was confirmed to hard-fail loading the native `libLiteRtLm.so` (`2cd1411`).
   S9-class hardware is now explicitly out of scope.
 
 ### Deferred / not started
@@ -331,7 +365,7 @@ work:
 ## Desktop (Electron)
 
 ### Recently completed
-- **Offline use after first login — fixed, NEEDS VERIFYING ON WINDOWS (`614e7aa`).** Reported
+- **Offline use after first login — fixed, NEEDS VERIFYING ON WINDOWS (`0b8e0fe`).** Reported
   as "doesn't function without internet; seems to require Firebase auth every time". Root
   cause: the packaged app loads its renderer via `loadFile()`, so the origin is `file://`, and
   `getAuth()` silently falls back to **in-memory** persistence when it can't confirm a storage
@@ -340,7 +374,7 @@ work:
   Vite persists fine). Fixed by calling `initializeAuth()` with an explicit persistence chain.
   **Build-verified only — could not be reproduced from macOS.** Please test on the Windows
   machine: sign in online, quit, disconnect, relaunch — you should land straight in the app.
-- **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `74410ae`)** — second
+- **Qwen3-VL-4B-Instruct added to the model catalog (Windows ARM64, `157d89b`)** — second
   GenieX/NPU model alongside the existing Qwen3-8B, confirmed working via the same backend
   architecture (Snapdragon X2 chip) with zero changes needed to `AppContext`/`ModelsScreen`.
   Also wires up real image-attach support in `ChatScreen.tsx`, gated on a new

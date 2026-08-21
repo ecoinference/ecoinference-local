@@ -98,7 +98,17 @@ calling `initializeAuth()` with an explicit persistence chain. **Still unverifie
 
 ---
 
-## Static `llama-server` build (macOS arm64)
+## Getting a `llama-server` binary
+
+**`AIDesktop/resources/bin/` is empty and gitignored.** The binaries used to be committed —
+~130 MB of them across macOS and two Windows architectures — which is most of the reason the
+repo was 310 MB. They were purged on 2026-08-20. `extraResources` in `package.json` bundles
+whatever is sitting in that directory when you package; it does not fetch or build anything.
+
+On Windows, take the prebuilt binaries from a [llama.cpp
+release](https://github.com/ggml-org/llama.cpp/releases). On macOS, build a static one:
+
+### Static `llama-server` build (macOS arm64)
 
 The Homebrew binary dynamically links eight libraries, several via absolute
 `/opt/homebrew/opt/…` paths — it only works on machines with the identical formulae installed,

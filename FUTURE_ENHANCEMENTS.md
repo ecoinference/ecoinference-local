@@ -10,9 +10,9 @@ Ordered roughly by whether it blocks something.
 ## Blocking: before this repo goes public
 
 - **Revoke two HuggingFace tokens still live in git history.**
-  `hf_eLEvJKgES…` (was in `AIiOS/Local.xcconfig`, commits `58f8451`, `0e20452`) and
+  `hf_eLEvJKgES…` (was in `AIiOS/Local.xcconfig`, commits `251a25b`, `683b6ef`) and
   `hf_mJjDwmaeN…` (was in the since-removed `AIServer/lib/services/settings_service.dart`,
-  commits `28f88e3`, `a88e08a`). **The fix is revoking them at
+  commits `6b09fec`, `f25319b`). **The fix is revoking them at
   huggingface.co/settings/tokens, not rewriting history** — scrubbing can't recall copies
   that already exist. Worth doing whether or not the repo is ever published.
 
@@ -37,7 +37,7 @@ Ordered roughly by whether it blocks something.
   never actually been exercised. Any account created before 2026-08-04 has an auth user with
   no `users/{uid}` document, so the migration path for those accounts needs testing too.
 
-- **Desktop offline auth fix is unverified.** `614e7aa` fixed the `file://`-origin
+- **Desktop offline auth fix is unverified.** `0b8e0fe` fixed the `file://`-origin
   persistence bug that made the packaged app demand a network login on every launch. It was
   build-verified only — the bug can't be reproduced from macOS. Test on Windows: sign in
   online, quit, disconnect, relaunch; you should land straight in the app.
@@ -65,7 +65,7 @@ these are drift, not design.
   MB thresholds predate the tablet measurements that motivated the gate.
 
 - **"Show Python" collapse → iOS.** Android hides generated Python behind a toggle so the
-  answer isn't pushed off-screen (`MessageBubble.kt`, `40f4a0a`). Not ported, and **not yet
+  answer isn't pushed off-screen (`MessageBubble.kt`, `137d43d`). Not ported, and **not yet
   eyeballed on Android either** — build-verified only.
 
 - **iOS E4B vision is disabled**, Android's is not. E4B's larger SigLIP encoder has ops that

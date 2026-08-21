@@ -112,17 +112,21 @@ imprecision in it are in the same file.
 
 ### 4. Platform-specific setup
 
-**iOS** — run `AIiOS/download_frameworks.sh` to fetch the LiteRT-LM xcframeworks (~91 MB, not
-tracked). Copy `AIiOS/Local.xcconfig.sample` to `Local.xcconfig` and fill in your team ID.
+**iOS** — run `AIiOS/download_frameworks.sh` first; it fetches the LiteRT-LM dylibs (~91 MB,
+not tracked) and wraps each in an xcframework Xcode can embed and sign. The build will not
+work until you do. Copy `AIiOS/Local.xcconfig.sample` to `Local.xcconfig` and fill in your team ID.
 Embedded-Python artifacts are built by `setup.sh`. **Simulator builds will fail** — the vendored
 frameworks ship device slices only.
 
 **Android** — API 30+ required (`.litertlm` won't load the native library below that). Gradle
 needs an explicit `JAVA_HOME`; Android Studio's bundled JBR works.
 
-**Desktop** — you need a `llama-server` binary bundled per platform.
-[docs/DESKTOP.md](docs/DESKTOP.md) has a verified static-build recipe, and explains why the
-Homebrew binary won't do.
+**Desktop** — `AIDesktop/resources/bin/` is **empty and gitignored**. Inference binaries
+aren't vendored here: they're ~130 MB, platform-specific, and made the repo unpleasant to
+clone. You supply your own. [docs/DESKTOP.md](docs/DESKTOP.md) has a verified static-build
+recipe for macOS arm64 and explains why the Homebrew binary won't do; on Windows, take the
+prebuilt binaries from a llama.cpp release. `extraResources` bundles whatever is in that
+directory at package time — it doesn't fetch anything for you.
 
 **Desktop on Windows ARM64** — additionally requires GenieX installed separately, for the NPU
 models.
