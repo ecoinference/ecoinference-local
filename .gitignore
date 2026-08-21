@@ -69,7 +69,7 @@ Thumbs.db
 /AIFlutter/
 
 # AIServer — the stage-1 Flutter app, removed in a6b1f17 and archived to
-# a private Flutter archive repo. Its tracked files are gone, but ~5.7GB
+# a separate EcoInference-Flutter-Archive repo. Its tracked files are gone, but ~5.7GB
 # of build output still sits on local disk, and a plain `git add -A` would happily
 # re-commit ~28 of those generated files (gradle wrappers, plugin registrants,
 # ephemeral symlinks) because the generic Flutter rules above don't cover them.

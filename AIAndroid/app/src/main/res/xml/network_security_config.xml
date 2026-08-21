@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Allow plain HTTP on loopback only.
-    Model downloads use https://models.example.invalid — no exception needed.
+    Model downloads are HTTPS from the CDN, so they need no exception here.
 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
