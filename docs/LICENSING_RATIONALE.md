@@ -173,7 +173,7 @@ stale on every rebuild. If anyone later proposes pasting them all in, that's the
 
 No paid attorney, no filing yet. Concretely:
 
-**1. Consistent ™ use — done** (`b2314e1`). Added to the prominent brand display on each
+**1. Consistent ™ use — done** (`9736027`). Added to the prominent brand display on each
 surface: iOS Settings About header and sign-in title, Android Settings About header, desktop
 sidebar logo, About title and auth logo.
 

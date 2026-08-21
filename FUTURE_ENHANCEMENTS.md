@@ -49,7 +49,7 @@ Ordered roughly by whether it blocks something.
   never actually been exercised. Any account created before 2026-08-04 has an auth user with
   no `users/{uid}` document, so the migration path for those accounts needs testing too.
 
-- **Desktop offline auth fix is unverified.** `322fa47` fixed the `file://`-origin
+- **Desktop offline auth fix is unverified.** `f21c03a` fixed the `file://`-origin
   persistence bug that made the packaged app demand a network login on every launch. It was
   build-verified only — the bug can't be reproduced from macOS. Test on Windows: sign in
   online, quit, disconnect, relaunch; you should land straight in the app.
@@ -77,7 +77,7 @@ these are drift, not design.
   MB thresholds predate the tablet measurements that motivated the gate.
 
 - **"Show Python" collapse → iOS.** Android hides generated Python behind a toggle so the
-  answer isn't pushed off-screen (`MessageBubble.kt`, `9926dfa`). Not ported, and **not yet
+  answer isn't pushed off-screen (`MessageBubble.kt`, `e9f3c4f`). Not ported, and **not yet
   eyeballed on Android either** — build-verified only.
 
 - **iOS E4B vision is disabled**, Android's is not. E4B's larger SigLIP encoder has ops that
