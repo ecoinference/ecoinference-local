@@ -8,23 +8,29 @@ The motivation is environmental as much as it is about privacy: inference that r
 hardware you already own doesn't spin up a datacenter GPU, and doesn't consume the energy
 and water that comes with one.
 
-## Licence
+## Licence — MIT
 
-The code in this repository is licensed under the **Mozilla Public License 2.0** — see
-[LICENSE](LICENSE). MPL is file-level copyleft: modifications to these files stay open, but
-you can build proprietary work alongside them.
+**[MIT](LICENSE).** Take it. Fork it, strip it, rebrand it, ship it commercially, never
+mention this project again. You owe nothing beyond keeping the copyright notice.
 
-The **name and brand are handled separately** — see [TRADEMARK.md](TRADEMARK.md). Short
-version: fork freely, just call your fork something else.
+**This project does not accept pull requests** — it's maintained by one person without the
+capacity to review them well. It's published as a finished thing you can take, not a project
+to join. That's a feature for you: no CLA, no review queue, no waiting, no permission needed.
+
+👉 **[FORKING.md](FORKING.md)** — everything hardcoded to this deployment that you'll need to
+point at your own. It's a short list.
+
+The **name and logo are handled separately** ([TRADEMARK.md](TRADEMARK.md)): fork freely, just
+call your fork something else, so users can tell whose software they're running.
 
 ### The assembled app is not all under one licence
 
-Worth being upfront about, because "the code is MPL" does not mean "the product is freely
+Worth being upfront about, because "the code is MIT" does not mean "the product is freely
 usable for anything." Running the app involves several components with their own terms:
 
 | Component | Terms | Notes |
 |---|---|---|
-| This source code | MPL 2.0 | What the LICENSE file covers |
+| This source code | **MIT** | What the LICENSE file covers — do as you like |
 | Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source licence — includes a prohibited-use policy. Redistribution requires providing the terms and a Notice file (see [NOTICE](NOTICE)) |
 | LiteRT-LM runtime (iOS, Android) | **Apache 2.0** | Confirmed — permits binary redistribution. Android resolves the official Google artifact via Gradle; iOS fetches prebuilt dylibs via `download_frameworks.sh`. Attribution in [NOTICE](NOTICE); upstream publishes no NOTICE file of its own |
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
@@ -37,9 +43,10 @@ usable for anything." Running the app involves several components with their own
 
 The practical upshot: several models' and tools' terms travel with them regardless of what
 this repository is licensed under, so the app as a whole carries use restrictions and
-attribution obligations the code alone does not. If that matters for your use case, read
+attribution obligations the code alone does not. **The Gemma weights are the one to actually
+read** — they are not open source. If that matters for your use case, read
 each component's terms directly (linked above, plus [NOTICE](NOTICE)) rather than assuming
-the MPL covers everything.
+MIT covers everything.
 
 > **Note on the Qualcomm NPU path.** Nothing from Qualcomm ships in this app. The packaged
 > Windows ARM64 build contains exactly one binary (`llama-server.exe`); `GenieXServer` simply
@@ -64,7 +71,7 @@ AIAndroid/   Android app    — Kotlin / Compose, LiteRT-LM via JNI, Chaquopy Py
 AIDesktop/   Desktop app    — Electron + React, llama.cpp (see also: separate repo docs)
 functions/   Firebase Functions — presigned model-download URLs, avatar uploads
 tests/       Cross-platform test assets
-docs/        Engineering notes, case studies, infrastructure, prior art
+docs/        Engineering notes, case studies, conventions, infrastructure, prior art
 ```
 
 The three clients are **independent native implementations that share a backend**, not a
@@ -158,7 +165,7 @@ Start here, in this order:
 | [docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) | Build, install and debug commands per platform, the traps in each, measured performance numbers. |
 | [docs/](docs/) | Eight more: case studies of expensive bugs, desktop/Electron, infrastructure, prior art, licensing rationale, model evaluations, related projects, fine-tuning roadmap. See the [index](docs/README.md). |
 | [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) | Open items, parity gaps, deferred work, and known limitations that are *not* bugs. |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution process, CLA, project conventions, Android theming. |
+| [docs/CODE_CONVENTIONS.md](docs/CODE_CONVENTIONS.md) | Standing decisions — cross-platform parity, Android theming (easy to break), verification discipline. |
 
 This repo is worked on from three machines (macOS for mobile, two Windows machines for the
 desktop builds), so `git log` is often ahead of any one session's assumptions — pull first.

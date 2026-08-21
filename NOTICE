@@ -1,5 +1,4 @@
-This repository (source code) is licensed under the Mozilla Public License 2.0 — see
-LICENSE. Several AI models fetched and run by the apps, and some third-party software
+This repository (source code) is licensed under the MIT License — see LICENSE. Several AI models fetched and run by the apps, and some third-party software
 distributed with or alongside them, carry their own separate license terms that travel
 with the component regardless of this repository's own license. This file exists to
 satisfy those components' attribution/notice requirements; see README.md for the full

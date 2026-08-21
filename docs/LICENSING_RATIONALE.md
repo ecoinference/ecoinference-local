@@ -1,63 +1,127 @@
 # Licensing and Trademark — the Reasoning
 
-`LICENSE`, `NOTICE`, `TRADEMARK.md` and `CONTRIBUTING.md` state the decisions. This file
-records *why*, including the options that were ruled out, so they don't get re-litigated from
-scratch.
+`LICENSE`, `NOTICE`, `TRADEMARK.md` and `FORKING.md` state the decisions. This file records
+*why*, including the options ruled out, so they don't get re-litigated from scratch.
 
-Not legal advice. Written from research done 2026-07-30 through 2026-08-04.
+Not legal advice. Research done 2026-07-30 through 2026-08-04; the decision changed
+2026-08-20.
 
 ---
 
-## The constraint that eliminates most of the field
+## The decision: MIT, no pull requests
 
-**The GPL family is unusable for an App Store app.** GPL §6 forbids imposing further
-restrictions on recipients; Apple's App Store terms impose exactly that — device limits, DRM,
-redistribution rules. They are incompatible. This is why **VLC was pulled from the App Store in
-2011**.
+**Goal: maximize the chance someone actually uses and forks this.** Not to capture value from
+forks, not to build a contributor community, not to retain leverage. That single goal settles
+most of what follows.
+
+**MIT**, because it is the most recognized permissive licence, imposes exactly one condition
+(keep the copyright notice), and requires nothing of the maintainer. A forker owes nothing and
+needs no permission.
+
+**No pull requests**, because reviewing patches well takes real time — reading the change,
+testing on hardware, checking cross-platform parity, weighing the maintenance burden. Doing it
+badly is worse than not doing it. The repo is published as a finished artefact to take, not a
+project to join.
+
+### The consequence worth understanding: no CLA is needed
+
+This was previously the plan's biggest piece of unfinished legal work, and it evaporated.
+
+A CLA exists to preserve the ability to relicense later. Without one, relicensing needs
+agreement from every past contributor — in practice, never. **But with no pull requests, no
+third-party copyright ever enters the codebase.** The copyright holder retains 100% ownership
+and can relicense at will, permanently, with no paperwork from anyone.
+
+So "no PRs" bought the exact thing the CLA was for, and removed a legal review, a bot, and a
+piece of friction in front of every would-be forker.
+
+### What was given up, honestly
+
+**Reciprocity.** A company can take this, build a product on it, and contribute nothing back.
+Under MIT that is entirely legitimate and there is no recourse. That was accepted deliberately
+— see the trade-off below, which shows the alternative was never really available.
+
+**Contributions.** Good patches will not land. Someone who fixes a real bug in their fork has
+no path to push it here. That is the cost of the capacity decision, and it is a real cost.
+
+---
+
+## Why not the alternatives
+
+### The GPL family was never available
+
+**GPL is unusable for an App Store app.** GPL §6 forbids imposing further restrictions on
+recipients; Apple's App Store terms impose exactly that — device limits, DRM, redistribution
+rules. They are incompatible, which is why **VLC was pulled from the App Store in 2011**.
 
 So GPLv3 and AGPLv3 are off the table for anything intended to ship on iOS, regardless of how
 much copyleft is wanted. Rule this out early rather than evaluating it.
 
-MPL 2.0 has no such conflict — Firefox iOS ships under it. Neither do MIT or Apache 2.0.
+### You cannot block commercial free-riding and stay open source
 
-## The trade-off that can't be avoided
+OSI criterion 6 ("No Discrimination Against Fields of Endeavor") explicitly forbids restricting
+commercial use. Any licence that genuinely stops "a company commercializes this without
+contributing" — BSL, FSL, SSPL — is *source-available*, not open source. Those repel a slice of
+adopters, which is the opposite of the goal here.
 
-**You cannot block commercial free-riding and remain open source.** OSI criterion 6 ("No
-Discrimination Against Fields of Endeavor") explicitly forbids restricting commercial use. Any
-licence that genuinely stops "a company commercializes this without contributing" — BSL, FSL,
-SSPL — is *source-available*, not open source. Those repel a slice of contributors and can't
-honestly be called open source.
+There is no licence that is both open source and blocks free-riding. Name the trade-off rather
+than hunting for one.
 
-Name this trade-off rather than searching for a licence that does both. There isn't one.
+### MPL 2.0 — the previous choice
 
-## The ladder
+The project was MPL 2.0 from 2026-07-30 to 2026-08-20. MPL is file-level copyleft: changes to
+*these* files stay open, while new files alongside them can be proprietary. App Store safe
+(Firefox iOS ships under it).
+
+It was a reasonable choice for a project expecting contributors. Once the decision was made to
+accept none, MPL's copyleft only bought a reciprocity obligation nobody would enforce, at the
+cost of a licence forkers have to think about. MIT asks less and gets read more.
+
+No public release ever happened under MPL, so the change is clean — no version of this code was
+ever distributed under the old terms.
+
+### Apache 2.0 — considered, not chosen
+
+Also permissive, and arguably the better *engineering* choice: an express patent grant with a
+retaliation clause, and §6 explicitly reserving trademarks. It also matches LiteRT-LM and Qwen,
+both Apache 2.0.
+
+Passed over because it adds conditions (preserve NOTICE, note changed files) that a fork-only
+project will never enforce, and because MIT is shorter and more immediately understood. When
+the maintainer will not police the terms, extra clauses are theatre.
+
+### 0BSD — considered, not chosen
+
+Genuinely the most permissive — drops even attribution. Passed over as exotic enough that some
+corporate legal teams flag it, which would cost more adoption than the attribution requirement
+does.
+
+### The ladder, for reference
 
 | Want | Use |
 |---|---|
-| Maximum adoption, no strings | MIT |
+| Maximum adoption, no strings | **MIT** ← chosen |
 | Same, plus patent grant and trademark reservation | Apache 2.0 |
-| Modifications to *your* files stay open | **MPL 2.0** — file-level copyleft, App Store safe |
+| Modifications to *your* files stay open | MPL 2.0 — file-level copyleft, App Store safe |
 | Actually block commercial competitors | FSL / BSL — *not* open source |
+| No attribution at all | 0BSD / Unlicense / CC0 |
 
-**MPL 2.0 was chosen.** File-level copyleft keeps changes to this project's files open without
-blocking anyone from building commercial work alongside them, and it carries no App Store
-conflict.
+---
 
-## Two things that matter more than the licence
+## Trademark is what actually protects the name
 
 **Trademark, not licence, protects a consumer app's identity.** Under any licence a forker can
 take the code but cannot use the name, icon, or store listing. That is usually the actual fear,
-and it is solved entirely outside `LICENSE`. Apache 2.0 §6 and MPL §3.3 both explicitly
-withhold trademark rights.
+and it is solved entirely outside `LICENSE`.
 
-**A CLA is the only thing that preserves the ability to change your mind.** Without one,
-relicensing requires agreement from every past contributor — in practice, never. With one, the
-project can tighten future versions or dual-license if abuse actually materializes.
-Already-released code stays under its original licence forever either way.
+This matters *more* under MIT than it did under MPL, because MIT says nothing about trademarks
+at all. Trademark rights exist independently of any copyright licence, and `TRADEMARK.md` states
+the position explicitly — so the practical protection is unchanged. But the licence is no
+longer carrying any of it.
 
-This is the honest answer to "I want some control without discouraging developers": start
-permissive, keep the legal option to respond. See `CONTRIBUTING.md` for how this is put to
-contributors.
+The ask on a forker is exactly one thing: **rename it.** Not a restriction on forking; it's
+what makes a fork honest, for an app that holds an API key, executes code on-device, and can
+reach location and messaging.
 
 ## Model weights are a separate layer
 
@@ -65,8 +129,9 @@ The model licence travels with the model regardless of the code's licence. Gemma
 the **Gemma Terms of Use**, which includes a prohibited-use policy and is **not** OSI open
 source.
 
-So "the code is MPL" never means "the product is freely usable for anything." The README states
-this plainly, with a per-component table, so nobody is surprised.
+So "the code is MIT" never means "the product is freely usable for anything." The README states
+this plainly, with a per-component table. **This is the single most important thing for a
+forker to actually read** — it is far more restrictive than the code licence.
 
 ---
 

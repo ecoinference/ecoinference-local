@@ -241,7 +241,7 @@ in light mode. All three of these shipped at some point:
 - `EcoColors.Green` used as text or icon tint — ~2.2:1 in light, below WCAG AA.
 
 **The rule and the two exceptions are documented in
-[CONTRIBUTING.md](../CONTRIBUTING.md#colours-and-theming-android).** Read it before touching
+[CODE_CONVENTIONS.md](CODE_CONVENTIONS.md#colours-and-theming-android).** Read it before touching
 colours — a blanket find-and-replace breaks the legitimate cases.
 
 Short version: use `MaterialTheme.colorScheme.*`, or the `ecoAccent` / `ecoBrand` helpers in

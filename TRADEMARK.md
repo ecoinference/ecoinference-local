@@ -1,6 +1,6 @@
 # EcoInference Trademark Policy
 
-The **code** in this repository is open source under the [Mozilla Public License 2.0](LICENSE).
+The **code** in this repository is open source under the [MIT License](LICENSE).
 The **name and brand** are not. This document explains the difference and what you may do
 with each.
 
@@ -21,8 +21,8 @@ used rather than ®.
 ## What you may do without asking
 
 **Use the software.** Run it, study it, modify it, distribute it, build on it — under the
-terms of the MPL, for any purpose including commercial ones. The trademark doesn't restrict
-that.
+terms of the MIT licence, for any purpose including commercial ones. The trademark doesn't
+restrict that, and it is not a back door to restricting it.
 
 **Refer to the project by name.** You can say your work is "based on EcoInference," "a fork
 of EcoInference," "compatible with EcoInference," or write articles, tutorials, reviews, and
@@ -38,7 +38,7 @@ isn't used in a way implying we endorse or sponsor you.
 
 **Naming a modified version "EcoInference."** If you change the code, please call it
 something else. You may still say it's derived from EcoInference — just don't ship it under
-our name. This is the core of the policy.
+our name. This is the core of the policy, and it's the *only* thing asked of a forker.
 
 **Publishing to an app store under the EcoInference name**, or anything close enough to
 confuse users.
@@ -65,13 +65,14 @@ honest.
 Email **info@ecoinference.ai** describing what you'd like to do. Reasonable requests are
 generally granted, particularly for community, educational, and non-commercial uses.
 
-## Note for contributors
+## Note for forkers
 
-Contributing code doesn't transfer any trademark rights to you, and it doesn't take any away
-from you either. See [CONTRIBUTING.md](CONTRIBUTING.md) for how contributions are licensed.
+Forking doesn't transfer any trademark rights to you, and it doesn't take any away from you
+either — your own name and branding remain entirely yours. See [FORKING.md](FORKING.md) to get
+started; renaming is the only thing this policy asks of you.
 
 ---
 
 *This policy may be updated. It is not legal advice, and it doesn't restrict any right the
-MPL grants you in the software itself — where the two appear to conflict regarding the code,
-the licence governs.*
+the MIT licence grants you in the software itself — where the two appear to conflict
+regarding the code, the licence governs.*

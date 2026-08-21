@@ -45,7 +45,7 @@ never does. Treating them as a family that must stay in parity would generate a 
 pointless work and would drag on-device-irrelevant features (server configuration, provider
 switching, cloud retry) into apps with no use for them.
 
-**The cross-platform parity rule in [CONTRIBUTING.md](../CONTRIBUTING.md) governs iOS ↔
+**The cross-platform parity rule in [CODE_CONVENTIONS.md](CODE_CONVENTIONS.md) governs iOS ↔
 Android within this repo only.** It does not reach Remote in either direction.
 
 ### What *does* flow: lessons, not code

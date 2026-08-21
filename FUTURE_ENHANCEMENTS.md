@@ -20,11 +20,11 @@ Ordered roughly by whether it blocks something.
   credentials were ever committed. The `AIza…` hits are Firebase *client* config, which is
   designed to ship publicly and is not a leak.
 
-- **Get the CLA legally reviewed and wire up a CLA bot.** `CONTRIBUTING.md` describes a CLA
-  that no automation currently enforces. [cla-assistant.io](https://cla-assistant.io) is the
-  usual free option. The CLA is what makes future relicensing possible, so it should be in
-  place from the first outside contribution rather than retrofitted — see
-  `CONTRIBUTING.md` for the reasoning.
+> **The CLA blocker is gone.** It existed only to preserve the ability to relicense later,
+> which required agreement from every past contributor. Since the project accepts no pull
+> requests, no third-party copyright ever enters the codebase — the copyright holder retains
+> the right to relicense at will, permanently. No CLA, no CLA bot, nothing to review.
+> (2026-08-20, when the licence moved to MIT.)
 
 ---
 

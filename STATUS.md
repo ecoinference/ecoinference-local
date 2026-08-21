@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-18, from the macOS/mobile machine.
+Last updated: 2026-08-20, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -32,7 +32,33 @@ work:
 
 ## Mobile (iOS + Android)
 
-### Recently completed (2026-08-17)
+### Recently completed (2026-08-20) — licence changed to MIT, fork-only
+
+- **Relicensed MPL 2.0 → MIT, and the project no longer accepts pull requests.** The goal
+  changed: maximize the chance someone actually uses and forks this, rather than capture value
+  from forks or build a contributor community. MIT asks one thing (keep the copyright notice)
+  and requires nothing of the maintainer. No public release ever happened under MPL, so the
+  change is clean — nothing was ever distributed under the old terms. Reasoning, and why
+  Apache 2.0 and 0BSD were passed over, in
+  [docs/LICENSING_RATIONALE.md](docs/LICENSING_RATIONALE.md).
+- **The CLA blocker is gone** — one of the two remaining pre-publication items. A CLA exists
+  only to preserve the ability to relicense later, which otherwise needs agreement from every
+  past contributor. With no PRs, no third-party copyright ever enters the codebase, so the
+  copyright holder keeps that right permanently with no paperwork. No legal review, no bot.
+  **The only remaining blocker is revoking the two HuggingFace tokens.**
+- **New [FORKING.md](FORKING.md)** — the practical guide that decides whether a fork succeeds:
+  every value hardcoded to this deployment (Firebase config in 5 files, CDN/bucket names in 3,
+  bundle and namespace identifiers), the per-platform setup traps, and a plain statement of why
+  PRs are closed. `CONTRIBUTING.md` is now a short redirect to it.
+- **Engineering content moved out of `CONTRIBUTING.md` into
+  [docs/CODE_CONVENTIONS.md](docs/CODE_CONVENTIONS.md)** rather than being lost with the
+  contribution process — parity rules, the Android theming convention, build-verification and
+  regression-isolation discipline. A forker needs these more than a contributor would.
+- Swept MPL/CLA references out of `README.md`, `NOTICE`, `TRADEMARK.md` and
+  `FUTURE_ENHANCEMENTS.md`. No source file ever carried an MPL header, so there were none to
+  strip.
+
+### Recently completed (2026-08-20) — device guardrails and docs migration
 - **Device-capability guardrails on Android, driven by real measurements on a Lenovo TB336FU
   tablet (7.6 GB RAM, Mali-G57 MC2).** Loading E4B there caused the screen to blank and other
   apps to be killed — the tablet was under genuine memory pressure, not faulting. E4B needs
@@ -56,7 +82,7 @@ work:
   as narratives, including the wrong turns), `DESKTOP.md` (Electron, the static `llama-server`
   build recipe, release process), `INFRASTRUCTURE.md` (B2/Cloudflare/DNS/Firebase and the IAM
   incident), `PRIOR_ART.md` (why the clients are separate native implementations; the PocketPal
-  analysis) and `LICENSING_RATIONALE.md` (why MPL, why a CLA, trademark strategy).
+  analysis) and `LICENSING_RATIONALE.md` (licence reasoning, trademark strategy).
   Standing conventions that had lived only in memory are now in `CONTRIBUTING.md`.
   A third pass added `MODEL_EVALUATIONS.md` (Gemma 4 12B on LiteRT-LM measured at 0.61 tok/s
   and shelved; the MLX Swift shortlist), `RELATED_PROJECTS.md` (the boundary between this repo,
@@ -100,6 +126,7 @@ work:
 
 ### Recently completed (2026-07-30, later) — open-sourcing prep
 - **Licensed under MPL 2.0**, plus `CONTRIBUTING.md` (with CLA rationale) and `TRADEMARK.md`.
+  *(Superseded 2026-08-20 — now MIT, fork-only. See the top of this file.)*
   MPL over Apache/GPL deliberately: file-level copyleft keeps changes to our files open
   without blocking commercial use, and unlike the GPL family it has no App Store conflict.
   Trademark — not the licence — is what protects the project name. README now states plainly
@@ -108,7 +135,8 @@ work:
   separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
   since an old directory rename — leaving `Local.xcconfig` and 91MB of vendored binaries
   unprotected. **Still open before publishing:** revoke two old HuggingFace tokens that
-  remain in git history, and get the CLA legally reviewed plus a CLA bot wired up. (Security
+  remain in git history, and get the CLA legally reviewed plus a CLA bot wired up. *(The CLA
+  item was dropped 2026-08-20 — fork-only means no CLA is needed.)* (Security
   rules — previously the biggest blocker — are done; see below.) Full list in
   [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
 - **Firestore + Storage security rules — written, committed and deployed (`49b9a43`).** They
@@ -342,9 +370,9 @@ work:
 
 ## Infrastructure
 
-### Recently completed (2026-08-18)
+### Recently completed (2026-08-20)
 - **CDN access check — `cdn.ecoinference.ai` and `releases.ecoinference.ai` are still
-  gated behind a Cloudflare Access login.** First found in the 2026-08-18 repo audit and
+  gated behind a Cloudflare Access login.** First found in the 2026-08-20 repo audit and
   re-verified by live probe the same day: both hosts 302-redirect to
   `round-salad-4639.cloudflareaccess.com`, so anonymous model downloads and
   `electron-updater` release checks fail. The B2 origin (`f005.backblazeb2.com`) is still
