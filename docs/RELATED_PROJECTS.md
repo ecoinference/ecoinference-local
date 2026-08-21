@@ -70,10 +70,20 @@ Borrowing a hard-won lesson creates no obligation to push anything back.
 The public website, and the highest-visibility surface the brand has. Also hosts a white
 paper, *The Case for Greener AI*, aimed at a general audience.
 
-Relevant to this repo in one concrete way: **the ™ marking work covered this repository
-only.** The site and the App Store / Play Store listing *descriptions* also want ™ (though not
-the store app-name field). Neither has been done — see
-[LICENSING_RATIONALE.md](LICENSING_RATIONALE.md#trademark-strategy).
+Three open items connect it to this repo:
+
+1. **Announce the open-source release.** This repo went MIT and fork-only on 2026-08-20; the
+   site doesn't mention it. Announce in brand voice — honest and evidence-based, not launch
+   hype — and note plainly that MIT covers the code, not the Gemma weights. **Don't publish
+   until this repo is actually public.** The genuinely unusual thing to highlight is the
+   documentation, not the code: ten debugging case studies with the wrong turns left in,
+   measured device performance, and an honest list of what's unfinished.
+2. **™ markings.** The trademark work covered this repository only. The site and the App Store
+   / Play Store listing *descriptions* also want ™ on first or most prominent use (not the
+   store app-name field). See [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md#trademark-strategy).
+3. **The site's own repo lives under a personal GitHub account**, while everything else has
+   moved to the `ecoinference` org. Its git history very likely carries the same personal email
+   this repo had in 208 commits — worth checking and migrating, for the same reasons.
 
 ---
 
