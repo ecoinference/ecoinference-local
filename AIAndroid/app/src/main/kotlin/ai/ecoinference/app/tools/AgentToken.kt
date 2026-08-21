@@ -8,7 +8,7 @@ package ai.ecoinference.app.tools
  *  - ToolText:   the raw text content returned by a text tool (e.g. run_python
  *                stdout).  The chat UI ignores this; the test runner uses it to
  *                evaluate the actual tool output rather than the model's
- *                (potentially hallucinated) summary of it — mirrors iOS behaviour.
+ *                (potentially hallucinated) summary of it — mirrors iOS behavior.
  */
 sealed class AgentToken {
     data class Text(val chunk: String)                               : AgentToken()

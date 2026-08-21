@@ -4,7 +4,7 @@
 
 This project doesn't accept pull requests — see [Why no PRs](#why-no-pull-requests) below. It
 is maintained by one person who would rather the code be useful to you than spend evenings
-reviewing patches. The MIT licence means you owe nothing: fork it, strip it, rebrand it,
+reviewing patches. The MIT license means you owe nothing: fork it, strip it, rebrand it,
 ship it commercially, never mention this project again. All fine.
 
 What follows is the practical part — everything hardcoded to *this* deployment that you'll
@@ -100,7 +100,7 @@ and `.gguf` (desktop) files.
 
 The simplest path is a public bucket plus a CDN and direct URLs, which is what desktop already
 does. Mobile still goes through a presigned-URL Function — more moving parts, and you can drop
-it in favour of the direct pattern.
+it in favor of the direct pattern.
 
 [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) documents the whole setup, including a
 Cloudflare/B2 gotcha that costs a day if you hit it cold: **CNAME to B2's path-based endpoint,
@@ -131,7 +131,7 @@ directory at package time — it doesn't fetch anything for you.
 **Desktop on Windows ARM64** — additionally requires GenieX installed separately, for the NPU
 models.
 
-### 5. Check the licence table
+### 5. Check the license table
 
 `README.md` has a per-component table. The one that matters: **Gemma weights are not open
 source.** They carry the Gemma Terms of Use, including a prohibited-use policy, and

@@ -36,7 +36,7 @@ Ordered roughly by whether it blocks something.
 - **The CLA is not needed.** It existed only to preserve the ability to relicense later, which
   otherwise requires agreement from every past contributor. With no pull requests, no
   third-party copyright ever enters the codebase, so that right is retained permanently with no
-  paperwork. Dropped 2026-08-20 when the licence moved to MIT.
+  paperwork. Dropped 2026-08-20 when the license moved to MIT.
 
 ---
 

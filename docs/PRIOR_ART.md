@@ -15,7 +15,7 @@ EcoInference did **not** begin as native-per-platform. It started on Flutter wit
 codebase. The move to separate Swift and Kotlin implementations was deliberate, driven by
 LiteRT-LM having inadequate Flutter bindings at the time, plus other integration friction.
 
-So the parity bugs this architecture produces — the same fix needed twice, colours drifting,
+So the parity bugs this architecture produces — the same fix needed twice, colors drifting,
 a feature landing on one platform only — are a **known, accepted cost of a decision made for
 concrete engine-binding reasons**, not an oversight waiting to be corrected.
 

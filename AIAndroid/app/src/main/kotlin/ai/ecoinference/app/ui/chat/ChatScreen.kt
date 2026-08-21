@@ -193,7 +193,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 // User-requested stop — freeze whatever was already streamed
                 // instead of showing it as an error, and rethrow so structured
-                // concurrency still sees this coroutine as genuinely cancelled.
+                // concurrency still sees this coroutine as genuinely canceled.
                 if (messages.lastOrNull()?.isStreaming == true)
                     messages = messages.dropLast(1) + messages.last().copy(isStreaming = false)
                 throw e
@@ -313,7 +313,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                     while (i < historySource.size) {
                         val msg  = historySource[i]
                         val next = historySource.getOrNull(i + 1)
-                        // A cancelled turn (Stop pressed mid-generation) leaves a
+                        // A canceled turn (Stop pressed mid-generation) leaves a
                         // blank-text assistant reply, which was already being
                         // skipped — but its paired user message (with an image
                         // attached) was still sent as history on the NEXT send,
@@ -323,7 +323,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         // what's actually attached caused a native
                         // "Provided less images than expected in the prompt"
                         // error on the following message (2026-07-27). Drop the
-                        // whole cancelled pair, not just the blank assistant half.
+                        // whole canceled pair, not just the blank assistant half.
                         if (msg.role == "user" && next?.role == "assistant" && next.text.isBlank()) {
                             i += 2
                             continue
@@ -420,7 +420,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                 // User-requested stop (Stop button) — preserve whatever was
                 // already streamed instead of showing it as an error. Must
                 // rethrow so structured concurrency still sees this coroutine
-                // as genuinely cancelled, not merely finished.
+                // as genuinely canceled, not merely finished.
                 if (messages.lastOrNull()?.isStreaming == true)
                     messages = messages.dropLast(1) + messages.last().copy(isStreaming = false)
                 throw e
@@ -607,7 +607,7 @@ fun ChatScreen(appState: AppState, modifier: Modifier = Modifier) {
                         style    = MaterialTheme.typography.labelSmall,
                         // All three Surface branches above now use
                         // colorScheme.surface, so every branch here needs a
-                        // theme-aware colour.
+                        // theme-aware color.
                         color    = when {
                             isModelLoading -> ecoAccent
                             modelLoaded    -> ecoAccent

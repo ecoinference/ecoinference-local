@@ -1,7 +1,7 @@
 import UIKit
 
 /// On-device chart rendering tools using UIKit / Core Graphics.
-/// No external charting library — themed to EcoInference brand colours.
+/// No external charting library — themed to EcoInference brand colors.
 /// Mirrors Android ChartTools.kt.
 ///
 /// Tools:
@@ -28,7 +28,7 @@ enum ChartTools {
     private static var CW: CGFloat { CR - CL }
     private static var CH: CGFloat { CB - CT }
 
-    // MARK: - EcoInference brand colours
+    // MARK: - EcoInference brand colors
 
     private static let cBg         = UIColor(red:0.059, green:0.141, blue:0.082, alpha:1)  // #0F2415 CardDark
     private static let cGreen      = UIColor(red:0.133, green:0.773, blue:0.369, alpha:1)  // #22C55E Green

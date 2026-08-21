@@ -98,7 +98,7 @@ class DownloadService private constructor(private val context: Context) {
                     body.byteStream().use { input ->
                         while (true) {
                             if (Thread.currentThread().isInterrupted) {
-                                throw CancellationException("Download cancelled")
+                                throw CancellationException("Download canceled")
                             }
                             val n = input.read(buffer)
                             if (n == -1) break

@@ -1,7 +1,7 @@
 # Device Testing
 
 Practical notes for building, installing and debugging on real hardware. Simulators and
-emulators are not sufficient for this project — inference behaviour, memory pressure and
+emulators are not sufficient for this project — inference behavior, memory pressure and
 native crashes only show up on device.
 
 **Companions:** [ENGINEERING_NOTES.md](ENGINEERING_NOTES.md) for why the code behaves as it

@@ -75,7 +75,7 @@ work:
 > will not work. Re-clone, or `git fetch origin && git reset --hard origin/main` — and check
 > for uncommitted work first, because it will be lost.
 
-### Recently completed (2026-08-20) — licence changed to MIT, fork-only
+### Recently completed (2026-08-20) — license changed to MIT, fork-only
 
 - **Relicensed MPL 2.0 → MIT, and the project no longer accepts pull requests.** The goal
   changed: maximize the chance someone actually uses and forks this, rather than capture value
@@ -130,7 +130,7 @@ work:
   as narratives, including the wrong turns), `DESKTOP.md` (Electron, the static `llama-server`
   build recipe, release process), `INFRASTRUCTURE.md` (B2/Cloudflare/DNS/Firebase and the IAM
   incident), `PRIOR_ART.md` (why the clients are separate native implementations; the PocketPal
-  analysis) and `LICENSING_RATIONALE.md` (licence reasoning, trademark strategy).
+  analysis) and `LICENSING_RATIONALE.md` (license reasoning, trademark strategy).
   Standing conventions that had lived only in memory are now in `CONTRIBUTING.md`.
   A third pass added `MODEL_EVALUATIONS.md` (Gemma 4 12B on LiteRT-LM measured at 0.61 tok/s
   and shelved; the MLX Swift shortlist), `RELATED_PROJECTS.md` (the boundary between this repo,
@@ -160,14 +160,14 @@ work:
 
 ### Recently completed (2026-08-04)
 - **Android light theme — fixed across five commits.** The app was built dark-first, so
-  colours picked for dark surfaces were hardcoded throughout and light mode ranged from
+  colors picked for dark surfaces were hardcoded throughout and light mode ranged from
   washed-out to fully invisible: text, section headers, cards, chat bubbles, dividers and
   brand-green icons. Added `ecoAccent` / `ecoBrand` helpers plus `DeepGreen` / `LightBorder`,
   and filled in the light scheme so it mirrors dark slot-for-slot. Dark mode is unchanged —
   regression-checked by screenshot. **The convention is now documented in
   [CONTRIBUTING.md](CONTRIBUTING.md)**, including the two cases where a hardcoded palette
-  colour is still correct (fills, and content on surfaces that are dark in both themes) —
-  worth reading before touching colours, since a blanket find-and-replace breaks those.
+  color is still correct (fills, and content on surfaces that are dark in both themes) —
+  worth reading before touching colors, since a blanket find-and-replace breaks those.
 - **Added `SECURITY.md`** — `CONTRIBUTING.md` had linked to it without it existing. Covers
   reporting plus where the real attack surface is (on-device execution of model-generated
   Python with network access, tool results as an injection vector, locally stored keys).
@@ -177,7 +177,7 @@ work:
   *(Superseded 2026-08-20 — now MIT, fork-only. See the top of this file.)*
   MPL over Apache/GPL deliberately: file-level copyleft keeps changes to our files open
   without blocking commercial use, and unlike the GPL family it has no App Store conflict.
-  Trademark — not the licence — is what protects the project name. README now states plainly
+  Trademark — not the license — is what protects the project name. README now states plainly
   that the assembled app isn't uniformly MPL (Gemma weights carry their own use restrictions).
 - **Repo audit ahead of going public.** Removed the dead `AIServer/` Flutter tree (archived
   separately), rewrote the stale README, and fixed a `.gitignore` whose paths had been wrong
@@ -213,11 +213,11 @@ work:
   runtime from Qualcomm itself. That only becomes a constraint if anyone bundles GenieX or
   QAIRT into the installer — confirm rights with Qualcomm *before* starting that. The GenieX
   setup requirement is now documented in the README; without it the NPU models won't load.
-  **Chaquopy is MIT** — open source since 12.0.1, no licence key needed. It surfaced a wider
+  **Chaquopy is MIT** — open source since 12.0.1, no license key needed. It surfaced a wider
   gap though: both apps embed CPython plus ~10 Python packages (29 resolved distributions on
   iOS) that NOTICE didn't mention. All permissive, and the attribution requirement turns out
-  to be met already — every bundled distribution ships its own licence in its `.dist-info/`
-  directory. NOTICE now records that rather than duplicating ~30 licence texts that would go
+  to be met already — every bundled distribution ships its own license in its `.dist-info/`
+  directory. NOTICE now records that rather than duplicating ~30 license texts that would go
   stale on every rebuild.
 
 ### Recently completed (2026-07-30) — tagged `v2.17-android-image-history-fix`
@@ -335,10 +335,10 @@ work:
   speculative decoding at all) so this wasn't ported there. (4) iOS: found a real stuck-keyboard
   trap with no way out except force-quit, when the model auto-unloaded mid-chat — added an
   explicit "Done" button plus auto-dismiss on unload; ported a defense-in-depth version to
-  Android. (5) Android: a cancelled turn's image-bearing user message was still being replayed
+  Android. (5) Android: a canceled turn's image-bearing user message was still being replayed
   as dangling history on the next send (no paired assistant reply), causing a native
   "Provided less images than expected in the prompt" error — fixed by dropping the whole
-  cancelled (user, assistant) pair from history, not just the empty assistant half. Full
+  canceled (user, assistant) pair from history, not just the empty assistant half. Full
   writeup in [docs/ENGINEERING_NOTES.md §2](docs/ENGINEERING_NOTES.md).
 
 ### Recently completed (2026-07-24)
@@ -435,7 +435,7 @@ work:
 - Two real bugs found in PocketPal AI itself via hands-on testing (interrupted-generation
   repetition loop on backgrounding; GPU/Adreno decode hang) — not yet filed upstream, user
   opted to hold for now.
-- Both are upstream's bugs, not ours. The transferable lessons (backgrounding behaviour,
+- Both are upstream's bugs, not ours. The transferable lessons (backgrounding behavior,
   Adreno GPU decode) are folded into [docs/ENGINEERING_NOTES.md](docs/ENGINEERING_NOTES.md).
 
 ## Reference: AIFlutter viability test (untracked in this repo, `AIFlutter/`)

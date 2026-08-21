@@ -14,7 +14,7 @@ import kotlin.math.pow
 
 /**
  * On-device chart rendering tools using Android Canvas.
- * No external charting library — themed to EcoInference brand colours.
+ * No external charting library — themed to EcoInference brand colors.
  *
  * Tools:
  *   plot_line    — line chart with optional labels
@@ -43,7 +43,7 @@ object ChartTools {
     private val CW get() = CR - CL
     private val CH get() = CB - CT
 
-    // ── EcoInference brand colours (Android ARGB ints) ────────────────────────
+    // ── EcoInference brand colors (Android ARGB ints) ────────────────────────
     private val C_BG         = 0xFF0F2415.toInt()   // EcoColors.CardDark
     private val C_GREEN      = 0xFF22C55E.toInt()   // EcoColors.Green
     private val C_DIM_GREEN  = 0xFF4ADE80.toInt()   // EcoColors.DimGreen

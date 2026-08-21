@@ -14,7 +14,7 @@ Not legal advice. Research done 2026-07-30 through 2026-08-04; the decision chan
 forks, not to build a contributor community, not to retain leverage. That single goal settles
 most of what follows.
 
-**MIT**, because it is the most recognized permissive licence, imposes exactly one condition
+**MIT**, because it is the most recognized permissive license, imposes exactly one condition
 (keep the copyright notice), and requires nothing of the maintainer. A forker owes nothing and
 needs no permission.
 
@@ -32,7 +32,7 @@ agreement from every past contributor — in practice, never. **But with no pull
 third-party copyright ever enters the codebase.**
 
 Copyright is held by **Many Rivers Iowa, LLC** (see `LICENSE`), and with no outside
-contributions it stays 100% held there. That means the licence can be changed at will,
+contributions it stays 100% held there. That means the license can be changed at will,
 permanently, with no paperwork from anyone — the thing a CLA exists to buy, obtained for free
 by not accepting patches.
 
@@ -64,11 +64,11 @@ much copyleft is wanted. Rule this out early rather than evaluating it.
 ### You cannot block commercial free-riding and stay open source
 
 OSI criterion 6 ("No Discrimination Against Fields of Endeavor") explicitly forbids restricting
-commercial use. Any licence that genuinely stops "a company commercializes this without
+commercial use. Any license that genuinely stops "a company commercializes this without
 contributing" — BSL, FSL, SSPL — is *source-available*, not open source. Those repel a slice of
 adopters, which is the opposite of the goal here.
 
-There is no licence that is both open source and blocks free-riding. Name the trade-off rather
+There is no license that is both open source and blocks free-riding. Name the trade-off rather
 than hunting for one.
 
 ### MPL 2.0 — the previous choice
@@ -79,7 +79,7 @@ The project was MPL 2.0 from 2026-07-30 to 2026-08-20. MPL is file-level copylef
 
 It was a reasonable choice for a project expecting contributors. Once the decision was made to
 accept none, MPL's copyleft only bought a reciprocity obligation nobody would enforce, at the
-cost of a licence forkers have to think about. MIT asks less and gets read more.
+cost of a license forkers have to think about. MIT asks less and gets read more.
 
 No public release ever happened under MPL, so the change is clean — no version of this code was
 ever distributed under the old terms.
@@ -114,13 +114,13 @@ does.
 
 ## Trademark is what actually protects the name
 
-**Trademark, not licence, protects a consumer app's identity.** Under any licence a forker can
+**Trademark, not license, protects a consumer app's identity.** Under any license a forker can
 take the code but cannot use the name, icon, or store listing. That is usually the actual fear,
 and it is solved entirely outside `LICENSE`.
 
 This matters *more* under MIT than it did under MPL, because MIT says nothing about trademarks
-at all. Trademark rights exist independently of any copyright licence, and `TRADEMARK.md` states
-the position explicitly — so the practical protection is unchanged. But the licence is no
+at all. Trademark rights exist independently of any copyright license, and `TRADEMARK.md` states
+the position explicitly — so the practical protection is unchanged. But the license is no
 longer carrying any of it.
 
 The ask on a forker is exactly one thing: **rename it.** Not a restriction on forking; it's
@@ -129,13 +129,13 @@ reach location and messaging.
 
 ## Model weights are a separate layer
 
-The model licence travels with the model regardless of the code's licence. Gemma weights carry
+The model license travels with the model regardless of the code's license. Gemma weights carry
 the **Gemma Terms of Use**, which includes a prohibited-use policy and is **not** OSI open
 source.
 
 So "the code is MIT" never means "the product is freely usable for anything." The README states
 this plainly, with a per-component table. **This is the single most important thing for a
-forker to actually read** — it is far more restrictive than the code licence.
+forker to actually read** — it is far more restrictive than the code license.
 
 ---
 
@@ -158,11 +158,11 @@ infrastructure. No redistribution happens here, so QAIRT's terms don't bind this
 it removes a manual setup step. Confirm rights with Qualcomm first — the terms sit behind a
 developer-portal click-through with no published text and could rule the approach out entirely.
 
-**Chaquopy is MIT** — open source since 12.0.1, no licence key needed. It surfaced a wider gap
+**Chaquopy is MIT** — open source since 12.0.1, no license key needed. It surfaced a wider gap
 though: both apps embed CPython plus ~10 Python packages (29 resolved distributions on iOS)
 that `NOTICE` didn't mention. All permissive, and the attribution requirement turns out to be
-satisfied already — **every bundled distribution ships its own licence in its `.dist-info/`
-directory**. `NOTICE` records that fact rather than duplicating ~30 licence texts that would go
+satisfied already — **every bundled distribution ships its own license in its `.dist-info/`
+directory**. `NOTICE` records that fact rather than duplicating ~30 license texts that would go
 stale on every rebuild. If anyone later proposes pasting them all in, that's the reason not to.
 
 ---
@@ -230,7 +230,7 @@ not the authoritative register.
 Treat the result as "no obvious blocker," **not** "clear to file."
 
 Worth a second look: `ECOINVENT` (registered, environmental-science databases) shares the prefix
-and an adjacent field. "Eco-" is a crowded prefix generally — ECOINT (cancelled), ECOPLAY,
+and an adjacent field. "Eco-" is a crowded prefix generally — ECOINT (canceled), ECOPLAY,
 ECOCENTER. Crowding narrows everyone's scope in both directions.
 
 ### Not done

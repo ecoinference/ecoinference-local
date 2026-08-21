@@ -604,7 +604,7 @@ result = f"Roots of x²-5x+6=0: {roots}"
         cases.append(TestCase(
             id:          "e2e_vision",
             name:        "Vision — describe test image",
-            description: "4-colour 64×64 grid → non-empty description, no error",
+            description: "4-color 64×64 grid → non-empty description, no error",
             category:    .vision,
             messages:    [InferenceMessage(role: "user",
                                            text: "Describe this image in one sentence.")],
@@ -956,7 +956,7 @@ Available tools:
 
                     // If the tool produced an image or HTML, we have everything
                     // needed for evaluation — don't add the bulky result to the
-                    // context and don't ask the model to summarise it.  A full
+                    // context and don't ask the model to summarize it.  A full
                     // plotly HTML export can be 2000+ tokens and pushing it into
                     // the next turn exceeds the model's 4096-token context limit.
                     switch toolResult {
@@ -1148,7 +1148,7 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         return docs.appendingPathComponent("test_failures.log")
     }()
 
-    // MARK: Test image (4-colour 64×64 grid)
+    // MARK: Test image (4-color 64×64 grid)
 
     private func makeTestImageData() -> Data? {
         let size = CGSize(width: 64, height: 64)
@@ -1156,14 +1156,14 @@ user_timezone = _dt.timezone(_dt.timedelta(hours=-5.0))
         defer { UIGraphicsEndImageContext() }
         guard let ctx = UIGraphicsGetCurrentContext() else { return nil }
 
-        let colours: [(CGRect, UIColor)] = [
+        let colors: [(CGRect, UIColor)] = [
             (CGRect(x:  0, y:  0, width: 32, height: 32), .red),
             (CGRect(x: 32, y:  0, width: 32, height: 32), .green),
             (CGRect(x:  0, y: 32, width: 32, height: 32), .blue),
             (CGRect(x: 32, y: 32, width: 32, height: 32), .yellow),
         ]
-        for (rect, colour) in colours {
-            ctx.setFillColor(colour.cgColor)
+        for (rect, color) in colors {
+            ctx.setFillColor(color.cgColor)
             ctx.fill(rect)
         }
         return UIGraphicsGetImageFromCurrentImageContext()?.pngData()

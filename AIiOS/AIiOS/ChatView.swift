@@ -380,7 +380,7 @@ struct ChatView: View {
                 inference.resetConversation()
                 let code = PythonCommand.extractCode(from: raw) ?? raw
                 dlog("handleToolCommand: extracted code (\(code.count) chars) — tail: \(code.suffix(300))")
-                guard !Task.isCancelled else { dlog("handleToolCommand: cancelled after chat"); return }
+                guard !Task.isCancelled else { dlog("handleToolCommand: canceled after chat"); return }
                 await MainActor.run {
                     if let idx = messages.firstIndex(where: { $0.id == targetId }) {
                         messages[idx].text = code
@@ -446,7 +446,7 @@ struct ChatView: View {
                     messages.append(runningMsg)
                     scrollToBottom()
                 }
-                guard !Task.isCancelled else { dlog("handleToolCommand: cancelled before execute"); return }
+                guard !Task.isCancelled else { dlog("handleToolCommand: canceled before execute"); return }
 
                 // Defensive timeout — generated code could contain a runaway
                 // loop or an unexpectedly heavy computation. There's no clean

@@ -61,7 +61,7 @@ fixing bug 2 I also skipped the existing safety force-unload for user-requested 
 reasoning that "a clean `cancel_process()` shouldn't leave the engine any worse off than a
 real error would."
 
-**That assumption was wrong, and the log proved it.** Turn 1 cancelled cleanly
+**That assumption was wrong, and the log proved it.** Turn 1 canceled cleanly
 (`CANCELLED: Session is cancelled during prefill`, no crash) → turn 2 in the *same* session,
 with no stop involved, failed with a genuine XNNPACK tensor-allocation error in the MTP
 drafter (`llm_litert_mtp_drafter.cc:357`, `unsupported scale value (0.000000)… INT8 tensor`).
@@ -84,13 +84,13 @@ Fixed with an always-visible "Done" in `ToolbarItemGroup(placement: .keyboard)` 
 `.onChange(of: appState.modelLoaded)` that clears focus on unload. Belt and suspenders,
 deliberately.
 
-**Bug 5 — Android: a dangling image-only turn after a cancelled generation.** The blank
+**Bug 5 — Android: a dangling image-only turn after a canceled generation.** The blank
 assistant reply was already filtered from the next send's history — but its *paired user
 message, which still had an image attached*, was not. Since Android replays full history into
 a fresh `Conversation` every turn, that left a lone image-bearing turn with no reply, and the
 next message died on `INVALID_ARGUMENT: Provided less images than expected in the prompt`.
 Fixed by making the history loop pair-aware: a `user` message followed by a blank-text
-`assistant` message is the signature of a cancelled turn — skip **both**.
+`assistant` message is the signature of a canceled turn — skip **both**.
 
 **Transferable:**
 
@@ -152,7 +152,7 @@ Android. A silent cross-platform divergence against a documented contract.
 `INVALID_ARGUMENT: Provided less images than expected in the prompt` appeared twice, three
 days apart, and the second one looked like a regression of the first. It wasn't.
 
-**First (2026-07-27):** a cancelled turn left a dangling image-bearing user message with no
+**First (2026-07-27):** a canceled turn left a dangling image-bearing user message with no
 paired reply — [case 1, bug 5](#1-one-vague-report-five-real-bugs--the-stop-button).
 
 **Second (2026-07-30):** attach an image, ask about it (fine), then send a **plain text

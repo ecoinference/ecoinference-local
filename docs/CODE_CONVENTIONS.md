@@ -6,7 +6,7 @@ these are the rules that keep the three clients coherent, and each one is here b
 violating it already caused a bug.
 
 Nothing here is enforced. Ignore any of it in your own fork. But read the theming section
-before you touch colours, because that one is genuinely easy to get wrong.
+before you touch colors, because that one is genuinely easy to get wrong.
 
 **Companions:** [ENGINEERING_NOTES.md](ENGINEERING_NOTES.md) for the SDK constraints ·
 [DEVICE_TESTING.md](DEVICE_TESTING.md) for verification mechanics ·
@@ -20,7 +20,7 @@ before you touch colours, because that one is genuinely easy to get wrong.
 conventions on iOS, Compose on Android, React on desktop. Don't import one platform's
 patterns into another.
 
-**Cross-platform parity matters.** If you change behaviour on one mobile platform, port it to
+**Cross-platform parity matters.** If you change behavior on one mobile platform, port it to
 the other or record why it doesn't apply. Silent divergence between iOS and Android is the
 single most common source of bugs here — most of [CASE_STUDIES.md](CASE_STUDIES.md) is one
 platform having a fix the other didn't.
@@ -44,7 +44,7 @@ a file compiled nothing; it found everything up to date. Both traps have already
 "fixed" report against a stale artifact. Details in
 [DEVICE_TESTING.md](DEVICE_TESTING.md#verifying-a-build-actually-built).
 
-Test on a real device where the change is device-dependent. Inference behaviour in particular
+Test on a real device where the change is device-dependent. Inference behavior in particular
 can't be trusted from a simulator — and the simulator has a coordinate-scale trap of its own.
 
 **When something that worked breaks, isolate the change before theorising.** Ask what
@@ -67,7 +67,7 @@ hard-to-attribute differences.
 strings show up in logs, proxies and server-side request records. This applies to any new
 Google API integration.
 
-**Badge and brand colours must match across platforms exactly, by hex.** The cloud badge is
+**Badge and brand colors must match across platforms exactly, by hex.** The cloud badge is
 `#5E5CE6` — Apple's systemIndigo dark variant, which SwiftUI's `Color.indigo` resolves to. Not
 Tailwind indigo (`#6366F1`); the near-miss was noticed. The local badge is `EcoColors.Green`.
 When adding any element that appears on both platforms, compare hex values rather than using
@@ -95,10 +95,10 @@ tag are treated as one step when tagging a checkpoint.
 machines and it's the only sync mechanism between them. In a fork you may not need it — but
 you'll want *something* playing that role if you work across machines.
 
-## Colours and theming (Android)
+## Colors and theming (Android)
 
 Both themes are supported, and light mode is easy to break without noticing — the app was
-built dark-first, and a colour that looks right in dark mode is often invisible in light.
+built dark-first, and a color that looks right in dark mode is often invisible in light.
 Every one of these has happened:
 
 - Text hardcoded to `EcoColors.NearWhite` — correct in dark, where `onSurface` *is*
@@ -130,12 +130,12 @@ slot-for-slot, so `colorScheme.surface` already gives `EcoColors.CardDark` in da
 Two cases, and they're worth understanding rather than pattern-matching:
 
 **Fills.** `EcoColors.Green` as a button `containerColor`, slider thumb/track, switch track,
-or focused border is fine. Those pair it with their own content colour, so there's no
+or focused border is fine. Those pair it with their own content color, so there's no
 contrast problem — only *foreground* uses are.
 
 **Content on a surface that's dark in both themes.** The user chat bubble is
 `EcoColors.Green` in both themes, so its `EcoColors.DarkInner` text is correct and must
-stay. Swapping that for a theme-aware colour would produce dark-on-dark in light mode.
+stay. Swapping that for a theme-aware color would produce dark-on-dark in light mode.
 
 This is why a blanket find-and-replace is the wrong instinct here. **Background and
 foreground have to move together** — converting a card to a themed surface without

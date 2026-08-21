@@ -59,7 +59,7 @@ CPython and its standard library are used under the Python Software Foundation L
 
 On Android the runtime is provided by **Chaquopy**, © Chaquo Ltd and contributors, licensed
 under the MIT License (https://github.com/chaquo/chaquopy). Chaquopy has been open source
-since version 12.0.1; no licence key is required. Packages are declared in
+since version 12.0.1; no license key is required. Packages are declared in
 `AIAndroid/app/build.gradle.kts` and installed at build time: numpy, pandas, scipy,
 matplotlib, plotly, astral, folium, shapely, qrcode and sympy, plus their dependencies.
 
@@ -67,12 +67,12 @@ On iOS the runtime is built separately (mobile-forge) and embedded as `Python.xc
 with packages under `app_packages/` — 29 distributions covering the same feature set, minus
 scipy and shapely.
 
-All of these packages are under permissive licences — BSD 2- and 3-Clause, MIT, MIT-CMU,
-Apache 2.0, and the PSF and matplotlib licences. None restricts commercial or private use.
+All of these packages are under permissive licenses — BSD 2- and 3-Clause, MIT, MIT-CMU,
+Apache 2.0, and the PSF and matplotlib licenses. None restricts commercial or private use.
 
-**Each package's own licence text ships alongside it**, in its `.dist-info/` directory inside
+**Each package's own license text ships alongside it**, in its `.dist-info/` directory inside
 the app bundle (for example `numpy-*.dist-info/LICENSE.txt`; matplotlib additionally carries
-eleven separate licence files for its bundled fonts and colour maps). That is how the
-retain-the-copyright-notice condition these licences impose is satisfied at distribution time
+eleven separate license files for its bundled fonts and color maps). That is how the
+retain-the-copyright-notice condition these licenses impose is satisfied at distribution time
 — the notices travel with the binaries rather than being reproduced here, since the exact set
 and versions change whenever the dependency set is rebuilt.

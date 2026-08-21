@@ -13,7 +13,7 @@ enum InferenceError: LocalizedError {
     case sessionCreationFailed
     case generationFailed(String)
     case noModelLoaded
-    case cancelled
+    case canceled
     case busy
 
     var errorDescription: String? {
@@ -31,8 +31,8 @@ enum InferenceError: LocalizedError {
             return "Inference failed: \(msg)"
         case .noModelLoaded:
             return "No model loaded. Call load() first."
-        case .cancelled:
-            return "Inference cancelled."
+        case .canceled:
+            return "Inference canceled."
         case .busy:
             return "Inference already in progress. Please wait."
         }

@@ -80,9 +80,9 @@ Don't raise it without verifying live on-device *generation*, not just `engine_c
 Android creates a new `Conversation` per local turn and replays history via
 `initialMessages`. Two bugs came out of this:
 
-1. **Cancelled turns.** A user message whose assistant reply was cancelled (blank) was still
+1. **Canceled turns.** A user message whose assistant reply was canceled (blank) was still
    replayed as history, landing as a dangling image-only turn → native
-   `"Provided less images than expected in the prompt"`. Fix: drop the whole cancelled
+   `"Provided less images than expected in the prompt"`. Fix: drop the whole canceled
    *(user, assistant)* pair, not just the blank assistant half.
 2. **Replayed images.** The history builder re-attached `imageBytes` to *every* past user
    turn. The engine (`maxNumImages = 1`) and the SDK's `initialMessages` seeding don't handle
@@ -231,7 +231,7 @@ debugging backend selection for slowness reports on this device.
 
 ## 5. Android theming — light mode is easy to break
 
-The app was built dark-first. A colour that looks right in dark mode is frequently invisible
+The app was built dark-first. A color that looks right in dark mode is frequently invisible
 in light mode. All three of these shipped at some point:
 
 - Text hardcoded to `EcoColors.NearWhite` — correct in dark (where `onSurface` *is* NearWhite),
@@ -241,8 +241,8 @@ in light mode. All three of these shipped at some point:
 - `EcoColors.Green` used as text or icon tint — ~2.2:1 in light, below WCAG AA.
 
 **The rule and the two exceptions are documented in
-[CODE_CONVENTIONS.md](CODE_CONVENTIONS.md#colours-and-theming-android).** Read it before touching
-colours — a blanket find-and-replace breaks the legitimate cases.
+[CODE_CONVENTIONS.md](CODE_CONVENTIONS.md#colors-and-theming-android).** Read it before touching
+colors — a blanket find-and-replace breaks the legitimate cases.
 
 Short version: use `MaterialTheme.colorScheme.*`, or the `ecoAccent` / `ecoBrand` helpers in
 `EcoTheme.kt`. A raw palette constant is only correct as a **fill**, or as content on a
@@ -351,13 +351,13 @@ To check whether a Storage bucket exists without the CLI:
 | `AIAndroid/.../services/LocationPreamble.kt` | Android Python preamble |
 | `AIAndroid/.../services/PythonCommand.kt` | Code-gen prompt for `use tool` (mirror of iOS) |
 | `AIAndroid/.../models/ModelCatalog.kt` | Android model catalog + descriptions |
-| `AIAndroid/.../ui/theme/EcoTheme.kt` | Palette, both colour schemes, `ecoAccent`/`ecoBrand` |
+| `AIAndroid/.../ui/theme/EcoTheme.kt` | Palette, both color schemes, `ecoAccent`/`ecoBrand` |
 | `AIiOS/AIiOS/default_router_rules.json` | Bundled rules — byte-identical on both platforms |
 | `AIDesktop/src/main/backends/GenieXServer.ts` | Desktop NPU backend (shells out to `geniex`) |
 
 ### Conventions
 
-- **Cross-platform parity**: a behaviour change on one mobile platform should be ported to the
+- **Cross-platform parity**: a behavior change on one mobile platform should be ported to the
   other, or the PR should say why it doesn't apply. Silent divergence is the most common
   source of bugs here.
 - **Router rules must stay byte-identical** across platforms.

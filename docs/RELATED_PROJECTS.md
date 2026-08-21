@@ -35,7 +35,7 @@ different: no model downloads, no bundled inference binary, no llama.cpp or Lite
 
 > Its own `STATUS.md` is the source of truth for its feature state, and `API-NOTES.md`
 > records what its API actually does as opposed to what its docs claim. Read those there;
-> don't infer its behaviour from this repo.
+> don't infer its behavior from this repo.
 
 ### The standing rule: features do not flow between them
 
@@ -58,7 +58,7 @@ building the equivalent elsewhere is cheap. Two that have already paid off in Re
 
 - **"Try with Cloud" shipped a bug where the retry silently dropped the attached image** —
   avoided there by slicing the real message array rather than rebuilding the turn.
-- **Badge colours drifted from Apple's systemIndigo `#5E5CE6`** until it was flagged — matched
+- **Badge colors drifted from Apple's systemIndigo `#5E5CE6`** until it was flagged — matched
   deliberately there from the start.
 
 Borrowing a hard-won lesson creates no obligation to push anything back.

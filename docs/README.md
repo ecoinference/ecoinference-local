@@ -11,7 +11,7 @@ establish and cheap to lose.
 | [DESKTOP.md](DESKTOP.md) | Electron stack, the static `llama-server` build recipe, release process | Before any desktop work or release |
 | [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | B2, Cloudflare, DNS, Firebase, Remote Config, and the IAM state | Before touching storage, the CDN, or anything in the GCP console |
 | [PRIOR_ART.md](PRIOR_ART.md) | Why the clients are separate native implementations; what PocketPal AI taught us | Before proposing a shared codebase, or touching GPU backend selection |
-| [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md) | Why MIT, the licences ruled out and why, third-party licence findings, trademark strategy | Before revisiting the licence, or acting on trademark |
+| [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md) | Why MIT, the licenses ruled out and why, third-party license findings, trademark strategy | Before revisiting the license, or acting on trademark |
 | [MODEL_EVALUATIONS.md](MODEL_EVALUATIONS.md) | Models tested and *not* adopted, with numbers — 12B via LiteRT-LM, MLX Swift for iOS vision | Before asking "has anyone tried X?" or proposing a new runtime |
 | [RELATED_PROJECTS.md](RELATED_PROJECTS.md) | What else carries the EcoInference name, and the standing rule that features don't flow between them | Before porting anything in from another EcoInference product |
 | [ROADMAP_FINETUNING.md](ROADMAP_FINETUNING.md) | Planned domain models and what they'll need from this repo's Remote Config, Models tab and Firestore | Before changing the model catalog schema |

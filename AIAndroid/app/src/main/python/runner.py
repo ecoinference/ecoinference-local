@@ -111,7 +111,7 @@ def generate_qr(text: str, box_size: int = 10, border: int = 4) -> list:
     Generate a QR code PNG from any text, URL, or structured data.
 
     Returns [type, value] with type="image" and value=base64 PNG.
-    The image uses EcoInference brand colours (green on dark).
+    The image uses EcoInference brand colors (green on dark).
     """
     import qrcode  # noqa: PLC0415
     from PIL import Image as _Image  # noqa: PLC0415

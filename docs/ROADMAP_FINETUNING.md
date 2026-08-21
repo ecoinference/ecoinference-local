@@ -61,7 +61,7 @@ also why the training data is natural-language text rather than structured obser
 Capabilities the model needs:
 
 - Phenology — arrival, departure and peak timing, **for each state separately**
-- Daily activity patterns — dawn chorus, midday behaviour, roost timing
+- Daily activity patterns — dawn chorus, midday behavior, roost timing
 - Habitat specificity — microhabitat within a region, not just statewide
 - Behavioural cues — what makes a species visible versus cryptic by season
 - Local site knowledge — key Iowa and California birding locations, by season
@@ -71,7 +71,7 @@ Capabilities the model needs:
 *Species accounts (the backbone):* Cornell All About Birds (`allaboutbirds.org` — free,
 accessible, exactly the target reading level), Audubon field guide, Iowa Ornithologists' Union
 (`iowabirds.org`), Audubon California, California Bird Records Committee, Xeno-canto species
-pages (vocalization and behaviour text).
+pages (vocalization and behavior text).
 
 *Phenology and seasonal text:* Iowa DNR Wildlife Diversity Program reports, USGS Breeding Bird
 Survey narratives, IOU quarterly seasonal field reports (the highest-value Iowa source).

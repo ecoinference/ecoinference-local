@@ -42,7 +42,7 @@ That's an invitation, not a support channel.
 
 ---
 
-## Licence
+## License
 
 **[MIT](LICENSE).** One condition: keep the copyright notice. Take it and do as you like.
 
@@ -50,7 +50,7 @@ The **name and logo are handled separately** ([TRADEMARK.md](TRADEMARK.md)): for
 call your fork something else, so users can tell whose software they're actually running.
 Renaming is the only thing this project asks of you.
 
-### The assembled app is not all under one licence
+### The assembled app is not all under one license
 
 Worth being upfront about, because "the code is MIT" does not mean "the product is freely
 usable for anything." Running the app involves several components with their own terms:
@@ -58,11 +58,11 @@ usable for anything." Running the app involves several components with their own
 | Component | Terms | Notes |
 |---|---|---|
 | This source code | **MIT** | What the LICENSE file covers — do as you like |
-| Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source licence — includes a prohibited-use policy. Redistribution requires providing the terms and a Notice file (see [NOTICE](NOTICE)) |
+| Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source license — includes a prohibited-use policy. Redistribution requires providing the terms and a Notice file (see [NOTICE](NOTICE)) |
 | LiteRT-LM runtime (iOS, Android) | **Apache 2.0** | Confirmed — permits binary redistribution. Android resolves the official Google artifact via Gradle; iOS fetches prebuilt dylibs via `download_frameworks.sh`. Attribution in [NOTICE](NOTICE); upstream publishes no NOTICE file of its own |
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
-| Chaquopy (Android Python runtime) | **MIT** | Confirmed — open source since 12.0.1, no licence key needed |
-| Embedded Python + packages (iOS, Android) | **All permissive** | CPython under the PSF licence, plus numpy/pandas/matplotlib/etc. under BSD, MIT, MIT-CMU and Apache 2.0. Each package's own licence ships beside it in `.dist-info/` — see [NOTICE](NOTICE) |
+| Chaquopy (Android Python runtime) | **MIT** | Confirmed — open source since 12.0.1, no license key needed |
+| Embedded Python + packages (iOS, Android) | **All permissive** | CPython under the PSF license, plus numpy/pandas/matplotlib/etc. under BSD, MIT, MIT-CMU and Apache 2.0. Each package's own license ships beside it in `.dist-info/` — see [NOTICE](NOTICE) |
 | Qwen3 8B / Qwen3-VL 4B (NPU) | **Apache 2.0** | Confirmed — upstream Qwen3 weights are Apache 2.0, permissive |
 | Llama 3.2 3B 16K (NPU) | **Llama 3.2 Community License** | Requires "Built with Llama" attribution and a Notice file (both present, see [NOTICE](NOTICE)) and compliance with [Meta's Acceptable Use Policy](https://www.llama.com/llama3_2/use-policy) |
 | GenieX (NPU orchestration CLI) | BSD 3-Clause | **Not bundled** — the user installs it themselves, and use is also subject to [Qualcomm's Terms of Use](https://www.qualcomm.com/site/terms-of-use), which they accept directly |

@@ -4,7 +4,7 @@ The **code** in this repository is open source under the [MIT License](LICENSE).
 The **name and brand** are not. This document explains the difference and what you may do
 with each.
 
-This split is intentional and standard practice for open-source applications. The licence
+This split is intentional and standard practice for open-source applications. The license
 gives you broad freedom with the software. The trademark exists so that when someone
 installs something called "EcoInference," they know where it came from — which protects
 users more than it protects us.
@@ -21,7 +21,7 @@ used rather than ®.
 ## What you may do without asking
 
 **Use the software.** Run it, study it, modify it, distribute it, build on it — under the
-terms of the MIT licence, for any purpose including commercial ones. The trademark doesn't
+terms of the MIT license, for any purpose including commercial ones. The trademark doesn't
 restrict that, and it is not a back door to restricting it.
 
 **Refer to the project by name.** You can say your work is "based on EcoInference," "a fork
@@ -74,5 +74,5 @@ started; renaming is the only thing this policy asks of you.
 ---
 
 *This policy may be updated. It is not legal advice, and it doesn't restrict any right the
-the MIT licence grants you in the software itself — where the two appear to conflict
-regarding the code, the licence governs.*
+the MIT license grants you in the software itself — where the two appear to conflict
+regarding the code, the license governs.*
