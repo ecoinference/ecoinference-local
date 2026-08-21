@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOTE: This licence covers the source code in this repository only. The models,
-runtimes and tools the app depends on carry their own terms — in particular the
-Gemma weights, which are NOT under an open-source licence. See NOTICE and the
-licence table in README.md before redistributing a build.
