@@ -67,23 +67,39 @@ Borrowing a hard-won lesson creates no obligation to push anything back.
 
 ## ecoinference.ai — separate repo
 
-The public website, and the highest-visibility surface the brand has. Also hosts a white
-paper, *The Case for Greener AI*, aimed at a general audience.
+**`github.com/ecoinference/ei-website`** — private. Eleventy static site, deployed by
+`npm run dist` → FTP → Apache on a VPS. GitHub is not in the deploy path at all; pushing and
+deploying are independent.
 
-Three open items connect it to this repo:
+Private deliberately: it is a marketing property, not something anyone needs to fork, and a
+public repo would only add a standing "never commit anything sensitive here" burden. That is
+the opposite of the calculus for *this* repo, where forks are the entire point.
 
-1. **Announce the open-source release.** This repo went MIT and fork-only on 2026-08-20; the
-   site doesn't mention it. Announce in brand voice — honest and evidence-based, not launch
-   hype — and note plainly that MIT covers the code, not the Gemma weights. **Don't publish
-   until this repo is actually public.** The genuinely unusual thing to highlight is the
-   documentation, not the code: ten debugging case studies with the wrong turns left in,
-   measured device performance, and an honest list of what's unfinished.
-2. **™ markings.** The trademark work covered this repository only. The site and the App Store
-   / Play Store listing *descriptions* also want ™ on first or most prominent use (not the
-   store app-name field). See [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md#trademark-strategy).
-3. **The site's own repo lives under a personal GitHub account**, while everything else has
-   moved to the `ecoinference` org. Its git history very likely carries the same personal email
-   this repo had in 208 commits — worth checking and migrating, for the same reasons.
+It also hosts four white papers aimed at a general audience, *The Case for Greener AI* among
+them.
+
+The three items that used to be listed here are all done as of 2026-08-21:
+
+- **The open-source release is announced** — a homepage section introduces the apps and links
+  here. It states the fork-only policy plainly and notes that MIT covers the code, not the
+  Gemma weights. Verified live.
+- **™ markings are applied** — nav brand site-wide, plus the first body use of the bare word
+  mark. Not on page titles, alt text, or repeat mentions, for the reasons in
+  [LICENSING_RATIONALE.md](LICENSING_RATIONALE.md#trademark-strategy).
+- **The repo moved off the personal account** to the org, with all 23 commits re-authored to
+  `info@ecoinference.ai`.
+
+Two things worth knowing before touching it:
+
+**The CMS backend is repo-specific.** `src/admin/config.yml` names
+`ecoinference/ei-website` as its Decap backend. Signing into `/admin` needs an account with
+access to the org repo, and the value has to change if the repo ever moves again.
+
+**Check for stale git locks if commits mysteriously fail.** That repo sat unable to commit for
+three weeks behind three zero-byte lock files from a crashed git process, with no error
+surfaced until someone tried to commit. It silently held back a published white paper, a
+broken About image, and a corrected arithmetic error. `find .git -name "*.lock"` — and confirm
+no git process is actually running before removing any.
 
 ---
 

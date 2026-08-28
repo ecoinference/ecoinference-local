@@ -38,9 +38,10 @@ for it or re-adds it:
   publication.
 - **Unrelated projects.** The same memory store covers work with no connection to this
   codebase. None of it belongs here.
-- **Secret values.** `FUTURE_ENHANCEMENTS.md` names two HuggingFace tokens that remain live in
-  git history, by prefix and by commit, so they can be found and revoked. The full values are
-  deliberately not written down anywhere in this repo.
+- **Secret values.** Two HuggingFace tokens were once in this history. They were verified dead
+  (HTTP 401 from `whoami-v2`) on 2026-08-20 and then purged from every commit anyway. Their
+  full values are deliberately written down nowhere in this repo — only the masked prefixes, in
+  `FUTURE_ENHANCEMENTS.md`, with the one-line command to re-check any suspect token.
 
 ## A note on how these are written
 

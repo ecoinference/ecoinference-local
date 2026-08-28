@@ -42,6 +42,16 @@ Ordered roughly by whether it blocks something.
 
 ## Correctness gaps
 
+- **iOS has not been compile-verified since the 2026-08-21 spelling sweep.** That sweep renamed
+  a Swift enum case (`case cancelled` → `case canceled`) and some local variables. Grep confirms
+  no orphaned references, and Android built clean, but a compiler is stronger evidence than a
+  grep. The iOS build currently fails in the "Install Python stdlib" phase *before* reaching any
+  Swift file — 0 Swift compile tasks ran, and the failure never mentions the changed files — so
+  it looks pre-existing and unrelated, but that was not confirmed. **Run a clean iOS build.**
+  Note the trap that hid this: `xcodebuild … | tail -n` reports the *pipe's* exit code, so the
+  shell says 0 while the log says `** BUILD FAILED **`. Grep the literal marker.
+
+
 - **Profile sync and avatar upload have never successfully run end-to-end.** Deploying the
   security rules on 2026-08-04 revealed that the Firestore database and the Storage bucket
   had never been created — `UserProfileService` had been failing silently on every launch

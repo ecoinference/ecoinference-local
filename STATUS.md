@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-20, from the macOS/mobile machine.
+Last updated: 2026-08-21, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -31,6 +31,60 @@ work:
 ---
 
 ## Mobile (iOS + Android)
+
+### Recently completed (2026-08-21) — published; website moved to the org
+
+**The repo is public.** `github.com/ecoinference/ecoinference-local` — MIT, fork-only,
+3.0 MB, 13 topics. Issues off; a workflow closes pull requests with a pointer to FORKING.md.
+
+- **GitHub was not detecting the license.** It reported `NOASSERTION`, because a NOTE about
+  the model terms had been appended after the MIT text and GitHub's detector needs a close
+  match to a known license. That costs the license badge and excludes the repo from
+  `license:mit` search filters — it reads as all-rights-reserved to anyone scanning, which
+  works directly against a repo whose whole point is being forked. `LICENSE` is now pure MIT
+  and the API reports `MIT`. The caveat it carried was already stated more fully in the README
+  table and NOTICE.
+- **American spelling swept through** (`0ec01d1`) — 99 lines over 26 files. Three things were
+  left alone deliberately, because "correcting" them would make the text wrong: the
+  `CANCELLED: Session is cancelled during prefill` native log string, and PocketPal's
+  `DownloadCancelledError` / `cancelledModelIds` identifiers cited in PRIOR_ART.
+  **The sweep introduced a real bug, caught by reading the diff rather than trusting the
+  script:** `RouterFactExtractor`'s keyword list carried `"analyze", "analyse"` deliberately so
+  it matches either spelling, and the replacement collapsed them into a duplicate. Restored on
+  both platforms. Android `BUILD SUCCESSFUL`; **iOS was not compile-verified** — see
+  FUTURE_ENHANCEMENTS.
+- **Global git identity fixed.** The machine's global config was still a personal Gmail
+  address, so any repo without a local override would reproduce the leak that took a full
+  history rewrite to remove here. Global is now a GitHub noreply address; the three
+  EcoInference repos keep their `info@ecoinference.ai` local override.
+
+### The website moved to the org
+
+`ecoinference.ai`'s source now lives at **`github.com/ecoinference/ei-website`** (private —
+it is a marketing site, not something anyone needs to fork). All 23 commits re-authored to
+`info@ecoinference.ai`. The old `wildwaysmark/ei-website` is superseded and has been made
+private.
+
+Three things that move required beyond a push, each recorded because they are the kind of
+thing that silently breaks:
+
+1. **`src/admin/config.yml` named the old repo as the Decap CMS backend.** The CMS would have
+   broken the moment the repo moved. It now points at the org — and needs a sign-in with org
+   access.
+2. **The repo had been unable to commit since 2026-08-01.** Three zero-byte lock files
+   (`index.lock`, `HEAD.lock`, `objects/maintenance.lock`) from a crashed git process, all
+   stamped 22:00 that day. Work had not been "in progress" — it was blocked, silently, for
+   three weeks. Removing them released a fourth white paper that had never been pushed, a
+   favicon, an About portrait the page was already referencing (so that image was broken
+   live), and a correction of "97,000 average US homes" to 36,000 — a 2.7x arithmetic error
+   that was published the whole time.
+3. **`scripts/preview.sh` hardcoded one machine's absolute path**; it now resolves its own
+   location.
+
+**The open-source announcement is live** on the homepage, and ™ markings are applied to the
+nav brand site-wide plus the first body use — verified against the deployed site: HTTP 200,
+2 marks on the homepage, 1 on every other page, all 10 links resolving, the corrected figure
+in place, and the previously-broken portrait now serving.
 
 ### Recently completed (2026-08-20) — history rewritten for public release
 
