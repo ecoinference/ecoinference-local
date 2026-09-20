@@ -40,6 +40,37 @@ Ordered roughly by whether it blocks something.
 
 ---
 
+## Next up: the routing test harness
+
+**Agreed 2026-09-19 as the next piece of work.** Design is in
+[docs/ROUTING.md](docs/ROUTING.md) — read §2 before starting; the reasoning there is the point,
+not the file layout.
+
+Suggested order, smallest useful thing first:
+
+1. **`tests/router/corpus.jsonl`** — seed ~30 cases by hand, weighted toward *near-miss
+   paraphrases*. Prompts that obviously match a keyword test nothing. Include the known
+   failures: "who won the game yesterday", "what's the latest with the election", a non-English
+   prompt. Mark them `known_miss: true`.
+2. **Android runner first** — `RuleEngine` has no platform imports, so it's a plain JVM test in
+   `app/src/test/kotlin/`. Fastest feedback loop, no device. This alone gives the router its
+   first tests.
+3. **Mirror to iOS** (`AIiOS/AIiOSTests/`) reading the *same* corpus file, and assert
+   iOS/Android agreement per case. That converts the "keep keyword lists in sync" comment into
+   something enforced — see [docs/ROUTING.md §1](docs/ROUTING.md#1-how-routing-works-today).
+4. **Then** wire Gemini-as-judge to generate labels, rather than hand-labeling. `GeminiService`
+   already exists on both platforms.
+
+Steps 1–3 are worth doing even if the judging step never happens: they close the "router has no
+tests" gap and enforce parity. Step 4 is what makes the corpus self-maintaining.
+
+Two things not to get wrong, both expanded in the design doc: the judging question is **"was
+local good enough?"** and not "which answer is better" (otherwise everything routes to cloud),
+and **local-retention is a headline metric** because accuracy alone is gamed by a router that
+sends everything to cloud and is never wrong.
+
+---
+
 ## Correctness gaps
 
 - **iOS has not been compile-verified since the 2026-08-21 spelling sweep.** That sweep renamed
