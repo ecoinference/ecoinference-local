@@ -15,6 +15,7 @@ establish and cheap to lose.
 | [MODEL_EVALUATIONS.md](MODEL_EVALUATIONS.md) | Models tested and *not* adopted, with numbers — 12B via LiteRT-LM, MLX Swift for iOS vision | Before asking "has anyone tried X?" or proposing a new runtime |
 | [RELATED_PROJECTS.md](RELATED_PROJECTS.md) | What else carries the EcoInference name, and the standing rule that features don't flow between them | Before porting anything in from another EcoInference product |
 | [ROADMAP_FINETUNING.md](ROADMAP_FINETUNING.md) | Planned domain models and what they'll need from this repo's Remote Config, Models tab and Firestore | Before changing the model catalog schema |
+| [ROUTING.md](ROUTING.md) | How local/cloud routing works today, its keyword weakness, a design for a Gemini-judged test harness, and the Cactus Needle evaluation | Before touching the router, or proposing a model-based replacement |
 | [CODE_CONVENTIONS.md](CODE_CONVENTIONS.md) | Standing decisions — parity, Android theming, verification discipline | Before writing code against this codebase |
 
 Elsewhere in the repo:

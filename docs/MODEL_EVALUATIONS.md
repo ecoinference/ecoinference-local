@@ -48,6 +48,14 @@ benchmark then.
 
 ---
 
+## Cactus Needle — evaluated as a router, not adopted (September 2026)
+
+A 2-bit, 8–29 MB model for tool calls, structured extraction and embeddings. Considered as a
+semantic replacement for the router's keyword matching. Write-up, including the
+telemetry-on-by-default flag that gates it, is in [ROUTING.md](ROUTING.md#4-evaluated-not-adopted-cactus-needle).
+
+---
+
 ## MLX Swift for iOS vision — explored, not started (July 2026)
 
 Explored [mlx-swift-examples](https://github.com/ml-explore/mlx-swift-examples) and the newer

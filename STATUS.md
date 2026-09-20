@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-08-21, from the macOS/mobile machine.
+Last updated: 2026-09-19, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -22,7 +22,7 @@ work:
   constraints, and the reasoning behind decisions that look arbitrary from the code alone.
 - **[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md)** — build/install/debug commands per
   platform, the traps in each, and measured performance numbers.
-- **[docs/](docs/README.md)** — eight more: case studies of expensive bugs, desktop/Electron,
+- **[docs/](docs/README.md)** — nine more: routing, case studies of expensive bugs, desktop/Electron,
   infrastructure (B2/Cloudflare/Firebase/IAM), prior art, licensing rationale, model
   evaluations, related projects, and the fine-tuning roadmap.
 - **[FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md)** — everything known to be incomplete,
@@ -31,6 +31,16 @@ work:
 ---
 
 ## Mobile (iOS + Android)
+
+### 2026-09-19 — routing design recorded (nothing built)
+
+Discussed replacing the router's keyword matching with a small on-device model. Outcome is a
+design, not code: [docs/ROUTING.md](docs/ROUTING.md). Three things worth knowing without
+reading it — the router has **no tests** and its iOS/Android parity is guaranteed only by a
+code comment; **live tunability via Remote Config is its best property**, so a replacement that
+trades that for accuracy is probably a bad trade; and Cactus Needle, the model evaluated, ships
+with **telemetry on by default**, which gates any adoption for a product claiming nothing leaves
+the device.
 
 ### Recently completed (2026-08-21) — published; website moved to the org
 
