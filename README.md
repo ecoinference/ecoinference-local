@@ -64,8 +64,6 @@ usable for anything." Running the app involves several components with their own
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
 | Chaquopy (Android Python runtime) | **MIT** | Confirmed — open source since 12.0.1, no license key needed |
 | Embedded Python + packages (iOS, Android) | **All permissive** | CPython under the PSF license, plus numpy/pandas/matplotlib/etc. under BSD, MIT, MIT-CMU and Apache 2.0. Each package's own license ships beside it in `.dist-info/` — see [NOTICE](NOTICE) |
-| Qwen3 8B / Qwen3-VL 4B (NPU) | **Apache 2.0** | Confirmed — upstream Qwen3 weights are Apache 2.0, permissive |
-| Llama 3.2 3B 16K (NPU) | **Llama 3.2 Community License** | Requires "Built with Llama" attribution and a Notice file (both present, see [NOTICE](NOTICE)) and compliance with [Meta's Acceptable Use Policy](https://www.llama.com/llama3_2/use-policy) |
 | GenieX (NPU orchestration CLI) | BSD 3-Clause | **Not bundled** — the user installs it themselves, and use is also subject to [Qualcomm's Terms of Use](https://www.qualcomm.com/site/terms-of-use), which they accept directly |
 | QAIRT / Qualcomm AI Engine Direct | Qualcomm's terms | **Not bundled, and not redistributed by this project** — GenieX downloads the runtime from Qualcomm's own infrastructure onto the user's machine. See the note below before changing that |
 
@@ -113,7 +111,7 @@ share an inference runtime.
 |---|---|---|
 | **iOS / Android** | LiteRT-LM (`.litertlm`) | Gemma 4 E2B (~2.5 GB), Gemma 4 E4B (~3.6 GB) |
 | **Desktop** | llama.cpp (GGUF) | Gemma 4 E4B (~5 GB), Gemma 4 12B (~6.7 GB) |
-| **Desktop (Snapdragon)** | GenieX (NPU) | Qwen3 8B, Qwen3-VL 4B — self-caching, no app-side download |
+| **Desktop (Snapdragon)** | GenieX (NPU) | Gemma 4 E4B — self-caching, no app-side download |
 
 Model weights are **not** in this repo. They're fetched at runtime from a Backblaze B2
 bucket fronted by Cloudflare CDN.

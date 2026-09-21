@@ -44,7 +44,7 @@ export abstract class InferenceServer {
   /**
    * Validate the modelPath argument to start() before spawning. Default assumes it's a
    * real file on disk (llama.cpp's case). Override for backends where modelPath is an
-   * opaque identifier instead (e.g. GenieX resolves model IDs like "qualcomm/Qwen3-8B"
+   * opaque identifier instead (e.g. GenieX resolves model IDs like "qualcomm/Gemma-4-E4B-it"
    * itself, server-side — there's no local file to check).
    */
   protected validateModelPath(modelPath: string): string | null {

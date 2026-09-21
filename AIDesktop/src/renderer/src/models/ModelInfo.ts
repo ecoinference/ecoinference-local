@@ -58,54 +58,32 @@ export const ModelCatalog: ModelInfo[] = [
     loaded:             false,
   },
   {
-    id:                 'qwen3-8b-npu',
-    displayName:        'Qwen3 8B (NPU)',
-    fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
-    fileName:           'qualcomm/Qwen3-8B',
-    licenseUrl:         'https://huggingface.co/Qwen/Qwen3-8B',
-    platform:           'desktop',
-    supportsVision:     false,
-    supportsImageInput: false,
-    maxContextTokens:   4096,
-    backend:            'geniex',
-    downloaded:         false,
-    loaded:             false,
-  },
-  {
     // NPU model availability is chip-specific to Qualcomm's AI Hub compile catalog (see
     // project memory) — confirmed working via GenieX on this exact chip (Snapdragon X2
-    // Elite Extreme), not verified on other Snapdragon X-series variants.
-    id:                 'qwen3-vl-4b-npu',
-    displayName:        'Qwen3 VL 4B (NPU)',
+    // Elite), not verified on other Snapdragon X-series variants. Was blocked (empty
+    // supported-chipset list) as recently as the same day this was integrated; only
+    // just became pullable after a GenieX update, so re-verify chipset support if this
+    // ever starts failing to load again rather than assuming it's a regression.
+    // Gemma's own Terms of Use (not Apache/MIT) apply — see the repo's NOTICE file.
+    // `max_tokens` was confirmed ignored by the qairt plugin on earlier GenieX versions
+    // (server always generated to a fixed ~2048-token cap regardless of the request —
+    // see https://github.com/qualcomm/GenieX/issues/1403), appears fixed as of the
+    // GenieX version this was integrated on, but re-verify after any future GenieX
+    // update. Long-form generation has shown real hallucinations in testing (e.g.
+    // misattributing Gutenberg's "Aha!" moment to Johannes Fust, his financier) —
+    // watch for this on other qairt models too if any get added back in the future.
+    // This is now the daily-driver model (2026-09-20), replacing the since-removed
+    // Qwen3 NPU models — see project memory for why.
+    id:                 'gemma4-e4b-npu',
+    displayName:        'Gemma 4 E4B (NPU)',
     fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
-    fileName:           'qualcomm/Qwen3-VL-4B-Instruct',
-    licenseUrl:         'https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct',
+    fileName:           'qualcomm/Gemma-4-E4B-it',
+    licenseUrl:         'https://huggingface.co/qualcomm/Gemma-4-E4B-it',
     platform:           'desktop',
+    gemmaVersion:       4,
     supportsVision:     true,
     supportsImageInput: true,
     maxContextTokens:   4096,
-    backend:            'geniex',
-    downloaded:         false,
-    loaded:             false,
-  },
-  {
-    // Independently compiled by a community publisher (piffie), not Qualcomm's own AI
-    // Hub pipeline — only importable via GenieX's `--model-hub localfs` path (`--model-hub
-    // hf` doesn't recognize raw genie/QAIRT bundles at all, see project memory), so it must
-    // already be present in the local GenieX cache before this entry will load — there's
-    // no `geniex pull` fallback the app can trigger on demand like the other geniex models.
-    // Real 16k context (confirmed: verified with an actual >4096-token prompt), at the cost
-    // of much lower throughput (~9 tok/s vs ~21 tok/s for Qwen3-8B) — a genuine capability
-    // vs. speed tradeoff, not a bug.
-    id:                 'llama32-3b-16k-npu',
-    displayName:        'Llama 3.2 3B 16K (NPU)',
-    fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
-    fileName:           'piffie/Llama-3.2-3B-Instruct-Genie-Snapdragon-X2-Elite-v81-16k',
-    licenseUrl:         'https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct',
-    platform:           'desktop',
-    supportsVision:     false,
-    supportsImageInput: false,
-    maxContextTokens:   16384,
     backend:            'geniex',
     downloaded:         false,
     loaded:             false,

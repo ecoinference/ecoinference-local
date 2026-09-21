@@ -21,7 +21,7 @@ export class GenieXServer extends InferenceServer {
   protected buildArgs(_modelPath: string): string[] {
     // geniex serve takes no model at startup — it's selected per-request via the
     // "model" field in the chat completion body instead. modelPath here is really
-    // the model ID the caller intends to use (e.g. "qualcomm/Qwen3-8B"); the base
+    // the model ID the caller intends to use (e.g. "qualcomm/Gemma-4-E4B-it"); the base
     // class still tracks it via _modelPath for status(), it's just not a CLI arg.
     return ['serve', '--compute', 'npu', '--host', `127.0.0.1:${this.port}`]
   }

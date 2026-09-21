@@ -64,6 +64,20 @@ type Action =
   | { type: 'SET_GENERATING';             value: boolean }
   | { type: 'CLEAR_MESSAGES' }
 
+// ── Persistence ───────────────────────────────────────────────────────────────
+
+// Per-viewer only (Electron's localStorage, scoped to this app's userData profile) — not
+// synced anywhere, just enough to remember what to auto-load next launch.
+const LAST_MODEL_STORAGE_KEY = 'ecoinference.lastModelId'
+
+function readLastModelId(): string | null {
+  try { return localStorage.getItem(LAST_MODEL_STORAGE_KEY) } catch { return null }
+}
+
+function writeLastModelId(id: string): void {
+  try { localStorage.setItem(LAST_MODEL_STORAGE_KEY, id) } catch { /* e.g. storage blocked — non-fatal */ }
+}
+
 // ── Reasoning-model helpers ───────────────────────────────────────────────────
 
 // Reasoning models (Qwen3's thinking mode, DeepSeek-R1 distills, etc.) emit their
@@ -344,7 +358,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
     dispatch({ type: 'SET_LOADING_MODEL', id: modelId })
     try {
       // llama-cpp: fileName is a real file downloaded to modelsDir. geniex: fileName is
-      // already the GenieX model ID (e.g. "qualcomm/Qwen3-8B") — pass it straight through.
+      // already the GenieX model ID (e.g. "qualcomm/Gemma-4-E4B-it") — pass it straight through.
       const modelPath = info.backend === 'geniex'
         ? info.fileName
         : `${modelsDirRef.current}/${info.fileName}`
@@ -352,6 +366,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
       if (result.ok) {
         dispatch({ type: 'SET_LOADED_MODEL', id: modelId })
         dispatch({ type: 'SET_SERVER_RUNNING', running: true })
+        writeLastModelId(modelId)
       } else {
         throw new Error(result.error ?? 'Failed to start inference server')
       }
@@ -359,6 +374,31 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
       dispatch({ type: 'SET_LOADING_MODEL', id: null })
     }
   }, [state.loadingModelId])
+
+  // Auto-load whatever model was loaded last time, once per app launch, then jump
+  // straight to Chat the same way a manual Load click does (see ModelsScreen).
+  // Gated on enabledModelIds having resolved (not just platformInfo) even though
+  // Windows ARM64 ignores the remote allowlist itself (see buildCatalog) —
+  // enabledModelIds starts out `null`, which buildCatalog treats as "no filter yet"
+  // and lets every catalog model through, so waiting for it to settle avoids racing
+  // a transient, not-yet-authoritative catalog on the platforms that do use the
+  // remote allowlist.
+  const autoLoadAttempted = useRef(false)
+  useEffect(() => {
+    if (autoLoadAttempted.current) return
+    if (state.enabledModelIds === null) return
+    if (state.loadedModelId || state.loadingModelId) return
+    autoLoadAttempted.current = true
+
+    const lastId = readLastModelId()
+    if (!lastId) return
+    const info = state.models.find((m) => m.id === lastId)
+    if (!info?.downloaded) return // e.g. deleted/disabled since last launch — fall back to manual pick
+
+    loadModel(lastId)
+      .then(() => navigateTo('chat'))
+      .catch(() => { /* failed auto-load — leave the user on Models to pick manually */ })
+  }, [state.models, state.enabledModelIds, state.loadedModelId, state.loadingModelId, loadModel, navigateTo])
 
   const unloadModel = useCallback(async () => {
     await window.llama.stop()
