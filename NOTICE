@@ -49,6 +49,29 @@ How it reaches each platform:
 Apache 2.0 section 4(d) requires passing along an upstream NOTICE file where one exists.
 LiteRT-LM does not publish one, so there is no upstream notice text to reproduce.
 
+## Cactus Needle 3 (router embedding engine — iOS and Android)
+
+Copyright The Cactus Needle Authors.
+
+Licensed under the Apache License, Version 2.0. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Source: https://github.com/cactus-compute/needle
+
+Used as the router's semantic-fact embedder (docs/ROUTING.md §4): a fixed 35 MB feature
+extractor; all tunable routing intelligence stays in this repo's own config. How it reaches
+each platform: prebuilt static engines (`libneedle.a` for ios-arm64, ios-sim-arm64 and
+android-arm64) plus the `needle3.cact` weights, fetched from the upstream HuggingFace repo
+(`Cactus-Compute/needle3`) by `fetch_needle.sh` at setup time and never committed or
+redistributed by this repository — the same policy as the iOS LiteRT-LM frameworks. The
+binaries are unmodified. Upstream publishes no NOTICE file, so there is no notice text to
+reproduce.
+
+The engine's Python-side CLI documents telemetry on by default; the C engines linked here
+were verified network-silent on macOS via strings/lsof probing (2026-09-20), with
+real-device verification tracked in FUTURE_ENHANCEMENTS.md before any release ships them.
+
 ## Embedded Python runtime and packages (iOS and Android)
 
 Both mobile apps embed a CPython 3.10 runtime and a set of third-party Python packages, so

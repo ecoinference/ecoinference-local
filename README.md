@@ -60,6 +60,7 @@ usable for anything." Running the app involves several components with their own
 | This source code | **MIT** | What the LICENSE file covers — do as you like |
 | Gemma model weights | **Gemma Terms of Use** | **Not** an OSI open-source license — includes a prohibited-use policy. Redistribution requires providing the terms and a Notice file (see [NOTICE](NOTICE)) |
 | LiteRT-LM runtime (iOS, Android) | **Apache 2.0** | Confirmed — permits binary redistribution. Android resolves the official Google artifact via Gradle; iOS fetches prebuilt dylibs via `download_frameworks.sh`. Attribution in [NOTICE](NOTICE); upstream publishes no NOTICE file of its own |
+| Cactus Needle 3 (router embedder, iOS + Android) | **Apache 2.0** | Prebuilt engines + 35 MB weights fetched from upstream HuggingFace by `fetch_needle.sh` — never committed or redistributed here. Attribution in [NOTICE](NOTICE). Upstream's *Python CLI* documents telemetry on by default; the linked C engines were verified network-silent on macOS (2026-09-20), with real-device verification tracked in [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md) before release |
 | llama.cpp (desktop) | MIT | Bundled per-platform binaries |
 | Chaquopy (Android Python runtime) | **MIT** | Confirmed — open source since 12.0.1, no license key needed |
 | Embedded Python + packages (iOS, Android) | **All permissive** | CPython under the PSF license, plus numpy/pandas/matplotlib/etc. under BSD, MIT, MIT-CMU and Apache 2.0. Each package's own license ships beside it in `.dist-info/` — see [NOTICE](NOTICE) |
@@ -172,6 +173,10 @@ Firebase project `ecoinference-28c31`, shared by all three clients:
 - **Android** — API 30+ (`.litertlm` fails to load the native lib below this; API 29
   devices are out of scope). Gradle needs an explicit `JAVA_HOME`, e.g. Android Studio's
   bundled JBR.
+- **Both mobile platforms** — run `./fetch_needle.sh` (repo root) to vendor the Cactus
+  Needle 3 router-embedder engines + weights (~37 MB per platform, not tracked; the router
+  fails open to keyword facts without them). Android also needs NDK 25.1.8937393 +
+  CMake 3.22.1 for the JNI wrapper.
 - **Desktop** — Node + Electron; a `llama-server` binary is bundled per platform.
 - **Desktop on Windows ARM64 / Snapdragon** — additionally requires
   **[GenieX](https://github.com/qualcomm/GenieX) installed separately**, with `geniex` on

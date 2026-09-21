@@ -264,4 +264,9 @@ void litert_lm_set_min_log_level(int level);
 }
 #endif
 
+// ── Needle 3 router embedder ────────────────────────────────────────────────
+// ObjC wrapper (declarations only — safe for the standalone test target,
+// which imports this header but never links or compiles the bridge).
+#import "Inference/NeedleBridge.h"
+
 #endif /* LiteRtLm_Bridging_Header_h */

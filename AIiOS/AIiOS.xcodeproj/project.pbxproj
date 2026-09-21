@@ -62,9 +62,22 @@
 		A2130000000000000000AA01 /* RouterModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1130000000000000000AA01 /* RouterModels.swift */; };
 		A2140000000000000000AA01 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1140000000000000000AA01 /* RuleEngine.swift */; };
 		A2150000000000000000AA01 /* RouterFactExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1150000000000000000AA01 /* RouterFactExtractor.swift */; };
+		B1010000000000000000CC01 /* RouterCorpusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000CC01 /* RouterCorpusTests.swift */; };
+		B1020000000000000000CC02 /* RouterFactExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000CC02 /* RouterFactExtractorTests.swift */; };
+		B1030000000000000000CC03 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1140000000000000000AA01 /* RuleEngine.swift */; };
+		B1040000000000000000CC04 /* RouterFactExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1150000000000000000AA01 /* RouterFactExtractor.swift */; };
+		B1050000000000000000CC05 /* RouterModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1130000000000000000AA01 /* RouterModels.swift */; };
 		A2160000000000000000AA01 /* RouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1160000000000000000AA01 /* RouterService.swift */; };
 		A2170000000000000000AA01 /* default_router_rules.json in Resources */ = {isa = PBXBuildFile; fileRef = A1170000000000000000AA01 /* default_router_rules.json */; };
 		A2180000000000000000AA01 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = A1180000000000000000AA01 /* FirebaseRemoteConfig */; };
+		A2200000000000000000AA01 /* default_router_exemplars.json in Resources */ = {isa = PBXBuildFile; fileRef = A1200000000000000000AA01 /* default_router_exemplars.json */; };
+		A2210000000000000000AA01 /* NeedleEmbedder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1210000000000000000AA01 /* NeedleEmbedder.swift */; };
+		A2220000000000000000AA01 /* ExemplarScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1220000000000000000AA01 /* ExemplarScorer.swift */; };
+		A2230000000000000000AA01 /* NeedleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A1240000000000000000AA01 /* NeedleBridge.m */; };
+		A2240000000000000000AA01 /* Needle.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1250000000000000000AA01 /* Needle.xcframework */; };
+		A2250000000000000000AA01 /* needle3.cact in Resources */ = {isa = PBXBuildFile; fileRef = A1260000000000000000AA01 /* needle3.cact */; };
+		A2260000000000000000AA01 /* ExemplarScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1220000000000000000AA01 /* ExemplarScorer.swift */; };
+		A2270000000000000000AA01 /* ExemplarScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1270000000000000000AA01 /* ExemplarScorerTests.swift */; };
 		A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC39CF38328F273C28DCECD0 /* ToolResult.swift */; };
 		A862F8147CA58D8E56808259 /* PythonCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE83DFFB718980F1B010B3C5 /* PythonCommandTests.swift */; };
 		A93B2AFBB1007B0C4857C8DA /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -174,6 +187,16 @@
 		F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libLiteRtMetalAccelerator.xcframework; path = Frameworks/libLiteRtMetalAccelerator.xcframework; sourceTree = "<group>"; };
 		FDA0060B41B5BC1A612164CF /* AIiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIiOS.entitlements; sourceTree = "<group>"; };
 		FE83DFFB718980F1B010B3C5 /* PythonCommandTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PythonCommandTests.swift; sourceTree = "<group>"; };
+		B1000000000000000000CC01 /* RouterCorpusTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouterCorpusTests.swift; sourceTree = "<group>"; };
+		B1000000000000000000CC02 /* RouterFactExtractorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RouterFactExtractorTests.swift; sourceTree = "<group>"; };
+		A1200000000000000000AA01 /* default_router_exemplars.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_router_exemplars.json; sourceTree = "<group>"; };
+		A1210000000000000000AA01 /* NeedleEmbedder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeedleEmbedder.swift; sourceTree = "<group>"; };
+		A1220000000000000000AA01 /* ExemplarScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExemplarScorer.swift; sourceTree = "<group>"; };
+		A1230000000000000000AA01 /* NeedleBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NeedleBridge.h; sourceTree = "<group>"; };
+		A1240000000000000000AA01 /* NeedleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NeedleBridge.m; sourceTree = "<group>"; };
+		A1250000000000000000AA01 /* Needle.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Needle.xcframework; path = Frameworks/Needle.xcframework; sourceTree = "<group>"; };
+		A1260000000000000000AA01 /* needle3.cact */ = {isa = PBXFileReference; lastKnownFileType = file; name = needle3.cact; path = Frameworks/needle3.cact; sourceTree = "<group>"; };
+		A1270000000000000000AA01 /* ExemplarScorerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExemplarScorerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +214,7 @@
 			files = (
 				2953CA140989E00E67E7E69D /* libLiteRtLm.xcframework in Frameworks */,
 				3F74C00E1F8F12D12830EDBB /* libGemmaModelConstraintProvider.xcframework in Frameworks */,
+				A2240000000000000000AA01 /* Needle.xcframework in Frameworks */,
 				4D8E90F22FE0AA0C00C8594A /* FirebaseStorage in Frameworks */,
 				A2180000000000000000AA01 /* FirebaseRemoteConfig in Frameworks */,
 				C76B26B888AD8FDB1CFA1ED0 /* libLiteRtMetalAccelerator.xcframework in Frameworks */,
@@ -232,6 +256,7 @@
 				58A8051299A89A6166861451 /* Info.plist */,
 				CC891A2300001111AABBCCDD /* GoogleService-Info.plist */,
 				A1170000000000000000AA01 /* default_router_rules.json */,
+				A1200000000000000000AA01 /* default_router_exemplars.json */,
 				61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */,
 				0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */,
 				ACFB2917A419EA15F57507C3 /* RootView.swift */,
@@ -293,6 +318,8 @@
 				A1140000000000000000AA01 /* RuleEngine.swift */,
 				A1150000000000000000AA01 /* RouterFactExtractor.swift */,
 				A1160000000000000000AA01 /* RouterService.swift */,
+				A1210000000000000000AA01 /* NeedleEmbedder.swift */,
+				A1220000000000000000AA01 /* ExemplarScorer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -315,6 +342,8 @@
 				8DDEC985502830F88444FB5F /* LiteRtLmEngine.swift */,
 				AC4253C7FDDE8165B54B1AC7 /* ToolDefinition.swift */,
 				761B7BD7D80F1ED1E8E1F7BD /* InferenceMessage.swift */,
+				A1230000000000000000AA01 /* NeedleBridge.h */,
+				A1240000000000000000AA01 /* NeedleBridge.m */,
 			);
 			path = Inference;
 			sourceTree = "<group>";
@@ -335,6 +364,8 @@
 				F9C96CB8C4CD2914FD79F0AC /* libLiteRtMetalAccelerator.xcframework */,
 				81C59C58E5D7AF904C6B2B41 /* libStreamProxy.xcframework */,
 				00484D7D7A20D3FAC92E1567 /* Python.xcframework */,
+				A1250000000000000000AA01 /* Needle.xcframework */,
+				A1260000000000000000AA01 /* needle3.cact */,
 				8D207313DA7C4948A20B9E51 /* iOS */,
 			);
 			name = Frameworks;
@@ -346,6 +377,9 @@
 				245CCBC0A19BDE2D9A85ED4A /* AgentLoopTests.swift */,
 				0EF1A06F03C725871B1CFC37 /* ToolResultTests.swift */,
 				FE83DFFB718980F1B010B3C5 /* PythonCommandTests.swift */,
+				B1000000000000000000CC01 /* RouterCorpusTests.swift */,
+				B1000000000000000000CC02 /* RouterFactExtractorTests.swift */,
+				A1270000000000000000AA01 /* ExemplarScorerTests.swift */,
 			);
 			name = AIiOSTests;
 			path = AIiOSTests;
@@ -455,6 +489,8 @@
 				4718B5169B2B8741B7010B70 /* Assets.xcassets in Resources */,
 				BB891A2300001111AABBCCDD /* GoogleService-Info.plist in Resources */,
 				A2170000000000000000AA01 /* default_router_rules.json in Resources */,
+				A2200000000000000000AA01 /* default_router_exemplars.json in Resources */,
+				A2250000000000000000AA01 /* needle3.cact in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -538,6 +574,9 @@
 				A2140000000000000000AA01 /* RuleEngine.swift in Sources */,
 				A2150000000000000000AA01 /* RouterFactExtractor.swift in Sources */,
 				A2160000000000000000AA01 /* RouterService.swift in Sources */,
+				A2210000000000000000AA01 /* NeedleEmbedder.swift in Sources */,
+				A2220000000000000000AA01 /* ExemplarScorer.swift in Sources */,
+				A2230000000000000000AA01 /* NeedleBridge.m in Sources */,
 				2655D9612602662244AD77E9 /* SettingsService.swift in Sources */,
 				085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */,
 				9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */,
@@ -559,6 +598,13 @@
 				F6E58BF203EA637F2E1D31E5 /* ToolResultTests.swift in Sources */,
 				B2C58B73B788995F85E0BDD8 /* PythonCommand.swift in Sources */,
 				A862F8147CA58D8E56808259 /* PythonCommandTests.swift in Sources */,
+				B1010000000000000000CC01 /* RouterCorpusTests.swift in Sources */,
+				B1020000000000000000CC02 /* RouterFactExtractorTests.swift in Sources */,
+				B1030000000000000000CC03 /* RuleEngine.swift in Sources */,
+				B1040000000000000000CC04 /* RouterFactExtractor.swift in Sources */,
+				B1050000000000000000CC05 /* RouterModels.swift in Sources */,
+				A2260000000000000000AA01 /* ExemplarScorer.swift in Sources */,
+				A2270000000000000000AA01 /* ExemplarScorerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,12 +659,17 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Frameworks/Needle",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = (
 					"-rpath",
 					"@executable_path/Frameworks",
+					"-lc++",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -749,6 +800,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Frameworks/Needle",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -756,6 +811,7 @@
 				OTHER_LDFLAGS = (
 					"-rpath",
 					"@executable_path/Frameworks",
+					"-lc++",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

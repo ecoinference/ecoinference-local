@@ -69,8 +69,22 @@ DerivedData/
 .DS_Store
 Thumbs.db
 
+# Router corpus test outputs — per-platform decision dumps written by
+# RouterCorpusTest.kt / RouterCorpusTests.swift for the cross-platform parity
+# comparison. Regenerated on every test run; the shared corpus.jsonl beside
+# them IS tracked.
+tests/router/decisions-*.txt
+
 # Local model weights (multi-GB GGUF/litertlm files) — never commit, fetched from B2
 /models/
+
+# Cactus Needle 3 router embedder — engine, weights and headers vendored by
+# fetch_needle.sh, same policy as AIiOS/Frameworks/ above (binaries are never
+# committed; the repo ships only the JNI/bridge sources and the exemplar
+# config JSON). The iOS side is already covered by the AIiOS/Frameworks/ rule.
+.cache-needle/
+AIAndroid/app/src/main/cpp/needle/
+AIAndroid/app/src/main/assets/needle3.cact
 
 # AIFlutter — standalone LiteRT-LM/Flutter viability test app, not part of the
 # shipped product and never tracked here. ~4.6GB of Flutter build output on disk;

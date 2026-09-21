@@ -1,10 +1,11 @@
 # Routing: How It Works, and Where It's Going
 
 Every prompt is routed to a **local** or **cloud** tier before inference. This covers how that
-decision is made today, a design for measuring it properly, and one third-party model evaluated
-as a possible replacement for the weak part.
+decision is made, the harness that measures it, and the Needle 3 embedder that replaced the
+weak part (§4 — adopted 2026-09-20).
 
-The harness below is a **design agreed 2026-09-19. It is not built.**
+The §2 harness is **built and green on both platforms** (2026-09-20); the §4 integration is
+built, with the device gates and corpus work listed in §4's status block still owed.
 
 ---
 
@@ -140,7 +141,50 @@ schema holds user-submitted prompts.
 
 ---
 
-## 4. Evaluated, not adopted: Cactus Needle
+## 4. Adopted 2026-09-20: Cactus Needle 3 as the embedder
+
+> **Status: integrated on both platforms, uncommitted at the time of writing; device gates
+> still owed.** The evaluation that led here follows below. What shipped:
+>
+> - **Harness first (§2) — built and green.** `tests/router/corpus.jsonl` (30 cases),
+>   `RouterCorpusTest.kt` (JVM), `RouterCorpusTests.swift` (standalone AIiOSTests target),
+>   cross-platform parity test comparing decision dumps — passing in both directions.
+>   Keyword-baseline measurement on the corpus: 0 false-local, 0 false-cloud, **1/15**
+>   known_miss converted.
+> - **Gate 1 (telemetry, Mac first pass): CLEAN.** `strings -a` over all four platform
+>   artifacts: zero http/telemetry strings; lsof sampling + child-process watch with
+>   telemetry on and off: zero network FDs, zero children. The README's telemetry disclosure
+>   tracks the *Python CLI*, not the C engines we link. **Real-device verification is still
+>   owed before any release ships the engine** (FUTURE_ENHANCEMENTS).
+> - **Gate 3 (conversion): GO — 13/15** known_miss converted, 0 labeled regressions
+>   (max-cosine, centered, per-category thresholds: current-events > +0.175,
+>   sensitive-domain > +0.200). Margin scoring was tested and dropped — no threshold
+>   combination avoided labeled regressions. 3072-dim embeddings, 8–11 ms/text on an
+>   M-series Mac. The two remaining misses are idiomatic false-clouds the keyword router
+>   also fails — parity, not regression.
+> - **Integration (mirrored exactly on both platforms):** `fetch_needle.sh` vendors the
+>   engines + weights (never committed, same policy as `AIiOS/Frameworks/`);
+>   `NeedleBridge.{h,m}` (iOS) / `needle_jni.c` + CMake (Android) wrap the three-function
+>   C API; `NeedleEmbedder.{swift,kt}` owns a process-global engine (the API is NOT
+>   thread-safe) behind a serial queue/executor and **fails open to keyword facts on any
+>   error or unavailable engine** (stub ABI, missing weights) — routing never blocks chat.
+>   `ExemplarScorer.{swift,kt}` holds the pure math, unit-tested on both platforms.
+>   Semantic facts are merged over keyword facts inside `RouterService.decide()`;
+>   `RuleEngine`, the rules JSON and structural facts are untouched.
+> - **Live tunability preserved:** new Remote Config key `router_exemplars`
+>   (`{version, categories, thresholds, mean}`), version-gated on the same fetch as
+>   `router_rules`. The bundled default (`default_router_exemplars.json`, byte-identical
+>   on both platforms) carries the 42-exemplar multilingual prototype, the sweep's best
+>   thresholds, and the fixed centering mean derived from the measurement batch. The app
+>   embeds exemplar texts once per config load (~42 × 10 ms).
+>
+> **Caveats on the 13/15 (recorded honestly):** exemplars and thresholds were tuned
+> against the full 30-case corpus, so it is an optimistic bound — the §2 holdout split and
+> Gemini-judge labeling are still owed. The deep-reasoning / creative-writing thresholds
+> are degenerate (they sit at the sweep's grid floor, effectively always-true) because the
+> corpus has no long expect-local case to constrain them — grow the corpus before trusting
+> those two facts. Gate 2 (Lenovo TB336FU latency, §4 item 2 below) is unmeasured; the
+> device runs ~5 chunks/s, so per-prompt embed cost there is the open shipping risk.
 
 [`cactus-compute/needle`](https://github.com/cactus-compute/needle) — Apache 2.0. A 2-bit,
 8–29 MB foundation model for tool calls, structured extraction and embeddings on small devices.

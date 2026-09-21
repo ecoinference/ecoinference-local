@@ -40,47 +40,50 @@ Ordered roughly by whether it blocks something.
 
 ---
 
-## Next up: the routing test harness
+## Next up: routing corpus growth + Needle device gates
 
-**Agreed 2026-09-19 as the next piece of work.** Design is in
-[docs/ROUTING.md](docs/ROUTING.md) — read §2 before starting; the reasoning there is the point,
-not the file layout.
+**Steps 1–3 of the harness are DONE (2026-09-20)** — corpus, Android JVM runner, iOS mirror
+and the enforced cross-platform parity test are built and green, and the Needle 3 embedder
+integration shipped on top of them (see [docs/ROUTING.md §4](docs/ROUTING.md) for the full
+status). What remains, in order:
 
-Suggested order, smallest useful thing first:
+1. **Wire Gemini-as-judge to generate labels** rather than hand-labeling (`GeminiService`
+   already exists on both platforms), plus the **~30% holdout split** — the shipped
+   exemplars/thresholds were tuned against the full 30-case corpus, so the 13/15 conversion
+   number is an optimistic bound until re-measured on held-out cases.
+2. **Grow the corpus with long expect-local cases** — the deep-reasoning/creative-writing
+   thresholds are currently degenerate (grid-floor, effectively always-true) because no
+   labeled case constrains them.
+3. **Device gates before any release ships the Needle engine** (ROUTING.md §4 items):
+   per-prompt embed latency on the Lenovo TB336FU (it runs ~5 chunks/s — the embed cost has
+   to be affordable on the hardware that can least afford it); real-device network-silence
+   verification (the Mac strings/lsof pass was clean, but the formal gate is hardware);
+   an iOS device run.
 
-1. **`tests/router/corpus.jsonl`** — seed ~30 cases by hand, weighted toward *near-miss
-   paraphrases*. Prompts that obviously match a keyword test nothing. Include the known
-   failures: "who won the game yesterday", "what's the latest with the election", a non-English
-   prompt. Mark them `known_miss: true`.
-2. **Android runner first** — `RuleEngine` has no platform imports, so it's a plain JVM test in
-   `app/src/test/kotlin/`. Fastest feedback loop, no device. This alone gives the router its
-   first tests.
-3. **Mirror to iOS** (`AIiOS/AIiOSTests/`) reading the *same* corpus file, and assert
-   iOS/Android agreement per case. That converts the "keep keyword lists in sync" comment into
-   something enforced — see [docs/ROUTING.md §1](docs/ROUTING.md#1-how-routing-works-today).
-4. **Then** wire Gemini-as-judge to generate labels, rather than hand-labeling. `GeminiService`
-   already exists on both platforms.
-
-Steps 1–3 are worth doing even if the judging step never happens: they close the "router has no
-tests" gap and enforce parity. Step 4 is what makes the corpus self-maintaining.
-
-Two things not to get wrong, both expanded in the design doc: the judging question is **"was
-local good enough?"** and not "which answer is better" (otherwise everything routes to cloud),
-and **local-retention is a headline metric** because accuracy alone is gamed by a router that
-sends everything to cloud and is never wrong.
+The original harness rationale, kept because it still governs step 1: the judging question is
+**"was local good enough?"** and not "which answer is better" (otherwise everything routes to
+cloud), and **local-retention is a headline metric** because accuracy alone is gamed by a
+router that sends everything to cloud and is never wrong.
 
 ---
 
 ## Correctness gaps
 
-- **iOS has not been compile-verified since the 2026-08-21 spelling sweep.** That sweep renamed
-  a Swift enum case (`case cancelled` → `case canceled`) and some local variables. Grep confirms
-  no orphaned references, and Android built clean, but a compiler is stronger evidence than a
-  grep. The iOS build currently fails in the "Install Python stdlib" phase *before* reaching any
-  Swift file — 0 Swift compile tasks ran, and the failure never mentions the changed files — so
-  it looks pre-existing and unrelated, but that was not confirmed. **Run a clean iOS build.**
-  Note the trap that hid this: `xcodebuild … | tail -n` reports the *pipe's* exit code, so the
-  shell says 0 while the log says `** BUILD FAILED **`. Grep the literal marker.
+- **~~iOS has not been compile-verified since the 2026-08-21 spelling sweep.~~ RESOLVED
+  2026-09-20:** the full app target now builds (`** BUILD SUCCEEDED **`, Swift compile +
+  link) during the Needle 3 router integration, which compile-verifies everything since the
+  sweep. **Root cause of the "Install Python stdlib" failure found:** the phase converts
+  binary `.so` packages to `.framework`s and codesigns each with
+  `EXPANDED_CODE_SIGN_IDENTITY` — when that expands empty (CLI builds with
+  `CODE_SIGNING_ALLOWED=NO`, or no signing identity configured), `codesign` fails with
+  `no identity found` and the phase aborts the build before any Swift compiles. Working
+  CLI incantation: `xcodebuild build … CODE_SIGNING_ALLOWED=NO
+  EXPANDED_CODE_SIGN_IDENTITY='-'` (passing `CODE_SIGN_IDENTITY='-'` instead does NOT work —
+  the iOS 26.5 SDK rejects ad-hoc signing as a configured identity; overriding the expanded
+  variable directly satisfies the script only). The script itself still deserves a guard for
+  the empty-identity case. Keep the trap note that hid this: `xcodebuild … | tail -n`
+  reports the *pipe's* exit code, so the shell says 0 while the log says
+  `** BUILD FAILED **`. Grep the literal marker.
 
 
 - **Profile sync and avatar upload have never successfully run end-to-end.** Deploying the

@@ -163,6 +163,11 @@ struct EcoInferenceApp: App {
                     handleURL(url)
                 }
                 .task {
+                    // Needle embedder for router semantic facts — async engine
+                    // + weights load; router fails open to keyword facts
+                    // until/unless it is ready. Mirrors Android
+                    // EcoInferenceApp.onCreate.
+                    NeedleEmbedder.shared.start()
                     // Check for an updated router rule set once per launch.
                     // No-op if offline or nothing newer is published — the
                     // bundled default always works.

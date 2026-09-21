@@ -4,6 +4,7 @@ import android.app.Application
 import com.chaquo.python.android.AndroidPlatform
 import com.chaquo.python.Python
 import ai.ecoinference.app.inference.InferenceService
+import ai.ecoinference.app.router.NeedleEmbedder
 import ai.ecoinference.app.router.RouterService
 import ai.ecoinference.app.services.DownloadService
 import ai.ecoinference.app.services.SettingsService
@@ -39,6 +40,9 @@ class EcoInferenceApp : Application() {
         PythonTools.register()
         ImageEditTools.register()
         QrCodeTools.register()
+        // Needle embedder for router semantic facts — async engine + weights
+        // load; router fails open to keyword facts until/unless it is ready.
+        NeedleEmbedder.start(this)
         // Check for an updated router rule set once per launch — no-op if offline
         // or nothing newer is published. Mirrors iOS AIiOSApp.swift .task { }.
         CoroutineScope(Dispatchers.IO).launch {

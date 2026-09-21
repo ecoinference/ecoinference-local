@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-09-19, from the macOS/mobile machine.
+Last updated: 2026-09-20, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -31,6 +31,39 @@ work:
 ---
 
 ## Mobile (iOS + Android)
+
+### 2026-09-20 — Needle 3 embedder router: harness green, integration built (UNCOMMITTED)
+
+Yesterday's design ([docs/ROUTING.md](docs/ROUTING.md)) became working code, in one session,
+**all uncommitted on the macOS machine** — commit it as `EcoInference <info@ecoinference.ai>`
+when git access allows (the session that built it had git blocked in this directory).
+
+- **Routing test harness (§2) built and green both platforms.** Shared 30-case corpus
+  (`tests/router/corpus.jsonl`), Android JVM runner, iOS mirror in the standalone AIiOSTests
+  target, cross-platform parity test passing in both directions (decision dumps identical).
+  Keyword baseline measured: 0 false-local, 0 false-cloud, 1/15 known_miss converted.
+- **Needle 3 adopted as embedder (§4) — GO on measurements.** 13/15 known_miss converted
+  offline with 0 labeled regressions (vs 1/15 for keywords); Mac telemetry probe clean
+  (strings + lsof, all four platform artifacts); 3072-dim, 8–11 ms/text on M-series.
+  Caveats recorded in ROUTING.md §4: tuned on the full corpus (holdout owed), deep/crea
+  thresholds degenerate, Lenovo latency unmeasured, real-device telemetry gate owed.
+- **Integration wired on both platforms, mirrored.** `fetch_needle.sh` (repo root) vendors
+  engines + 35 MB weights from HF `Cactus-Compute/needle3` — never committed, same policy as
+  `AIiOS/Frameworks/`; after cloning, run it before building the apps. `NeedleBridge.{h,m}` /
+  `needle_jni.c` + CMake wrap the C API (x86_64 emulator builds get a stub);
+  `NeedleEmbedder.{swift,kt}` + `ExemplarScorer.{swift,kt}` (unit-tested both platforms) fail
+  open to keyword facts on any unavailability; `RouterService.decide()` merges semantic facts;
+  new Remote Config key `router_exemplars` version-gated alongside `router_rules`; bundled
+  `default_router_exemplars.json` byte-identical on both platforms.
+- **Build-verified:** Android `assembleDebug` BUILD SUCCESSFUL (arm64 JNI 1.75 MB with the
+  real engine linked, verified via llvm-nm; x86_64 stub 4.6 KB); 15/15 Android router JVM
+  tests green. iOS app target `** BUILD SUCCEEDED **` (device, unsigned CLI build) with the
+  engine linked and weights + config bundled — which also closes the long-standing
+  "iOS not compile-verified" gap and found the Python-stdlib script phase's real failure
+  cause (empty codesign identity; workaround in FUTURE_ENHANCEMENTS). iOS tests: all green
+  including 5 new scorer tests and corpus parity.
+- NOTICE updated (Apache 2.0 attribution); ROUTING.md §4 rewritten as adopted-with-status;
+  FUTURE_ENHANCEMENTS "Next up" now = corpus growth, Gemini-judge labels, device gates.
 
 ### 2026-09-19 — routing design recorded (nothing built)
 

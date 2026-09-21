@@ -27,6 +27,7 @@ class RouterService private constructor(private val context: Context) {
     companion object {
         @Volatile private var instance: RouterService? = null
         private const val REMOTE_CONFIG_KEY = "router_rules"
+        private const val EXEMPLARS_CONFIG_KEY = "router_exemplars"
 
         fun getInstance(context: Context): RouterService =
             instance ?: synchronized(this) {
@@ -55,6 +56,10 @@ class RouterService private constructor(private val context: Context) {
     ): RouterDecision {
         val facts = RouterFactExtractor.extract(prompt, history, hasImage)
         facts["localSupportsImage"] = FactValue.BoolValue(localSupportsImage)
+        // Needle embedding facts replace the keyword-derived semantic facts
+        // when the engine is available (docs/ROUTING.md §4). Null on any
+        // failure — keyword facts stand (fail open; routing never blocks chat).
+        NeedleEmbedder.semanticFacts(prompt)?.let { facts.putAll(it) }
 
         val outcome = RuleEngine.decide(facts, ruleSet)
         val tier = if (outcome.decision == "cloud") RouterTier.CLOUD else RouterTier.LOCAL
@@ -77,6 +82,7 @@ class RouterService private constructor(private val context: Context) {
     suspend fun refreshFromRemote(): RefreshResult {
         return try {
             remoteConfig.fetchAndActivate().await()
+            refreshExemplars()
 
             val raw = remoteConfig.getString(REMOTE_CONFIG_KEY)
             if (raw.isEmpty()) return RefreshResult.NoRemoteValue
@@ -90,6 +96,23 @@ class RouterService private constructor(private val context: Context) {
             }
         } catch (e: Exception) {
             RefreshResult.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    /**
+     * Piggybacks the exemplar config (Needle embedder) on the same fetch:
+     * version-gated, failures keep the current config. Malformed JSON is
+     * logged and ignored — a bad push must not take down rule refresh.
+     */
+    private fun refreshExemplars() {
+        val raw = remoteConfig.getString(EXEMPLARS_CONFIG_KEY)
+        if (raw.isEmpty()) return
+        try {
+            NeedleEmbedder.applyConfigIfNewer(
+                json.decodeFromString(NeedleEmbedder.ExemplarConfig.serializer(), raw)
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("RouterService", "invalid $EXEMPLARS_CONFIG_KEY: ${e.message}")
         }
     }
 

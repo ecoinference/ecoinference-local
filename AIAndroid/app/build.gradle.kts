@@ -10,6 +10,9 @@ plugins {
 android {
     namespace  = "ai.ecoinference.app"
     compileSdk = 35
+    // Pinned to the installed NDK — externalNativeBuild (Needle JNI, see
+    // src/main/cpp/CMakeLists.txt) makes the NDK a hard build requirement.
+    ndkVersion = "25.1.8937393"
 
     defaultConfig {
         // Matches iOS bundle ID (ai.ecoinference.eiapp) so both platforms share
@@ -25,6 +28,22 @@ android {
         // Chaquopy requires explicit ABI list.
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+
+        // Needle JNI: libneedle.a is C++ internally, so the shared lib links
+        // the static libc++ runtime. x86_64 has no vendored engine — CMake
+        // builds the stub there (router fails open to keyword facts).
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_STL=c++_static"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 

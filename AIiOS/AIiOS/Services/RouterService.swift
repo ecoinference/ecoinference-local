@@ -30,6 +30,10 @@ final class RouterService: ObservableObject {
     /// Set/update this in Firebase Console → Remote Config → Parameters.
     private static let remoteConfigKey = "router_rules"
 
+    /// Needle embedder exemplar config (docs/ROUTING.md §4) — same console,
+    /// same version-gated refresh pattern as the rules.
+    private static let exemplarsConfigKey = "router_exemplars"
+
     private init() {
         ruleSet = Self.loadBundledDefault()
         let settings = RemoteConfigSettings()
@@ -51,6 +55,12 @@ final class RouterService: ObservableObject {
     ) -> Decision {
         var facts = RouterFactExtractor.extract(prompt: prompt, history: history, hasImage: hasImage)
         facts["localSupportsImage"] = .bool(localSupportsImage)
+        // Needle embedding facts replace the keyword-derived semantic facts
+        // when the engine is available (docs/ROUTING.md §4). Nil on any
+        // failure — keyword facts stand (fail open; routing never blocks chat).
+        if let semantic = NeedleEmbedder.shared.semanticFacts(prompt: prompt) {
+            for (fact, value) in semantic { facts[fact] = value }
+        }
 
         let outcome = engine.decide(facts: facts, ruleSet: ruleSet)
         let tier = Tier(rawValue: outcome.decision) ?? .local
@@ -74,6 +84,7 @@ final class RouterService: ObservableObject {
     func refreshFromRemote() async -> RefreshResult {
         do {
             try await remoteConfig.fetchAndActivate()
+            refreshExemplars()
 
             let raw = remoteConfig.configValue(forKey: Self.remoteConfigKey).stringValue
             guard !raw.isEmpty, let data = raw.data(using: .utf8) else {
@@ -90,6 +101,19 @@ final class RouterService: ObservableObject {
         } catch {
             return .error(error.localizedDescription)
         }
+    }
+
+    /// Piggybacks the exemplar config (Needle embedder) on the same fetch:
+    /// version-gated, failures keep the current config. Malformed JSON is
+    /// ignored — a bad push must not take down rule refresh.
+    /// Mirrors Android RouterService.refreshExemplars().
+    private func refreshExemplars() {
+        let raw = remoteConfig.configValue(forKey: Self.exemplarsConfigKey).stringValue
+        guard !raw.isEmpty,
+              let data = raw.data(using: .utf8),
+              let config = try? JSONDecoder().decode(NeedleEmbedder.ExemplarConfig.self, from: data)
+        else { return }
+        NeedleEmbedder.shared.applyConfigIfNewer(config)
     }
 
     // MARK: - Rule set loading
