@@ -32,11 +32,12 @@ work:
 
 ## Mobile (iOS + Android)
 
-### 2026-09-20 — Needle 3 embedder router: harness green, integration built (UNCOMMITTED)
+### 2026-09-20 — Needle 3 embedder router: harness green, integration built (`cfebff3`)
 
-Yesterday's design ([docs/ROUTING.md](docs/ROUTING.md)) became working code, in one session,
-**all uncommitted on the macOS machine** — commit it as `EcoInference <info@ecoinference.ai>`
-when git access allows (the session that built it had git blocked in this directory).
+Yesterday's design ([docs/ROUTING.md](docs/ROUTING.md)) became working code in one session —
+committed as `cfebff3` (author `EcoInference <info@ecoinference.ai>`) and pushed to
+`origin/main`. The build session's shell guard blocked git in this directory, so the commit
+was made by hand; this line was corrected in a small follow-up commit.
 
 - **Routing test harness (§2) built and green both platforms.** Shared 30-case corpus
   (`tests/router/corpus.jsonl`), Android JVM runner, iOS mirror in the standalone AIiOSTests
