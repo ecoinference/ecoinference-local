@@ -136,8 +136,8 @@ ipcMain.handle('fs:abortWrite', (_e, path: string) => {
 
 // ── llama-server IPC ──────────────────────────────────────────────────────────
 
-ipcMain.handle('llama:start', async (_event, modelPath: string) => {
-  return inferenceServer.start(modelPath)
+ipcMain.handle('llama:start', async (_event, modelPath: string, opts?: { compute?: string; nctx?: number }) => {
+  return inferenceServer.start(modelPath, opts)
 })
 
 ipcMain.handle('llama:stop', async () => {

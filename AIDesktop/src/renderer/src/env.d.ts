@@ -15,7 +15,7 @@ declare global {
       abortWrite: (path: string)                    => Promise<void>
     }
     llama: {
-      start:  (modelPath: string) => Promise<{ ok: boolean; error?: string }>
+      start:  (modelPath: string, opts?: { compute?: string; nctx?: number }) => Promise<{ ok: boolean; error?: string }>
       stop:   ()                  => Promise<void>
       status: ()                  => Promise<unknown>
     }

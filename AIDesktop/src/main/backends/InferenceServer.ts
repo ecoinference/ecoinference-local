@@ -12,6 +12,19 @@ export interface InferenceStatus {
   pid: number | null
 }
 
+/** Backend-specific knobs that don't fit the generic modelPath string. Currently just
+ *  GenieX's compute-unit and context-size selection — ignored by backends that don't
+ *  use them (llama.cpp sets its own fixed --ctx-size directly in LlamaCppServer). */
+export interface StartOptions {
+  compute?: string
+  /** Passed as `geniex serve --nctx <value>`. Per GenieX's own `--help`, this is
+   *  "llama_cpp only" — qairt-plugin models' real context is baked into the compiled
+   *  QAIRT binary at compile time, so passing it for those is harmless/ignored, not
+   *  functional. Safe to always pass ModelInfo.maxContextTokens here regardless of
+   *  plugin type. */
+  nctx?: number
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -34,7 +47,7 @@ export abstract class InferenceServer {
   }
 
   protected abstract get binaryPath(): string
-  protected abstract buildArgs(modelPath: string): string[]
+  protected abstract buildArgs(modelPath: string, opts?: StartOptions): string[]
 
   /** Path to poll for readiness. Override when a backend has no /health (e.g. GenieX only exposes /v1/models). */
   protected healthPath(): string {
@@ -110,7 +123,7 @@ export abstract class InferenceServer {
     console.log('[inferenceServer] orphaned server did not die within 5s — start() may fail to bind')
   }
 
-  async start(modelPath: string): Promise<{ ok: boolean; error?: string }> {
+  async start(modelPath: string, opts?: StartOptions): Promise<{ ok: boolean; error?: string }> {
     if (this.proc) {
       await this.stop()
     }
@@ -126,7 +139,7 @@ export abstract class InferenceServer {
       return { ok: false, error: `Inference server binary not found at ${this.binaryPath}. The app may be missing a required component — try reinstalling.` }
     }
 
-    const args = this.buildArgs(modelPath)
+    const args = this.buildArgs(modelPath, opts)
 
     console.log('[inferenceServer] spawning:', this.binaryPath, args.join(' '))
 

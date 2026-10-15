@@ -21,6 +21,11 @@ export interface ModelInfo {
    *  which platforms it's shown on (see AppContext's buildCatalog) and how
    *  loadModel/sendMessage interpret fileName. */
   backend:           'llama-cpp' | 'geniex'
+  /** backend:'geniex' only — passed as `geniex serve --compute <value>`. Defaults to
+   *  'npu' (every qairt-plugin model's native path) when omitted; set explicitly for
+   *  a llama_cpp-plugin model (GGUF pulled via --model-hub hf) that measured faster on
+   *  a different compute unit under sustained load — see project notes. */
+  geniexCompute?:    'npu' | 'gpu' | 'cpu'
   // Runtime state
   downloaded:        boolean
   loaded:            boolean
@@ -85,6 +90,40 @@ export const ModelCatalog: ModelInfo[] = [
     supportsImageInput: true,
     maxContextTokens:   4096,
     backend:            'geniex',
+    downloaded:         false,
+    loaded:             false,
+  },
+  {
+    // llama_cpp-plugin model (pulled via `--model-hub hf`, not Qualcomm's AI Hub
+    // catalog), MoE architecture (21B total / 3.6B active per token). Previously
+    // crashed on every GenieX compute path (`ggml-backend.cpp:584: GGML_ASSERT(device)
+    // failed`, see project memory's "GPU exploration" entries, 2026-07-29/30) — fixed
+    // as of GenieX v0.8.1-rc.4 via two upstream PRs that stopped pinning GPT-OSS
+    // experts to CPU and added GPU-specific flash attention for this model specifically.
+    // `geniexCompute: 'gpu'` is intentional, not the usual 'npu' default — measured
+    // ~5.8x faster on GPU under a sustained 800-token generation (2.38 vs 13.9 tok/s),
+    // the opposite of every other geniex model in this catalog. Don't change this to
+    // 'npu' without re-benchmarking; don't assume this generalizes to other models —
+    // GPU is confirmed *worse* than CPU for ordinary dense models on this chip's Adreno
+    // GPU (see the September "GPU is not real acceleration" finding).
+    // Upstream context window is 128K, but a KV-cache-cost caveat applies at that size
+    // (see project notes, "128k context trap") — set to 32768 as a middle ground given
+    // this model's already-documented CPU-heavy footprint on this chip. maxContextTokens
+    // is passed straight through as `geniex serve --nctx` (see AppContext.loadModel /
+    // GenieXServer.buildArgs) — it's a real, functional value for this llama_cpp-plugin
+    // model, not just catalog display text. Raise further deliberately, not by default,
+    // if actual long-context use is needed — re-benchmark first, don't assume it scales.
+    id:                 'gpt-oss-20b-gpu',
+    displayName:        'GPT-OSS 20B (GPU)',
+    fileSizeMb:         0, // GenieX pulls and caches its own model, nothing for the app to download
+    fileName:           'unsloth/gpt-oss-20b-GGUF:Q4_K_M',
+    licenseUrl:         'https://huggingface.co/openai/gpt-oss-20b',
+    platform:           'desktop',
+    supportsVision:     false,
+    supportsImageInput: false,
+    maxContextTokens:   32768,
+    backend:            'geniex',
+    geniexCompute:      'gpu',
     downloaded:         false,
     loaded:             false,
   },

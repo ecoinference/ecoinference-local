@@ -362,7 +362,7 @@ export function AppProvider({ children }: { children: React.ReactNode }): JSX.El
       const modelPath = info.backend === 'geniex'
         ? info.fileName
         : `${modelsDirRef.current}/${info.fileName}`
-      const result = await window.llama.start(modelPath)
+      const result = await window.llama.start(modelPath, { compute: info.geniexCompute, nctx: info.maxContextTokens })
       if (result.ok) {
         dispatch({ type: 'SET_LOADED_MODEL', id: modelId })
         dispatch({ type: 'SET_SERVER_RUNNING', running: true })

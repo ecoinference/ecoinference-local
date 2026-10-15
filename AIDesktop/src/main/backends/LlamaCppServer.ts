@@ -27,6 +27,8 @@ export class LlamaCppServer extends InferenceServer {
   }
 
   protected buildArgs(modelPath: string): string[] {
+    // No StartOptions used here — llama.cpp's GPU/CPU split is already controlled by
+    // --n-gpu-layers below, not a per-request compute selector like GenieX's.
     return [
       '--model', modelPath,
       '--port', String(this.port),

@@ -13,7 +13,7 @@ const fsOps = {
 }
 
 const llamaAPI = {
-  start:  (modelPath: string): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('llama:start', modelPath),
+  start:  (modelPath: string, opts?: { compute?: string; nctx?: number }): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('llama:start', modelPath, opts),
   stop:   ():                  Promise<void>                             => ipcRenderer.invoke('llama:stop'),
   status: ():                  Promise<unknown>                          => ipcRenderer.invoke('llama:status'),
 }
