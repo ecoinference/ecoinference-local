@@ -66,7 +66,25 @@ from nothing.
 
 ## D3. Where do sensitive-domain prompts go?
 
-**Status:** Decided 2026-10-20 — **A, self-hosted**, as recommended.
+**Status:** Decided 2026-10-20 — **A, self-hosted**, as recommended, with a clarification
+the same day: the user is told and can override.
+
+**Behaviour.** When a prompt is classed as sensitive:
+
+1. **Stay on user-owned hardware by default.** User-owned means on-device or self-hosted.
+   Self-hosted if it's available, otherwise on-device. Never cloud without the user's say-so.
+2. **Tell the user.** A short, plain notice with the reply — for example, "This looks like a
+   private legal, medical or financial question, so it stayed on your own hardware." — that
+   encourages keeping it there.
+3. **Offer the override.** A visible action to send this prompt to the cloud (frontier/API)
+   model instead, saying plainly that the prompt will leave the user's hardware. It applies to
+   that one prompt only; it never changes the active tier or a setting (the lesson from
+   Remote's "label that was not stuck" fallback bug).
+
+This is user-initiated, so it doesn't conflict with D4: D4 governs what the app does on its
+own, and the override is the user choosing. It also takes precedence over the old
+`sensitive_domain → cloud` rule, which goes away. Applies in both repos wherever semantic
+facts exist — Local mobile, and Remote once Needle ships (D7).
 
 **Context.** `sensitive_domain` currently routes to **cloud**, on the reasoning that
 legal/medical/financial questions benefit from the larger model. A self-hosted tier offers a

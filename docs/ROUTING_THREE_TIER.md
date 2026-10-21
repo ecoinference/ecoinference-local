@@ -126,7 +126,8 @@ availability + capabilities + user policy ──► TierResolver ──► tier 
 - Existing rules re-expressed, e.g. `long_conversation`, `long_complex_prompt`,
   `creative_writing_long`, `complex_code` → `self_hosted` (they're about size, which the
   user's own big model satisfies). `current_events` → whatever tier has web access (see 3.3).
-  `sensitive_domain` → your call (§7).
+  `sensitive_domain` → user-owned hardware with a notice and a per-prompt cloud override
+  (decided — D3 in the decision log).
 - First-match, Remote Config live updates, byte-identical JSON across platforms: all kept.
   `ROUTING.md` calls live tunability "the current router's best property" — this design
   doesn't touch it.
