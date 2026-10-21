@@ -55,8 +55,9 @@ status). What remains, in order:
    thresholds are currently degenerate (grid-floor, effectively always-true) because no
    labeled case constrains them.
 3. **Device gates before any release ships the Needle engine** (ROUTING.md §4 items):
-   per-prompt embed latency on the Lenovo TB336FU (it runs ~5 chunks/s — the embed cost has
-   to be affordable on the hardware that can least afford it); real-device network-silence
+   per-prompt embed latency confirmed once on an Android phone and an iPhone at or above the
+   floor (mid-tier modern phone, ≥ 4 GB RAM — the TB336FU is below it as of 2026-10-20, see
+   [docs/ROUTING_THREE_TIER_DECISIONS.md](docs/ROUTING_THREE_TIER_DECISIONS.md) D8); real-device network-silence
    verification (the Mac strings/lsof pass was clean, but the formal gate is hardware);
    an iOS device run.
 

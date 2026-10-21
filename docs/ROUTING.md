@@ -187,8 +187,9 @@ schema holds user-submitted prompts.
 > Gemini-judge labeling are still owed. The deep-reasoning / creative-writing thresholds
 > are degenerate (they sit at the sweep's grid floor, effectively always-true) because the
 > corpus has no long expect-local case to constrain them — grow the corpus before trusting
-> those two facts. Gate 2 (Lenovo TB336FU latency, §4 item 2 below) is unmeasured; the
-> device runs ~5 chunks/s, so per-prompt embed cost there is the open shipping risk.
+> those two facts. Gate 2 (latency, §4 item 2 below) is unmeasured; as of 2026-10-20 it is a
+> confirmation on a mid-tier phone with ≥ 4 GB RAM, not a TB336FU blocker — see
+> [ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D8.
 
 [`cactus-compute/needle`](https://github.com/cactus-compute/needle) — Apache 2.0. A 2-bit,
 8–29 MB foundation model for tool calls, structured extraction and embeddings on small devices.
@@ -233,8 +234,11 @@ is the gate; everything else is downstream of it.
 ### What to measure before writing any integration
 
 1. **Network silence with telemetry disabled** — the gate condition.
-2. **Router latency on the Lenovo TB336FU**, not on a Mac. That device already runs ~5 chunks/s;
-   per-prompt model inference has to be affordable on the hardware that can least afford it.
+2. **Router latency on a supported phone**, not on a Mac. Originally the Lenovo TB336FU (~5
+   chunks/s), on the reasoning that routing must be affordable on the hardware that can least
+   afford it. **Changed 2026-10-20:** the floor is a mid-tier modern phone with ≥ 4 GB RAM, and
+   this is a confirmation, not a blocker — the TB336FU is below the floor
+   ([ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D8).
 3. **`known_miss` conversion rate** against the corpus. If embeddings barely beat keywords, this
    is a lot of work for nothing.
 
