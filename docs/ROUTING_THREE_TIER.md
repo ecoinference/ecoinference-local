@@ -245,7 +245,10 @@ Old app builds route unknown decision strings to on-device (§1). So:
 
 ---
 
-## 7. Open decisions (yours, not mine)
+## 7. Open decisions
+
+Options, costs and recommendations for each are in
+[ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md), which also tracks status.
 
 1. Reverse the two standing decisions in §0, or keep Remote manual?
 2. Local desktop: add a router at all? (No router, no cloud, no Needle desktop engine today.)
