@@ -102,7 +102,8 @@ facts exist — Local mobile, and Remote once Needle ships (D7).
   for professional advice". Under D3 it means "private — keep it on the user's hardware",
   which is broader: disclosing a diagnosis, an employment or immigration situation, debts, a
   legal problem. The exemplar list should grow to cover disclosure as well as advice-seeking —
-  a Remote Config change, no app release.
+  a Remote Config change, no app release. Proposed set and measurement plan:
+  [ROUTING_SENSITIVE_EXEMPLARS.md](ROUTING_SENSITIVE_EXEMPLARS.md).
 - **Corpus:** a good case for the three-tier corpus (`expect_min_tier` as user-owned, plus the
   expected notice), and a `known_miss` against the keyword router. Not added to
   `tests/router/corpus.jsonl` yet, because the current schema would have to label it
