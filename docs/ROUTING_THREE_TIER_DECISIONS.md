@@ -14,7 +14,7 @@ the recommendation (D5 provider, D7); their entries say what that changes. Where
 | D5 | Cloud tier in Local: provider and search grounding | Decided — grounding for current events (1A); configurable provider (2B) |
 | D6 | Third badge colour | Decided — new colour in both repos (A) |
 | D7 | Semantic facts in Remote | Decided — ship Needle in Remote (C) |
-| D8 | Hardware floor for the router | Decided — mid-tier modern phone, ≥ 4 GB RAM |
+| D8 | Needle 3 as part of the app | Decided — ships everywhere, no hardware gate |
 
 ---
 
@@ -190,32 +190,22 @@ little there. Revisit B only if usage shows a prompt class the self-hosted model
 
 ---
 
-## D8. Hardware floor for the router
+## D8. Needle 3 is part of the app — no hardware gate
 
-**Status:** Decided 2026-10-20 — **a mid-tier modern phone with at least 4 GB of RAM.** Added
-after D1–D7; not one of the design doc's original open questions.
+**Status:** Decided 2026-10-20. Added after D1–D7; not one of the design doc's original open
+questions.
 
-**Context.** `ROUTING.md` §4 made router latency on the Lenovo TB336FU a release gate ("Gate 2"),
-on the reasoning that routing must be affordable on the hardware that can least afford it. That
-tablet runs the chat model at ~5 chunks/s. The gate was never measured.
+Needle 3 ships as a standard part of the app on every device, like the router rules. There is
+no minimum-hardware requirement for it and no latency gate before release. The intended target
+is a mid-tier modern phone with 4 GB of RAM or more, but a device below that isn't blocked or
+treated specially.
 
-**What changes.**
+This retires `ROUTING.md` §4's Gate 2 (router latency on the Lenovo TB336FU), which was never
+measured. It does **not** affect the telemetry/network-silence gate, which is about privacy,
+not performance.
 
-- **The TB336FU is below the floor and no longer gates a release.** Note that RAM alone doesn't
-  exclude it — it has 7.6 GB. It's out on processor class (MediaTek MT8755, Mali-G57 MC2), which
-  is what "mid-tier modern" is meant to rule out.
-- **Gate 2 becomes a confirmation on supported devices**, not a blocker: measure per-prompt
-  embed time once on an Android phone and an iPhone at or above the floor, and record it.
-- **The memory end of the floor is already in the test fleet:** the iPad mini (6th gen) has
-  4 GB. Neither Android test device is mid-tier — the Xiaomi is a flagship — so Android is
-  confirmed on hardware above the floor, not at it.
-- **Scope: the router only.** This doesn't change which chat models the Models tab offers on
-  which devices.
-
-The Android call path still blocks the UI thread for the duration of one embed
-(`ChatScreen` → `RouterService.decide()` → `NeedleEmbedder.semanticFacts()` waits on its
-executor). On supported hardware that should be milliseconds; moving it off the UI thread
-remains worth doing when routing code is next touched.
+Scope: the router only — this doesn't change which chat models the Models tab offers on which
+devices.
 
 ---
 

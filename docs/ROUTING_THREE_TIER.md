@@ -57,8 +57,8 @@ If you don't want to reverse either decision, the rest of this document collapse
   local engine. "Try with Cloud" retries a local answer. Tier badges (`#5E5CE6` cloud,
   `EcoColors.Green` local). `lifetimeLocalCount` / `lifetimeCloudCount`.
 - Harness: `tests/router/corpus.jsonl` (30 cases), JVM + XCTest runners, cross-platform
-  decision-dump parity test. Needle device gates (real-device network silence; a latency
-  confirmation on a supported phone — D8) still owed.
+  decision-dump parity test. Needle real-device network-silence gate still owed (the latency
+  gate was retired — D8).
 - Desktop (`AIDesktop`): llama-server sidecar, no router, no cloud tier at all.
 
 ### Remote (desktop Electron, Android, web extension; iPad dormant)
@@ -269,6 +269,6 @@ Options, costs and recommendations for each are in
    and iOS test targets, no UI. Finish the owed holdout/judge work alongside.
 3. Local mobile: `SelfHostedService`, settings, badges, retry, history generalisation.
 4. Remote desktop + Android: opt-in auto mode over the resolver.
-5. Needle device gates: real-device network silence (blocking any release that ships the
-   engine) and a latency confirmation on a supported phone (D8 — not blocking).
+5. Needle real-device network-silence gate — blocking any release that ships the engine.
+   (No latency gate — D8.)
 6. Local desktop, if decided.

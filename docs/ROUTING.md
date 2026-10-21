@@ -187,8 +187,8 @@ schema holds user-submitted prompts.
 > Gemini-judge labeling are still owed. The deep-reasoning / creative-writing thresholds
 > are degenerate (they sit at the sweep's grid floor, effectively always-true) because the
 > corpus has no long expect-local case to constrain them — grow the corpus before trusting
-> those two facts. Gate 2 (latency, §4 item 2 below) is unmeasured; as of 2026-10-20 it is a
-> confirmation on a mid-tier phone with ≥ 4 GB RAM, not a TB336FU blocker — see
+> those two facts. Gate 2 (latency, §4 item 2 below) was retired on 2026-10-20: Needle 3 is
+> part of the app with no hardware gate — see
 > [ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D8.
 
 [`cactus-compute/needle`](https://github.com/cactus-compute/needle) — Apache 2.0. A 2-bit,
@@ -236,9 +236,8 @@ is the gate; everything else is downstream of it.
 1. **Network silence with telemetry disabled** — the gate condition.
 2. **Router latency on a supported phone**, not on a Mac. Originally the Lenovo TB336FU (~5
    chunks/s), on the reasoning that routing must be affordable on the hardware that can least
-   afford it. **Changed 2026-10-20:** the floor is a mid-tier modern phone with ≥ 4 GB RAM, and
-   this is a confirmation, not a blocker — the TB336FU is below the floor
-   ([ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D8).
+   afford it. **Retired 2026-10-20:** Needle 3 is part of the app on every device, with no
+   hardware or latency gate ([ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D8).
 3. **`known_miss` conversion rate** against the corpus. If embeddings barely beat keywords, this
    is a lot of work for nothing.
 
