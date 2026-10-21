@@ -33,6 +33,11 @@ and a SwiftUI iPad app. Single-user, no auth.
 From a user's point of view it resembles what this app does. The plumbing is entirely
 different: no model downloads, no bundled inference binary, no llama.cpp or LiteRT-LM.
 
+> **Decided 2026-10-20, not yet built:** Remote will ship Cactus Needle 3 as a routing
+> embedder ([ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md) D7). It still
+> never runs a *chat* model on the device; "no local model ever runs" stops being literally
+> true once that lands.
+
 > Its own `STATUS.md` is the source of truth for its feature state, and `API-NOTES.md`
 > records what its API actually does as opposed to what its docs claim. Read those there;
 > don't infer its behavior from this repo.
@@ -50,6 +55,14 @@ switching, cloud retry) into apps with no use for them.
 
 **The cross-platform parity rule in [CODE_CONVENTIONS.md](CODE_CONVENTIONS.md) governs iOS ↔
 Android within this repo only.** It does not reach Remote in either direction.
+
+**Amendment, 2026-10-20: the router contract is shared.** The routing rules schema, the tier
+resolver's semantics and the routing corpus format are a common specification across Local
+and Remote, so that the same prompt and the same availability produce the same tier in both.
+This shares a *contract*, not features: each repo still adopts a tier, a setting or a UI
+element only by its own recorded decision, and the absence of a feature in one repo is still
+not a gap to close in the other. See [ROUTING_THREE_TIER.md](ROUTING_THREE_TIER.md) and
+decision D1 in [ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md).
 
 ### What *does* flow: lessons, not code
 

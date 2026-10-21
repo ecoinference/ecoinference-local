@@ -21,7 +21,8 @@ entries say what that changes. Where a decision here differs from the design doc
 
 **Status:** Decided 2026-10-20 — **B, narrow amendment**, as recommended. Remote's auto mode is
 opt-in; manual selection stays the default and the picker and pin override it. The appendix
-wording still has to be applied to `RELATED_PROJECTS.md` and Remote's `STATUS.md`.
+wording was applied to `RELATED_PROJECTS.md` on 2026-10-20; Remote's README and `STATUS.md`
+changes are drafted on Remote's `docs/three-tier-routing` branch.
 
 **Context.** Two recorded decisions block this design:
 
