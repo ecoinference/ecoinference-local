@@ -296,10 +296,36 @@ moment, any state or nation-wide crisis service can be displayed and encouraged.
    reachable, else on-device), never automatically to cloud. The D3 cloud override stays
    available but isn't promoted — the card is the focus, not a settings choice.
 
+5. **Safe-messaging instruction for the answering model** (added the same day). When
+   `mentionsCrisis` is true, the turn carries a system instruction, whichever tier answers.
+   Like the resource list, its text lives in Remote Config so it can be revised without a
+   release. Draft — to be reviewed with the card:
+
+   > The person may be in crisis or at risk of harm. Respond with warmth and without judgment,
+   > and take what they say seriously. Keep the reply short and plain. Encourage them to reach
+   > a person now — someone nearby they trust, a local crisis service, or emergency services if
+   > they are in immediate danger — and mention that crisis contacts are shown above your reply.
+   > If it fits, gently ask whether they are safe right now. Do not describe methods or means of
+   > self-harm, do not diagnose, and do not promise outcomes. Don't lecture or bury the reply
+   > in disclaimers.
+
+   **How it reaches each tier:**
+   - **Cloud (Gemini) and self-hosted:** these calls already take a system prompt per request
+     (`GeminiService.chat(systemPrompt:)`; Remote prepends a per-provider system message every
+     turn), so the instruction is added to that turn's request.
+   - **On-device:** Local builds the system prompt only on the first turn of a conversation
+     (`ChatView.send()` adds it when `inferenceHistory` is empty), and the engine's KV cache
+     tracks committed messages. A mid-conversation system message has to be added without
+     desyncing `committedMessageCount` — e.g. prepended to that user turn's text. Needs
+     working out per engine (LiteRT-LM on mobile; the llama-server desktop path is out of scope
+     under D2).
+
 **Open details:**
 
-- Whether to add safe-messaging guidance to the answering model's system prompt for that turn
-  (offered as an option; not chosen).
+- **Per turn or for the rest of the conversation?** Decided as per turn. Follow-ups in a crisis
+  conversation ("I don't know", "nobody would care") may not trip detection on their own, so
+  once a conversation has triggered `mentionsCrisis` it may be better to keep the instruction
+  (and the card's availability) for the rest of it.
 - **Shared devices** (abuse and domestic violence): conversation titles, previews and history can
   reveal what was asked to someone else using the phone. Needs its own look before shipping.
 - The card's wording and resource list should be reviewed against published safe-messaging
