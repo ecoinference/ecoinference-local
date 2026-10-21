@@ -1,6 +1,9 @@
 # Three-Tier Routing — Design Draft
 
 **Status:** draft for review, 2026-10-20. No code changed in either repo.
+**Decisions:** all seven in §7 were made on 2026-10-20 and are recorded in
+[ROUTING_THREE_TIER_DECISIONS.md](ROUTING_THREE_TIER_DECISIONS.md), which overrides this draft
+where they differ (notably D7: Needle ships in Remote).
 **Scope:** extend routing from `local | cloud` to **on-device | self-hosted | cloud**, across
 `ecoinference-local` and `ecoinference-remote`.
 **Read against:** [ROUTING.md](ROUTING.md), [RELATED_PROJECTS.md](RELATED_PROJECTS.md),

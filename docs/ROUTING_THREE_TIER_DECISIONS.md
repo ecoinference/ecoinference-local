@@ -1,25 +1,27 @@
 # Three-Tier Routing — Decision Log
 
 The decisions [ROUTING_THREE_TIER.md](ROUTING_THREE_TIER.md) depends on (its §0 and §7). Each
-entry lists the options, what each one costs, and a recommendation. **None is decided yet.**
-When one is, change its status line to `Decided YYYY-MM-DD — <option>` and note anything that
-changed from the recommendation.
+entry lists the options, what each one costs, and the recommendation made before deciding.
+**All seven were decided on 2026-10-20.** Two departed from the recommendation (D5 provider, D7); their
+entries say what that changes. Where a decision here differs from the design doc, this log wins.
 
 | # | Decision | Status |
 |---|---|---|
-| D1 | Reverse the two standing decisions? | Open |
-| D2 | Router for Local desktop? | Open |
-| D3 | Where do sensitive-domain prompts go? | Open |
-| D4 | Escalation to cloud: automatic or offered? | Open |
-| D5 | Cloud tier in Local: provider and search grounding | Open |
-| D6 | Third badge colour | Open |
-| D7 | Semantic facts in Remote | Open |
+| D1 | Reverse the two standing decisions? | Decided — narrow amendment (B) |
+| D2 | Router for Local desktop? | Decided — defer (A) |
+| D3 | Where do sensitive-domain prompts go? | Decided — self-hosted (A) |
+| D4 | Escalation to cloud: automatic or offered? | Decided — rules auto, fallback offered (B) |
+| D5 | Cloud tier in Local: provider and search grounding | Decided — grounding for current events (1A); configurable provider (2B) |
+| D6 | Third badge colour | Decided — new colour in both repos (A) |
+| D7 | Semantic facts in Remote | Decided — ship Needle in Remote (C) |
 
 ---
 
 ## D1. Reverse the two standing decisions?
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **B, narrow amendment**, as recommended. Remote's auto mode is
+opt-in; manual selection stays the default and the picker and pin override it. The appendix
+wording still has to be applied to `RELATED_PROJECTS.md` and Remote's `STATUS.md`.
 
 **Context.** Two recorded decisions block this design:
 
@@ -45,7 +47,7 @@ original rule exists to prevent. Proposed wording is in the appendix.
 
 ## D2. Router for Local desktop?
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **A, defer**, as recommended.
 
 **Context.** `AIDesktop` has no router and no cloud tier. Needle is only vendored for
 `ios-arm64`, `ios-sim-arm64` and `android-arm64`; desktop would need a Node binding or the
@@ -62,7 +64,7 @@ from nothing.
 
 ## D3. Where do sensitive-domain prompts go?
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **A, self-hosted**, as recommended.
 
 **Context.** `sensitive_domain` currently routes to **cloud**, on the reasoning that
 legal/medical/financial questions benefit from the larger model. A self-hosted tier offers a
@@ -86,7 +88,7 @@ should say so.
 
 ## D4. Escalation to cloud: automatic or offered?
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **B, with a setting for A**, as recommended.
 
 **Context.** Local's premise is that cloud is "an explicit fallback the user can see and
 override". Today a rule that says `cloud` sends to cloud immediately, with a visible badge and
@@ -103,7 +105,16 @@ sends and never escalates to cloud just because a server is down without asking 
 
 ## D5. Cloud tier in Local: provider and search grounding
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **1A** (grounding only for `current_events` routes), as
+recommended; **2B** (configurable OpenAI-compatible cloud provider alongside Gemini), which
+departs from the recommendation.
+
+**What 2B adds to the work:** a second cloud client on iOS and Android (OpenAI-compatible,
+streaming), provider settings with the key in secure storage, and a choice of which cloud
+provider a `cloud` decision uses. The client is the same shape as the self-hosted client the
+design already needs (§5), so the two should be one OpenAI-compatible client configured twice,
+not two implementations. Open detail: whether grounding (1A) applies only when Gemini is the
+selected cloud provider, since other providers have no equivalent field.
 
 **Context.** Local's cloud tier is Gemini (`gemini-flash-latest`). Neither `GeminiService.swift`
 nor `GeminiService.kt` sends a search or grounding tool, so the `current_events` rule sends
@@ -124,7 +135,8 @@ second client) with no current need.
 
 ## D6. Third badge colour
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **A, new colour in both repos**, as recommended. The hex
+value is not chosen yet; it has to be contrast-checked in both themes before any UI work.
 
 **Context.** Local: on-device = `EcoColors.Green`, cloud = `#5E5CE6`. Remote: self-hosted =
 green, cloud = `#5E5CE6`. Three tiers need three colours, hex-matched across platforms per
@@ -142,7 +154,28 @@ work. Green stays reserved for "on this device", which is the product's core cla
 
 ## D7. Semantic facts in Remote
 
-**Status:** Open
+**Status:** Decided 2026-10-20 — **C, ship Needle in Remote**, which departs from the
+recommendation and overturns Remote's premise that no model runs on the device.
+
+**What C commits to:**
+
+- **Remote's premise changes.** Its README ("No model ever runs on this device") and
+  `STATUS.md` need rewording to something like "no *chat* model runs on this device; a small
+  routing embedder does." The appendix wording for `STATUS.md` (no semantic routing) is
+  superseded on that point.
+- **The telemetry gate applies.** Needle's README says telemetry is on by default in its
+  binaries. Local verified its linked C engines network-silent on macOS only; Remote needs the
+  same check on each engine it links, on real hardware.
+- **Engines per client.** Android can reuse the `android-arm64` engine Local already wraps.
+  The Electron desktop (macOS, Windows ARM64 and x64) and the web extension have no vendored
+  engine; they need a Node binding or the upstream WASI/browser build, neither evaluated.
+- **Licensing.** Remote currently "bundles no third-party weights or runtimes"; it would need a
+  NOTICE entry for Needle (Apache 2.0), following Local's pattern.
+- **Live tuning.** Remote has no Remote Config (Firebase was removed 2026-08-12). The exemplar
+  config either ships bundled only, or Remote needs another update channel.
+- **Design doc §2 and §4** describe Remote as two-tier with no on-device model. Needle is a
+  router, not a chat tier, so Remote stays two-tier for answers; §4's "no semantic facts"
+  default no longer holds.
 
 **Context.** Remote's premise is that no model runs on the device; Needle is a model.
 
