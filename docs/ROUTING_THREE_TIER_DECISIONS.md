@@ -286,6 +286,9 @@ moment, any state or nation-wide crisis service can be displayed and encouraged.
    - **Then regional or national crisis services** — a state or nationwide line (in the US,
      988) — shown and encouraged when local help isn't available right now.
    The model still answers; the card doesn't block the conversation.
+   **Shared phones are out of scope** (decided the same day): the app can't protect someone
+   from another person using the same device, and a person in crisis needs help now. Nothing
+   in this handling is delayed, hidden or softened on that account.
 3. **Resources come from Remote Config, keyed by region**, so numbers can be corrected or added
    without an app release, like the routing rules. Region comes from the device's locale and
    region setting, **not from location services** — asking for location permission in that
@@ -326,8 +329,6 @@ moment, any state or nation-wide crisis service can be displayed and encouraged.
   conversation ("I don't know", "nobody would care") may not trip detection on their own, so
   once a conversation has triggered `mentionsCrisis` it may be better to keep the instruction
   (and the card's availability) for the rest of it.
-- **Shared devices** (abuse and domestic violence): conversation titles, previews and history can
-  reveal what was asked to someone else using the phone. Needs its own look before shipping.
 - The card's wording and resource list should be reviewed against published safe-messaging
   guidance and by someone qualified. This decision sets the structure, not the final text.
 
