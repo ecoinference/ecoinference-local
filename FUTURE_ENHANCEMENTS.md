@@ -64,6 +64,12 @@ The original harness rationale, kept because it still governs step 1: the judgin
 cloud), and **local-retention is a headline metric** because accuracy alone is gamed by a
 router that sends everything to cloud and is never wrong.
 
+**TODO — crisis wording review (D9, before it ships).** Review the crisis resource card's text,
+the per-region resource list (verify every number) and the safe-messaging system instruction
+against published safe-messaging guidance and with someone qualified. Drafts and structure are
+in [docs/ROUTING_THREE_TIER_DECISIONS.md](docs/ROUTING_THREE_TIER_DECISIONS.md) D9; the
+`mentionsCrisis` exemplars are not drafted yet.
+
 ---
 
 ## Correctness gaps

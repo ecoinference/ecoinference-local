@@ -337,10 +337,11 @@ moment, any state or nation-wide crisis service can be displayed and encouraged.
    app. The flag is saved with the conversation, so reopening it from history resumes crisis
    mode.
 
-**Open details:**
-
-- The card's wording and resource list should be reviewed against published safe-messaging
-  guidance and by someone qualified. This decision sets the structure, not the final text.
+**TODO — wording review, later:** the resource card's text, the resource list (every number
+checked per region) and the safe-messaging instruction are drafts. Review them against
+published safe-messaging guidance and with someone qualified before anything ships. This
+decision sets the structure, not the final text. Tracked in
+[FUTURE_ENHANCEMENTS.md](../FUTURE_ENHANCEMENTS.md).
 
 ---
 
