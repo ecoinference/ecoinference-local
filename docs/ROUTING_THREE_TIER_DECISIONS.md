@@ -86,6 +86,28 @@ own, and the override is the user choosing. It also takes precedence over the ol
 `sensitive_domain → cloud` rule, which goes away. Applies in both repos wherever semantic
 facts exist — Local mobile, and Remote once Needle ships (D7).
 
+**Worked example:** *"I have liver cancer, should I tell my employer?"*
+
+- **Expected:** stays on user-owned hardware (self-hosted if reachable, else on-device), with
+  the notice and the cloud override offered.
+- **Today's keyword router misses it.** None of the sensitive-domain keywords match
+  ("diagnos", "should i take", "symptoms of", "can i sue", …), so it falls through to the
+  default. On the old two-tier rules that happens to keep it local, but with no notice and for
+  the wrong reason.
+- **The Needle exemplars may miss it too.** The 14 bundled `mentionsSensitiveDomain`
+  exemplars are all *asking for professional advice* — medication, diagnosis, lawsuits, taxes,
+  retirement savings. This prompt is different: it *discloses* a private health fact, and the
+  question is about employment. Whether it clears the 0.200 threshold is unmeasured.
+- **What D3 changes about the category.** The fact was built to mean "needs a better model
+  for professional advice". Under D3 it means "private — keep it on the user's hardware",
+  which is broader: disclosing a diagnosis, an employment or immigration situation, debts, a
+  legal problem. The exemplar list should grow to cover disclosure as well as advice-seeking —
+  a Remote Config change, no app release.
+- **Corpus:** a good case for the three-tier corpus (`expect_min_tier` as user-owned, plus the
+  expected notice), and a `known_miss` against the keyword router. Not added to
+  `tests/router/corpus.jsonl` yet, because the current schema would have to label it
+  `cloud` — the opposite of D3.
+
 **Context.** `sensitive_domain` currently routes to **cloud**, on the reasoning that
 legal/medical/financial questions benefit from the larger model. A self-hosted tier offers a
 large model that doesn't leave the user's hardware.
