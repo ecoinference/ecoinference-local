@@ -323,12 +323,22 @@ moment, any state or nation-wide crisis service can be displayed and encouraged.
      working out per engine (LiteRT-LM on mobile; the llama-server desktop path is out of scope
      under D2).
 
+6. **Once triggered, it's the whole conversation** (decided the same day, in Mark's words: *"A
+   person in crisis only needs one thing and that is help right now. That becomes the whole
+   conversation until the user clears that conversation."*). When any turn trips
+   `mentionsCrisis`, the conversation enters crisis mode and stays in it:
+   - the safe-messaging instruction goes with **every** later turn, whatever the turn says —
+     follow-ups like "I don't know" or "nobody would care" no longer need to trip detection;
+   - the resource card stays visible for the rest of the conversation;
+   - routing stays on user-owned hardware for every turn, never automatically to cloud.
+
+   It ends only when the user clears the conversation — starts a new one, or clears or deletes
+   this one. Nothing else turns it off: not later "normal" turns, not leaving and reopening the
+   app. The flag is saved with the conversation, so reopening it from history resumes crisis
+   mode.
+
 **Open details:**
 
-- **Per turn or for the rest of the conversation?** Decided as per turn. Follow-ups in a crisis
-  conversation ("I don't know", "nobody would care") may not trip detection on their own, so
-  once a conversation has triggered `mentionsCrisis` it may be better to keep the instruction
-  (and the card's availability) for the rest of it.
 - The card's wording and resource list should be reviewed against published safe-messaging
   guidance and by someone qualified. This decision sets the structure, not the final text.
 
