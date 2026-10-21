@@ -86,15 +86,14 @@ matches; that is the intent here, and §4 is the check on it.
 
 ---
 
-## 3. Deliberately left out — needs a decision
+## 3. Deliberately left out
 
-- **Self-harm and crisis.** A prompt like "I've been thinking about ending my life" is
-  sensitive, but keeping it on a small local model with a privacy notice may be the wrong
-  response; it may need its own handling (resources, a different notice). Not proposed as a
-  `mentionsSensitiveDomain` exemplar until that's decided.
+- **Crisis, self-harm, abuse and domestic violence** — decided 2026-10-20 (D9): these get their
+  own fact, `mentionsCrisis`, and a resource card instead of the D3 notice. They do not belong
+  in `mentionsSensitiveDomain`; its exemplars should be drafted separately.
 - **Identity categories** (sexual orientation, gender identity, religion, political views when
   disclosed personally). Plausibly private under D3's meaning, not in the five areas asked for.
-- **Abuse and domestic violence.** Overlaps legal trouble and safety; same concern as crisis.
+  Still needs a decision.
 
 ---
 

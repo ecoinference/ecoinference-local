@@ -2,7 +2,7 @@
 
 The decisions [ROUTING_THREE_TIER.md](ROUTING_THREE_TIER.md) depends on (its §0 and §7). Each
 entry lists the options, what each one costs, and the recommendation made before deciding.
-**All were decided on 2026-10-20** (D8 was added after the original seven). Two departed from
+**All were decided on 2026-10-20** (D8 and D9 were added after the original seven). Two departed from
 the recommendation (D5 provider, D7); their entries say what that changes. Where a decision here differs from the design doc, this log wins.
 
 | # | Decision | Status |
@@ -15,6 +15,7 @@ the recommendation (D5 provider, D7); their entries say what that changes. Where
 | D6 | Third badge colour | Decided — new colour in both repos (A) |
 | D7 | Semantic facts in Remote | Decided — ship Needle in Remote (C) |
 | D8 | Needle 3 as part of the app | Decided — ships everywhere, no hardware gate |
+| D9 | Crisis, self-harm, abuse and domestic violence | Decided — local human help first, then regional/national lines |
 
 ---
 
@@ -261,6 +262,48 @@ measured.
 
 Scope: the router only — this doesn't change which chat models the Models tab offers on which
 devices.
+
+---
+
+## D9. Crisis, self-harm, abuse and domestic violence
+
+**Status:** Decided 2026-10-20, in Mark's words: *"I want to assist people in crisis. Perhaps we
+encourage the user to find local, human-based resources first. If that is not available at the
+moment, any state or nation-wide crisis service can be displayed and encouraged."*
+
+**What that means for the router and the app:**
+
+1. **Detection — a separate fact, `mentionsCrisis`.** Its own exemplar category and threshold
+   in `router_exemplars`, tuned for recall. Covers suicidal thoughts and self-harm, and abuse or
+   domestic violence (same handling, decided the same day). Idioms ("this commute is killing
+   me") go into the corpus as near-miss negatives. Exemplars are not drafted yet.
+2. **The first thing shown is a fixed resource card, not model text.** It replaces D3's privacy
+   notice for these prompts. It's app-provided, so it reads the same every time regardless of
+   which model answers, and it comes before the reply. Its content is ordered the way Mark
+   described:
+   - **People nearby first** — local, human help: emergency services if someone is in immediate
+     danger, a local crisis centre, and reaching out to someone the user trusts.
+   - **Then regional or national crisis services** — a state or nationwide line (in the US,
+     988) — shown and encouraged when local help isn't available right now.
+   The model still answers; the card doesn't block the conversation.
+3. **Resources come from Remote Config, keyed by region**, so numbers can be corrected or added
+   without an app release, like the routing rules. Region comes from the device's locale and
+   region setting, **not from location services** — asking for location permission in that
+   moment is the wrong ask. (iOS `LocationService` and Android `LocationPreamble` exist for the
+   Python tools; they should not be used here.) Unknown region → a nationwide or international
+   directory. Every number needs checking before it ships.
+4. **Routing tier.** Not separately chosen. Defaults to D3's: user-owned hardware (self-hosted if
+   reachable, else on-device), never automatically to cloud. The D3 cloud override stays
+   available but isn't promoted — the card is the focus, not a settings choice.
+
+**Open details:**
+
+- Whether to add safe-messaging guidance to the answering model's system prompt for that turn
+  (offered as an option; not chosen).
+- **Shared devices** (abuse and domestic violence): conversation titles, previews and history can
+  reveal what was asked to someone else using the phone. Needs its own look before shipping.
+- The card's wording and resource list should be reviewed against published safe-messaging
+  guidance and by someone qualified. This decision sets the structure, not the final text.
 
 ---
 
