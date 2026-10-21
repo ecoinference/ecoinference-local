@@ -201,8 +201,22 @@ is a mid-tier modern phone with 4 GB of RAM or more, but a device below that isn
 treated specially.
 
 This retires `ROUTING.md` §4's Gate 2 (router latency on the Lenovo TB336FU), which was never
-measured. It does **not** affect the telemetry/network-silence gate, which is about privacy,
-not performance.
+measured.
+
+**Needle and the network.** Two separate things, stated so they aren't conflated:
+
+1. **Needle itself never makes a network call.** It is a local function: text in, vector out.
+   This is a requirement on the engine, and the network-silence gate is how it's verified —
+   the gate stays, because the engine is a third-party binary whose upstream README says
+   telemetry is on by default (in the Python CLI; the linked C engines were clean on macOS,
+   real devices not yet checked). If a future upstream build ever phones home, the gate is
+   what catches it.
+2. **Needle's output can lead the app to make a network call.** Its semantic facts feed the
+   rules, and a decision of `self_hosted` or `cloud` means the app sends the prompt to that
+   server. That outbound call belongs to the app, not to Needle, and is governed by the
+   resolver: the user's ceiling and pin, D3 (sensitive → self-hosted), D4 (cloud reached only
+   because a lower tier is down is an offer, never automatic), and a visible tier badge and
+   reason on every reply. In Remote, MCP tools stay self-hosted-only regardless of routing.
 
 Scope: the router only — this doesn't change which chat models the Models tab offers on which
 devices.
