@@ -7,6 +7,10 @@ weak part (§4 — adopted 2026-09-20).
 The §2 harness is **built and green on both platforms** (2026-09-20); the §4 integration is
 built, with the device gates and corpus work listed in §4's status block still owed.
 
+**Proposed, not adopted:** extending this to three tiers (on-device / self-hosted / cloud) —
+see [ROUTING_THREE_TIER.md](ROUTING_THREE_TIER.md). It depends on reversing two standing
+decisions, listed in its §0.
+
 ---
 
 ## 1. How routing works today
