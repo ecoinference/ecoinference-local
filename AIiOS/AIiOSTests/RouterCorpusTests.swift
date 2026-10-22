@@ -32,6 +32,12 @@ final class RouterCorpusTests: XCTestCase {
         }
     }
 
+    private struct PolicySpec: Decodable {
+        let ceiling: String?
+        let pin: String?
+        let offerAllCloud: Bool?
+    }
+
     private struct CorpusCase: Decodable {
         let id: String
         let prompt: String
@@ -40,10 +46,23 @@ final class RouterCorpusTests: XCTestCase {
         let context: CaseContext
         let notes: String
         let knownMiss: Bool
+        // ── Three-tier fields (docs/ROUTING_THREE_TIER.md §6) ──
+        let expectMinTier: String
+        let expectTier: String
+        let expectAction: String
+        let expectFallbackTier: String?
+        /// Per-tier availability shorthand: ok | down | absent | no_web | no_vision.
+        let availability: [String: String]
+        let policy: PolicySpec?
 
         private enum CodingKeys: String, CodingKey {
             case id, prompt, expect, because, context, notes
             case knownMiss = "known_miss"
+            case expectMinTier = "expect_min_tier"
+            case expectTier = "expect_tier"
+            case expectAction = "expect_action"
+            case expectFallbackTier = "expect_fallback_tier"
+            case availability, policy
         }
 
         init(from decoder: Decoder) throws {
@@ -55,6 +74,12 @@ final class RouterCorpusTests: XCTestCase {
             context = try c.decodeIfPresent(CaseContext.self, forKey: .context) ?? CaseContext()
             notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
             knownMiss = try c.decodeIfPresent(Bool.self, forKey: .knownMiss) ?? false
+            expectMinTier = try c.decodeIfPresent(String.self, forKey: .expectMinTier) ?? ""
+            expectTier = try c.decodeIfPresent(String.self, forKey: .expectTier) ?? ""
+            expectAction = try c.decodeIfPresent(String.self, forKey: .expectAction) ?? "send"
+            expectFallbackTier = try c.decodeIfPresent(String.self, forKey: .expectFallbackTier)
+            availability = try c.decodeIfPresent([String: String].self, forKey: .availability) ?? [:]
+            policy = try c.decodeIfPresent(PolicySpec.self, forKey: .policy)
         }
     }
 
@@ -160,5 +185,160 @@ final class RouterCorpusTests: XCTestCase {
                 result[String(parts[0])] = String(parts[1])
             }
         XCTAssertEqual(try allDecisions(), android, "iOS/Android routing divergence (always a bug)")
+    }
+
+    // MARK: - Three-tier pipeline: rules v3 → minTier → TierResolver
+    // docs/ROUTING_THREE_TIER.md §6. Same standard profile and availability
+    // shorthand on both platforms — the v3 parity dump enforces it.
+
+    private struct V3Outcome {
+        let minTier: Tier
+        let ruleId: String?
+        let result: ResolverResult
+    }
+
+    private func loadRuleSetV3() throws -> RouterRuleSet {
+        let url = repoRoot.appendingPathComponent("AIiOS/AIiOS/default_router_rules_v3.json")
+        return try JSONDecoder().decode(RouterRuleSet.self, from: try Data(contentsOf: url))
+    }
+
+    /// Standard capability profile; on-device vision comes from the case's
+    /// localSupportsImage (that fact IS the on-device tier's vision capability
+    /// under v3 — the image rule moved into the resolver, §3.3).
+    private func tiersFor(_ c: CorpusCase) -> [Tier: TierState] {
+        func state(_ tier: Tier) -> TierState {
+            var configured = true
+            var reachable: Reachability = .yes
+            var vision = tier == .onDevice ? c.context.localSupportsImage : true
+            var web = tier != .onDevice
+            var contextLimit = 1_000_000
+            switch tier {
+            case .onDevice:   contextLimit = 2_000
+            case .selfHosted: contextLimit = 32_000
+            case .cloud:      contextLimit = 1_000_000
+            }
+            switch c.availability[tier.decision] ?? "ok" {
+            case "ok":        break
+            case "down":      reachable = .no
+            case "absent":    configured = false
+            case "no_web":    web = false
+            case "no_vision": vision = false
+            default:
+                preconditionFailure("\(c.id): unknown availability shorthand \(c.availability[tier.decision]!)")
+            }
+            return TierState(configured: configured, reachable: reachable,
+                             vision: vision, web: web, contextLimit: contextLimit)
+        }
+        return Dictionary(uniqueKeysWithValues: Tier.allCases.map { ($0, state($0)) })
+    }
+
+    private func parseTier(_ decision: String?, _ c: CorpusCase, _ what: String) throws -> Tier? {
+        guard let decision else { return nil }
+        guard let t = Tier(decision: decision) else {
+            XCTFail("\(c.id): bad \(what) tier '\(decision)'")
+            throw NSError(domain: "RouterCorpusTests", code: 1)
+        }
+        return t
+    }
+
+    private func policyFor(_ c: CorpusCase) throws -> ResolverPolicy {
+        guard let p = c.policy else { return ResolverPolicy() }
+        return ResolverPolicy(
+            ceiling: try parseTier(p.ceiling, c, "ceiling") ?? .cloud,
+            pin: try parseTier(p.pin, c, "pin"),
+            offerAllCloud: p.offerAllCloud ?? false)
+    }
+
+    private func factsFor(_ c: CorpusCase) -> [String: FactValue] {
+        let history = (0..<c.context.turns).map { InferenceMessage(role: "user", text: "turn \($0)") }
+        var facts = RouterFactExtractor.extract(prompt: c.prompt, history: history, hasImage: c.context.hasImage)
+        facts["localSupportsImage"] = .bool(c.context.localSupportsImage)
+        return facts
+    }
+
+    private func runV3(_ c: CorpusCase, ruleSet: RouterRuleSet) throws -> V3Outcome {
+        let facts = factsFor(c)
+        let outcome = RuleEngine().decide(facts: facts, ruleSet: ruleSet)
+        guard let minTier = Tier(decision: outcome.decision) else {
+            XCTFail("\(c.id): v3 rules produced non-tier decision '\(outcome.decision)'")
+            throw NSError(domain: "RouterCorpusTests", code: 2)
+        }
+        let result = TierResolver.resolve(minTier: minTier, ruleReason: outcome.reason,
+                                          facts: facts, tiers: tiersFor(c), policy: try policyFor(c))
+        return V3Outcome(minTier: minTier, ruleId: outcome.ruleId, result: result)
+    }
+
+    /// Dump line: "id minTier action tier fallback" — fallback is "-" for sends.
+    private func v3Line(_ id: String, _ o: V3Outcome) -> String {
+        "\(id) \(o.minTier.decision) \(o.result.action.rawValue) \(o.result.tier.decision) " +
+            (o.result.fallbackTier?.decision ?? "-")
+    }
+
+    private func v3Matches(_ o: V3Outcome, _ c: CorpusCase) -> Bool {
+        o.minTier.decision == c.expectMinTier &&
+            o.result.action.rawValue == c.expectAction &&
+            o.result.tier.decision == c.expectTier &&
+            o.result.fallbackTier?.decision == c.expectFallbackTier
+    }
+
+    func testV3CorpusCases_withoutKnownMiss_routeAsExpected() throws {
+        let ruleSet = try loadRuleSetV3()
+        for c in try loadCases() where !c.knownMiss {
+            let o = try runV3(c, ruleSet: ruleSet)
+            XCTAssertTrue(v3Matches(o, c),
+                "\(c.id): expected (\(c.expectMinTier), \(c.expectAction), \(c.expectTier), " +
+                "\(c.expectFallbackTier ?? "-")), got (\(o.minTier.decision), \(o.result.action.rawValue), " +
+                "\(o.result.tier.decision), \(o.result.fallbackTier?.decision ?? "-")) " +
+                "(rule=\(o.ruleId ?? "default")) — \(c.because)")
+        }
+    }
+
+    func testV3CorpusMetrics_reportAndDumpDecisions() throws {
+        let ruleSet = try loadRuleSetV3()
+        let cases = try loadCases()
+        var outcomes: [String: V3Outcome] = [:]
+        for c in cases { outcomes[c.id] = try runV3(c, ruleSet: ruleSet) }
+
+        let labeled = cases.filter { !$0.knownMiss }
+        let misses = cases.filter { $0.knownMiss }
+        let labeledPass = labeled.filter { v3Matches(outcomes[$0.id]!, $0) }
+        let converted = misses.filter { v3Matches(outcomes[$0.id]!, $0) }
+        let sends = outcomes.values.filter { $0.result.action == .send }.count
+        let cloudSends = outcomes.values.filter { $0.result.action == .send && $0.result.tier == .cloud }.count
+        let offers = outcomes.values.filter { $0.result.action == .offer }.count
+
+        print("── three-tier corpus metrics (ios) ──────────────────────────")
+        print("cases: \(cases.count) (labeled \(labeled.count), known_miss \(misses.count))")
+        print("labeled passing (minTier,action,tier,fallback): \(labeledPass.count)/\(labeled.count)")
+        print("known_miss converted: \(converted.count)/\(misses.count) \(converted.map(\.id))")
+        print("datacenter avoidance: sends \(sends) (cloud \(cloudSends)), offers \(offers) " +
+              "(keyword facts only — embedder unavailable in test target)")
+        print("─────────────────────────────────────────────────────────────")
+
+        let dump = outcomes.keys.sorted().map { v3Line($0, outcomes[$0]!) }.joined(separator: "\n") + "\n"
+        try dump.write(to: repoRoot.appendingPathComponent("tests/router/decisions-v3-ios.txt"),
+                       atomically: true, encoding: .utf8)
+    }
+
+    func testV3CrossPlatformDecisions_agreeWithAndroidDump() throws {
+        let androidURL = repoRoot.appendingPathComponent("tests/router/decisions-v3-android.txt")
+        guard FileManager.default.fileExists(atPath: androidURL.path) else {
+            throw XCTSkip("Run the Android corpus tests first (missing decisions-v3-android.txt)")
+        }
+        let android = try String(contentsOf: androidURL, encoding: .utf8)
+            .split(separator: "\n")
+            .filter { !$0.isEmpty }
+            .reduce(into: [String: [String]]()) { result, line in
+                let parts = line.split(separator: " ").map(String.init)
+                guard parts.count == 5 else { return }
+                result[parts[0]] = Array(parts[1...])
+            }
+        let ruleSet = try loadRuleSetV3()
+        var ios: [String: [String]] = [:]
+        for c in try loadCases() {
+            let parts = v3Line(c.id, try runV3(c, ruleSet: ruleSet)).split(separator: " ").map(String.init)
+            ios[parts[0]] = Array(parts[1...])
+        }
+        XCTAssertEqual(ios, android, "iOS/Android three-tier divergence (always a bug)")
     }
 }

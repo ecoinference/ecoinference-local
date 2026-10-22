@@ -34,6 +34,13 @@ class RouterCorpusTest {
     )
 
     @Serializable
+    private data class PolicySpec(
+        val ceiling: String? = null,
+        val pin: String? = null,
+        val offerAllCloud: Boolean = false,
+    )
+
+    @Serializable
     private data class CorpusCase(
         val id: String,
         val prompt: String,
@@ -42,6 +49,14 @@ class RouterCorpusTest {
         val context: CaseContext = CaseContext(),
         val notes: String = "",
         @SerialName("known_miss") val knownMiss: Boolean = false,
+        // ── Three-tier fields (docs/ROUTING_THREE_TIER.md §6) ──
+        @SerialName("expect_min_tier") val expectMinTier: String = "",
+        @SerialName("expect_tier") val expectTier: String = "",
+        @SerialName("expect_action") val expectAction: String = "send",
+        @SerialName("expect_fallback_tier") val expectFallbackTier: String? = null,
+        /** Per-tier availability shorthand: ok | down | absent | no_web | no_vision. */
+        val availability: Map<String, String> = emptyMap(),
+        val policy: PolicySpec? = null,
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -147,5 +162,145 @@ class RouterCorpusTest {
             .filter { it.isNotBlank() }
             .associate { val parts = it.split(" "); parts[0] to parts[1] }
         assertEquals("iOS/Android routing divergence (always a bug)", iosDecisions, android)
+    }
+
+    // ── Three-tier pipeline: rules v3 → minTier → TierResolver ─────────────
+    // docs/ROUTING_THREE_TIER.md §6. Same standard profile and availability
+    // shorthand on both platforms — the v3 parity dump enforces it.
+
+    private fun loadRuleSetV3(): RouterRuleSet =
+        json.decodeFromString(
+            RouterRuleSet.serializer(),
+            File(repoRoot(), "AIAndroid/app/src/main/assets/default_router_rules_v3.json").readText(),
+        )
+
+    /** Standard capability profile; on-device vision comes from the case's
+     *  localSupportsImage (that fact IS the on-device tier's vision capability
+     *  under v3 — the image rule moved into the resolver, §3.3). */
+    private fun tiersFor(case: CorpusCase): Map<Tier, TierState> {
+        val base = mapOf(
+            Tier.ON_DEVICE to TierState(true, Reachability.YES, case.context.localSupportsImage, false, 2_000),
+            Tier.SELF_HOSTED to TierState(true, Reachability.YES, vision = true, web = true, contextLimit = 32_000),
+            Tier.CLOUD to TierState(true, Reachability.YES, vision = true, web = true, contextLimit = 1_000_000),
+        )
+        return base.mapValues { (tier, state) ->
+            when (case.availability[tier.decision] ?: "ok") {
+                "ok"       -> state
+                "down"     -> state.copy(reachable = Reachability.NO)
+                "absent"   -> state.copy(configured = false)
+                "no_web"   -> state.copy(web = false)
+                "no_vision"-> state.copy(vision = false)
+                else -> error("${case.id}: unknown availability shorthand ${case.availability[tier.decision]}")
+            }
+        }
+    }
+
+    private fun policyFor(case: CorpusCase): ResolverPolicy {
+        val p = case.policy ?: return ResolverPolicy()
+        return ResolverPolicy(
+            ceiling = p.ceiling?.let { Tier.fromDecision(it) ?: error("${case.id}: bad ceiling $it") } ?: Tier.CLOUD,
+            pin = p.pin?.let { Tier.fromDecision(it) ?: error("${case.id}: bad pin $it") },
+            offerAllCloud = p.offerAllCloud,
+        )
+    }
+
+    private data class V3Outcome(
+        val minTier: Tier,
+        val ruleId: String?,
+        val result: ResolverResult,
+    )
+
+    private fun runV3(case: CorpusCase, ruleSet: RouterRuleSet, factsOf: (CorpusCase) -> Map<String, FactValue>): V3Outcome {
+        val facts = factsOf(case)
+        val outcome = RuleEngine.decide(facts, ruleSet)
+        val minTier = Tier.fromDecision(outcome.decision)
+            ?: error("${case.id}: v3 rules produced non-tier decision '${outcome.decision}'")
+        val result = TierResolver.resolve(minTier, outcome.reason, facts, tiersFor(case), policyFor(case))
+        return V3Outcome(minTier, outcome.ruleId, result)
+    }
+
+    private fun factsFor(case: CorpusCase): Map<String, FactValue> {
+        val history = List(case.context.turns) { InferenceMessage(role = "user", text = "turn $it") }
+        val facts = RouterFactExtractor.extract(case.prompt, history, case.context.hasImage)
+        facts["localSupportsImage"] = FactValue.BoolValue(case.context.localSupportsImage)
+        return facts
+    }
+
+    /** Dump line: "id minTier action tier fallback" — fallback is "-" for sends. */
+    private fun v3Line(id: String, o: V3Outcome): String =
+        "$id ${o.minTier.decision} ${o.result.action.name.lowercase()} ${o.result.tier.decision} " +
+            (o.result.fallbackTier?.decision ?: "-")
+
+    private fun v3Matches(o: V3Outcome, case: CorpusCase): Boolean =
+        o.minTier.decision == case.expectMinTier &&
+            o.result.action.name.lowercase() == case.expectAction &&
+            o.result.tier.decision == case.expectTier &&
+            o.result.fallbackTier?.decision == case.expectFallbackTier
+
+    @Test
+    fun v3CorpusCases_withoutKnownMiss_routeAsExpected() {
+        val ruleSet = loadRuleSetV3()
+        val failures = loadCases()
+            .filterNot { it.knownMiss }
+            .map { case ->
+                val o = runV3(case, ruleSet, ::factsFor)
+                if (v3Matches(o, case)) {
+                    null
+                } else {
+                    "${case.id}: expected (${case.expectMinTier}, ${case.expectAction}, ${case.expectTier}, " +
+                        "${case.expectFallbackTier ?: "-"}), got (${o.minTier.decision}, " +
+                        "${o.result.action.name.lowercase()}, ${o.result.tier.decision}, " +
+                        "${o.result.fallbackTier?.decision ?: "-"}) (rule=${o.ruleId ?: "default"}) — ${case.because}"
+                }
+            }
+            .filterNotNull()
+        assertTrue(
+            "Three-tier pipeline misrouted ${failures.size} labeled corpus case(s):\n" + failures.joinToString("\n"),
+            failures.isEmpty(),
+        )
+    }
+
+    @Test
+    fun v3CorpusMetrics_reportAndDumpDecisions() {
+        val ruleSet = loadRuleSetV3()
+        val cases = loadCases()
+        val outcomes = cases.associate { it.id to runV3(it, ruleSet, ::factsFor) }
+
+        val labeled = cases.filterNot { it.knownMiss }
+        val misses = cases.filter { it.knownMiss }
+        val labeledPass = labeled.filter { v3Matches(outcomes[it.id]!!, it) }
+        val converted = misses.filter { v3Matches(outcomes[it.id]!!, it) }
+        val sends = outcomes.values.count { it.result.action == ResolverAction.SEND }
+        val cloudSends = outcomes.values.count {
+            it.result.action == ResolverAction.SEND && it.result.tier == Tier.CLOUD
+        }
+        val offers = outcomes.values.count { it.result.action == ResolverAction.OFFER }
+
+        println("── three-tier corpus metrics (android) ──────────────────────")
+        println("cases: ${cases.size} (labeled ${labeled.size}, known_miss ${misses.size})")
+        println("labeled passing (minTier,action,tier,fallback): ${labeledPass.size}/${labeled.size}")
+        println("known_miss converted: ${converted.size}/${misses.size} ${converted.map { it.id }}")
+        println("datacenter avoidance: sends $sends (cloud $cloudSends), offers $offers " +
+            "(keyword facts only — embedder unavailable in JVM tests)")
+        println("─────────────────────────────────────────────────────────────")
+
+        File(repoRoot(), "tests/router/decisions-v3-android.txt").writeText(
+            outcomes.toSortedMap().entries.joinToString("\n") { v3Line(it.key, it.value) } + "\n"
+        )
+    }
+
+    @Test
+    fun v3CrossPlatformDecisions_agreeWithIosDump() {
+        val ios = File(repoRoot(), "tests/router/decisions-v3-ios.txt")
+        assumeTrue("Run the iOS corpus tests first (missing ${ios.path})", ios.isFile)
+        val ruleSet = loadRuleSetV3()
+        val android = loadCases().associate { c ->
+            val parts = v3Line(c.id, runV3(c, ruleSet, ::factsFor)).split(" ")
+            parts[0] to parts.drop(1)
+        }
+        val iosDecisions = ios.readLines()
+            .filter { it.isNotBlank() }
+            .associate { val parts = it.split(" "); parts[0] to parts.drop(1) }
+        assertEquals("iOS/Android three-tier divergence (always a bug)", iosDecisions, android)
     }
 }

@@ -228,6 +228,17 @@ runs per user turn, never inside the agent loop.
 
 - Add to each case: `expect_min_tier`, and an `availability` matrix so resolver behaviour is
   tested per case (server down, no cloud key, vision-less tier, pinned).
+  **Shipped 2026-10-21** (branch `feat/tier-resolver`): the schema is `expect_min_tier`,
+  `expect_tier`, `expect_action` (`send`|`offer`, default `send`), `expect_fallback_tier`,
+  per-case `availability` (tier → `ok`|`down`|`absent`|`no_web`|`no_vision`, applied to a
+  standard profile: on-device ctx 2 000 / self-hosted 32 000 / cloud 1 000 000, self-hosted
+  and cloud vision+web; **on-device vision = the case's `localSupportsImage`** — that fact is
+  the on-device tier's capability under v3) and per-case `policy` (`ceiling`/`pin`/
+  `offerAllCloud`). Corpus is now 34 cases: the original 30 labelled with
+  `(expect_min_tier, expect_tier)` — sensitive-domain labels follow D3 — plus `av-01…04`
+  exercising the matrix (absent tier ⇒ offer, D3 server-down ⇒ offer, no-web ⇒ offer, pin).
+  Parity dumps `decisions-v3-{android,ios}.txt`, line = `id minTier action tier fallback`,
+  compared by both suites; any divergence is a hard failure.
 - Generalise the judge question from "was local good enough?" to **"was the cheapest
   available tier good enough?"**, judged pairwise along the tier order. Still development-time
   only.

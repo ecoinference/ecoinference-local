@@ -32,7 +32,7 @@ work:
 
 ## Mobile (iOS + Android)
 
-### 2026-10-21 — three-tier routing: TierResolver + rules v3 (pure code, both platforms green)
+### 2026-10-21 — three-tier routing: TierResolver + rules v3 + three-tier corpus (pure code, both platforms green)
 
 First code increment of the three-tier design ([docs/ROUTING_THREE_TIER.md](docs/ROUTING_THREE_TIER.md)
 §8 step 2), on branch `feat/tier-resolver`. Pure code only — no UI, no service wiring, nothing
@@ -55,6 +55,17 @@ consumes it yet; `RuleEngine` is untouched (decisions were always opaque strings
   ceiling-degrade, pin-skips-capabilities, context-limit upgrade) run by both
   `TierResolverTest.kt` (JVM) and `TierResolverTests.swift` (AIiOSTests) — any divergence in
   resolution OR reason strings fails a suite. Android 18/18 green; iOS `** TEST SUCCEEDED **`.
+- **Corpus went three-tier (34 cases).** All 30 originals labelled with
+  `(expect_min_tier, expect_tier)` — sensitive-domain labels follow D3; `image_unsupported`
+  cases now exercise the resolver's vision matching. Four new `av-*` cases exercise the
+  availability/policy matrix end-to-end (absent tier ⇒ offer, D3 server-down ⇒ offer,
+  no-web ⇒ offer, pin). Both harnesses gained the full v3 pipeline (rules v3 → RuleEngine →
+  TierResolver), hard-fail on labelled cases, a datacenter-avoidance metric line, and a
+  second parity dump `decisions-v3-*.txt` over `(minTier, action, tier, fallback)` tuples.
+  Android 21/21 green; iOS `** TEST SUCCEEDED **`; v2 + v3 parity pass in both directions.
+  Keyword-only baseline on v3: 19/19 labelled, 0/15 known_miss converted (the embedder is
+  unavailable in test targets — conversion becomes measurable once a harness can run Needle).
+  Schema documented in ROUTING_THREE_TIER.md §6.
 - **Machine notes (not repo changes):** Homebrew dropped python3.10 (EOL) so Chaquopy's
   buildPython broke — fixed with `uv python install 3.10` + its bin dir on PATH. Xcode's
   CoreSimulator went stale after an update — `xcodebuild -runFirstLaunch` fixed it. Gradle
