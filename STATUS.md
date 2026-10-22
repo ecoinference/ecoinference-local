@@ -13,7 +13,7 @@ may have landed from another machine. After finishing meaningful work, update th
 section below, commit, and push, so the next session (on any machine) starts from an accurate
 picture. Keep entries short and factual — this is a status board, not a design doc.
 
-Last updated: 2026-09-20, from the macOS/mobile machine.
+Last updated: 2026-10-21, from the macOS/mobile machine.
 
 **Companion docs.** This file is *what happened and when*. Two others cover *why things are
 the way they are* — read them before touching inference, tool calling, theming or device
@@ -31,6 +31,34 @@ work:
 ---
 
 ## Mobile (iOS + Android)
+
+### 2026-10-21 — three-tier routing: TierResolver + rules v3 (pure code, both platforms green)
+
+First code increment of the three-tier design ([docs/ROUTING_THREE_TIER.md](docs/ROUTING_THREE_TIER.md)
+§8 step 2), on branch `feat/tier-resolver`. Pure code only — no UI, no service wiring, nothing
+consumes it yet; `RuleEngine` is untouched (decisions were always opaque strings).
+
+- **`TierResolver.{kt,swift}`** — pure, mirrored: pin → lowest capable candidate ≥ minTier,
+  ≤ ceiling → cloud gated per D4 (automatic only when the rules asked; otherwise an OFFER with
+  a degraded fallback; `offerAllCloud` setting makes every cloud send an offer). Capability
+  upgrades to self-hosted are plain sends (still user-owned hardware, D3). No candidates →
+  degrade to the most private usable tier with a visible reason. `reachable: unknown` never
+  blocks. Needs derived from facts: `hasImage`→vision, `mentionsCurrentEvents`→web,
+  `estimatedTokens = wordCount + conversationTurns*100` (v1 approximation, mirrored, pinned
+  by fixtures). Reason strings are part of the cross-platform contract.
+- **`default_router_rules_v3.json`** (byte-identical both platforms, enforced by a test):
+  version 3, decisions in `on_device|self_hosted|cloud`; size rules → `self_hosted`;
+  `sensitive_domain` → `self_hosted` (D3); `current_events` → `on_device` + resolver picks
+  the cheapest web-capable tier; `image_unsupported_locally` removed (§3.3 — capability, not
+  a rule). Not yet read by `RouterService` (old `router_rules` untouched — §6 rollout).
+- **Shared fixtures `tests/router/resolver_cases.json`** (14 cases incl. D3-server-down,
+  ceiling-degrade, pin-skips-capabilities, context-limit upgrade) run by both
+  `TierResolverTest.kt` (JVM) and `TierResolverTests.swift` (AIiOSTests) — any divergence in
+  resolution OR reason strings fails a suite. Android 18/18 green; iOS `** TEST SUCCEEDED **`.
+- **Machine notes (not repo changes):** Homebrew dropped python3.10 (EOL) so Chaquopy's
+  buildPython broke — fixed with `uv python install 3.10` + its bin dir on PATH. Xcode's
+  CoreSimulator went stale after an update — `xcodebuild -runFirstLaunch` fixed it. Gradle
+  runs on brew openjdk@21 (Studio's JBR is Java 25, Gradle 8.9 won't start on it).
 
 ### 2026-09-20 — Needle 3 embedder router: harness green, integration built (`cfebff3`)
 

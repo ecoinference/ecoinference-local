@@ -78,6 +78,10 @@
 		A2250000000000000000AA01 /* needle3.cact in Resources */ = {isa = PBXBuildFile; fileRef = A1260000000000000000AA01 /* needle3.cact */; };
 		A2260000000000000000AA01 /* ExemplarScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1220000000000000000AA01 /* ExemplarScorer.swift */; };
 		A2270000000000000000AA01 /* ExemplarScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1270000000000000000AA01 /* ExemplarScorerTests.swift */; };
+		A2280000000000000000AA01 /* TierResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1280000000000000000AA01 /* TierResolver.swift */; };
+		A2290000000000000000AA01 /* TierResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1280000000000000000AA01 /* TierResolver.swift */; };
+		A22A0000000000000000AA01 /* TierResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1290000000000000000AA01 /* TierResolverTests.swift */; };
+		A22B0000000000000000AA01 /* default_router_rules_v3.json in Resources */ = {isa = PBXBuildFile; fileRef = A12A0000000000000000AA01 /* default_router_rules_v3.json */; };
 		A5AB52E73D713C2E9075F2B4 /* ToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC39CF38328F273C28DCECD0 /* ToolResult.swift */; };
 		A862F8147CA58D8E56808259 /* PythonCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE83DFFB718980F1B010B3C5 /* PythonCommandTests.swift */; };
 		A93B2AFBB1007B0C4857C8DA /* libLiteRtLm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7E42818491234BF49436D57E /* libLiteRtLm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -197,6 +201,9 @@
 		A1250000000000000000AA01 /* Needle.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Needle.xcframework; path = Frameworks/Needle.xcframework; sourceTree = "<group>"; };
 		A1260000000000000000AA01 /* needle3.cact */ = {isa = PBXFileReference; lastKnownFileType = file; name = needle3.cact; path = Frameworks/needle3.cact; sourceTree = "<group>"; };
 		A1270000000000000000AA01 /* ExemplarScorerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExemplarScorerTests.swift; sourceTree = "<group>"; };
+		A1280000000000000000AA01 /* TierResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierResolver.swift; sourceTree = "<group>"; };
+		A1290000000000000000AA01 /* TierResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TierResolverTests.swift; sourceTree = "<group>"; };
+		A12A0000000000000000AA01 /* default_router_rules_v3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = default_router_rules_v3.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -257,6 +264,7 @@
 				CC891A2300001111AABBCCDD /* GoogleService-Info.plist */,
 				A1170000000000000000AA01 /* default_router_rules.json */,
 				A1200000000000000000AA01 /* default_router_exemplars.json */,
+				A12A0000000000000000AA01 /* default_router_rules_v3.json */,
 				61117BA860445AD9A8B29DAE /* LiteRtLm-Bridging-Header.h */,
 				0C0B88EDC625CA2DDCCD6E0D /* ModelsView.swift */,
 				ACFB2917A419EA15F57507C3 /* RootView.swift */,
@@ -320,6 +328,7 @@
 				A1160000000000000000AA01 /* RouterService.swift */,
 				A1210000000000000000AA01 /* NeedleEmbedder.swift */,
 				A1220000000000000000AA01 /* ExemplarScorer.swift */,
+				A1280000000000000000AA01 /* TierResolver.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -380,6 +389,7 @@
 				B1000000000000000000CC01 /* RouterCorpusTests.swift */,
 				B1000000000000000000CC02 /* RouterFactExtractorTests.swift */,
 				A1270000000000000000AA01 /* ExemplarScorerTests.swift */,
+				A1290000000000000000AA01 /* TierResolverTests.swift */,
 			);
 			name = AIiOSTests;
 			path = AIiOSTests;
@@ -491,6 +501,7 @@
 				A2170000000000000000AA01 /* default_router_rules.json in Resources */,
 				A2200000000000000000AA01 /* default_router_exemplars.json in Resources */,
 				A2250000000000000000AA01 /* needle3.cact in Resources */,
+				A22B0000000000000000AA01 /* default_router_rules_v3.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -577,6 +588,7 @@
 				A2210000000000000000AA01 /* NeedleEmbedder.swift in Sources */,
 				A2220000000000000000AA01 /* ExemplarScorer.swift in Sources */,
 				A2230000000000000000AA01 /* NeedleBridge.m in Sources */,
+				A2280000000000000000AA01 /* TierResolver.swift in Sources */,
 				2655D9612602662244AD77E9 /* SettingsService.swift in Sources */,
 				085CE538F88DB1BE590FF9E1 /* SettingsView.swift in Sources */,
 				9211667A5A5F918A5E9BFA6A /* TestView.swift in Sources */,
@@ -605,6 +617,8 @@
 				B1050000000000000000CC05 /* RouterModels.swift in Sources */,
 				A2260000000000000000AA01 /* ExemplarScorer.swift in Sources */,
 				A2270000000000000000AA01 /* ExemplarScorerTests.swift in Sources */,
+				A2290000000000000000AA01 /* TierResolver.swift in Sources */,
+				A22A0000000000000000AA01 /* TierResolverTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

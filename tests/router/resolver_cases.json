@@ -1,0 +1,187 @@
+{
+  "comment": "Shared TierResolver fixtures — docs/ROUTING_THREE_TIER.md §3.2. Read by TierResolverTest.kt (JVM) and TierResolverTests.swift (AIiOSTests); both must produce exactly these results, reason strings included. Any iOS/Android disagreement is always a bug. Tier-state fields: configured, reachable (yes|no|unknown), vision, web, contextLimit (estimated-token units; estimate = wordCount + conversationTurns*100).",
+  "cases": [
+    {
+      "id": "plain-local",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 12, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "on_device", "reason": "No rule matched — default.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "image-to-self-hosted",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": true, "mentionsCurrentEvents": false, "wordCount": 20, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "self_hosted", "reason": "Resolved to a higher tier: the minimum tier lacks a required capability.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "image-cloud-is-an-offer",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": true, "mentionsCurrentEvents": false, "wordCount": 20, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": false, "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "offer", "tier": "cloud", "reason": "Cloud escalation beyond the rules' tier is offered, never automatic.", "fallbackTier": "on_device", "fallbackReason": "No available tier meets this prompt's needs; answered on the most private reachable tier." }
+    },
+    {
+      "id": "recency-to-self-hosted-with-web",
+      "minTier": "on_device",
+      "ruleReason": "Needs up-to-date information — resolved to the cheapest tier with web access.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": true, "wordCount": 9, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "self_hosted", "reason": "Resolved to a higher tier: the minimum tier lacks a required capability.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "recency-cloud-is-an-offer",
+      "minTier": "on_device",
+      "ruleReason": "Needs up-to-date information — resolved to the cheapest tier with web access.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": true, "wordCount": 9, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": false, "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "offer", "tier": "cloud", "reason": "Cloud escalation beyond the rules' tier is offered, never automatic.", "fallbackTier": "on_device", "fallbackReason": "No available tier meets this prompt's needs; answered on the most private reachable tier." }
+    },
+    {
+      "id": "rules-asked-for-cloud-is-automatic",
+      "minTier": "cloud",
+      "ruleReason": "Requires frontier knowledge.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 30, "conversationTurns": 2 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "cloud", "reason": "Requires frontier knowledge.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "offer-all-cloud-setting",
+      "minTier": "cloud",
+      "ruleReason": "Requires frontier knowledge.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 30, "conversationTurns": 2 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": true },
+      "expect": { "action": "offer", "tier": "cloud", "reason": "Every cloud send is an offer under the user's escalation setting.", "fallbackTier": "on_device", "fallbackReason": "No available tier meets this prompt's needs; answered on the most private reachable tier." }
+    },
+    {
+      "id": "pin-wins-and-skips-capability-checks",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": true, "mentionsCurrentEvents": false, "wordCount": 15, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": "self_hosted", "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "self_hosted", "reason": "Pinned by user.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "sensitive-server-down-offers-cloud",
+      "minTier": "self_hosted",
+      "ruleReason": "Private legal/medical/financial topic — stays on hardware the user owns; cloud only by the user's explicit override.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 18, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "no",  "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "offer", "tier": "cloud", "reason": "Cloud escalation beyond the rules' tier is offered, never automatic.", "fallbackTier": "on_device", "fallbackReason": "No available tier meets this prompt's needs; answered on the most private reachable tier." }
+    },
+    {
+      "id": "ceiling-forces-degrade",
+      "minTier": "cloud",
+      "ruleReason": "Requires frontier knowledge.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 30, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "self_hosted", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "on_device", "reason": "No available tier meets this prompt's needs; answered on the most private reachable tier.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "unknown-reachability-does-not-block",
+      "minTier": "self_hosted",
+      "ruleReason": "Long conversation may approach the on-device model's context window limit.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 10, "conversationTurns": 21 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes",     "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "unknown", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes",     "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "self_hosted", "reason": "Long conversation may approach the on-device model's context window limit.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "context-limit-upgrades",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 900, "conversationTurns": 25 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": true,  "reachable": "yes", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "self_hosted", "reason": "Resolved to a higher tier: the minimum tier lacks a required capability.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "only-on-device-configured",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": false, "mentionsCurrentEvents": false, "wordCount": 8, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes", "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": false, "reachable": "unknown", "vision": true, "web": true, "contextLimit": 32000 },
+        "cloud":       { "configured": false, "reachable": "unknown", "vision": true, "web": true, "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "on_device", "reason": "No rule matched — default.", "fallbackTier": null, "fallbackReason": null }
+    },
+    {
+      "id": "no-capable-tier-degrades-to-most-private",
+      "minTier": "on_device",
+      "ruleReason": "No rule matched — default.",
+      "facts": { "hasImage": true, "mentionsCurrentEvents": false, "wordCount": 14, "conversationTurns": 0 },
+      "tiers": {
+        "on_device":   { "configured": true,  "reachable": "yes",     "vision": false, "web": false, "contextLimit": 2000 },
+        "self_hosted": { "configured": false, "reachable": "unknown", "vision": true,  "web": true,  "contextLimit": 32000 },
+        "cloud":       { "configured": false, "reachable": "unknown", "vision": true,  "web": true,  "contextLimit": 1000000 }
+      },
+      "policy": { "ceiling": "cloud", "pin": null, "offerAllCloud": false },
+      "expect": { "action": "send", "tier": "on_device", "reason": "No available tier meets this prompt's needs; answered on the most private reachable tier.", "fallbackTier": null, "fallbackReason": null }
+    }
+  ]
+}

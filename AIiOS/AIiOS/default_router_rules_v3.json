@@ -1,0 +1,57 @@
+{
+  "version": 3,
+  "defaultDecision": "on_device",
+  "rules": [
+    {
+      "id": "current_events",
+      "conditions": { "fact": "mentionsCurrentEvents", "operator": "equal", "value": true },
+      "decision": "on_device",
+      "reason": "Needs up-to-date information — resolved to the cheapest tier with web access."
+    },
+    {
+      "id": "sensitive_domain",
+      "conditions": { "fact": "mentionsSensitiveDomain", "operator": "equal", "value": true },
+      "decision": "self_hosted",
+      "reason": "Private legal/medical/financial topic — stays on hardware the user owns; cloud only by the user's explicit override."
+    },
+    {
+      "id": "long_complex_prompt",
+      "conditions": {
+        "all": [
+          { "fact": "promptLength", "operator": "greaterThan", "value": 600 },
+          { "fact": "requestsDeepReasoning", "operator": "equal", "value": true }
+        ]
+      },
+      "decision": "self_hosted",
+      "reason": "Long prompt requesting deep analysis exceeds the on-device model's comfortable range."
+    },
+    {
+      "id": "creative_writing_long",
+      "conditions": {
+        "all": [
+          { "fact": "requestsCreativeWriting", "operator": "equal", "value": true },
+          { "fact": "promptLength", "operator": "greaterThan", "value": 500 }
+        ]
+      },
+      "decision": "self_hosted",
+      "reason": "Long-form creative writing with substantial context tends to read better from a larger model."
+    },
+    {
+      "id": "long_conversation",
+      "conditions": { "fact": "conversationTurns", "operator": "greaterThan", "value": 20 },
+      "decision": "self_hosted",
+      "reason": "Long conversation may approach the on-device model's context window limit."
+    },
+    {
+      "id": "complex_code",
+      "conditions": {
+        "all": [
+          { "fact": "hasCodeBlock", "operator": "equal", "value": true },
+          { "fact": "promptLength", "operator": "greaterThan", "value": 300 }
+        ]
+      },
+      "decision": "self_hosted",
+      "reason": "Code-heavy prompt above average length suggests a complex implementation task."
+    }
+  ]
+}
