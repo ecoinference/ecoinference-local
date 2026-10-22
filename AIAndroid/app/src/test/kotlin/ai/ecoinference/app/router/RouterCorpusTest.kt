@@ -49,6 +49,9 @@ class RouterCorpusTest {
         val context: CaseContext = CaseContext(),
         val notes: String = "",
         @SerialName("known_miss") val knownMiss: Boolean = false,
+        /** True for the ~30% tuning holdout (docs/ROUTING.md §2). Regression
+         *  assertions still cover these; exemplar/threshold/judge tuning must not. */
+        val holdout: Boolean = false,
         // ── Three-tier fields (docs/ROUTING_THREE_TIER.md §6) ──
         @SerialName("expect_min_tier") val expectMinTier: String = "",
         @SerialName("expect_tier") val expectTier: String = "",
@@ -131,13 +134,16 @@ class RouterCorpusTest {
         val falseCloud = labeled.filter { it.expect == "local" && decisions[it.id] == "cloud" }
         val retainedLocal = labeled.count { decisions[it.id] == "local" }
         val converted = misses.filter { decisions[it.id] == it.expect }
+        val missesTuning = misses.count { !it.holdout }
+        val convTuning = converted.count { !it.holdout }
 
         println("── router corpus metrics (android) ──────────────────────────")
-        println("cases: ${cases.size} (labeled ${labeled.size}, known_miss ${misses.size})")
+        println("cases: ${cases.size} (labeled ${labeled.size}, known_miss ${misses.size}; holdout ${cases.count { it.holdout }})")
         println("local retention (labeled): $retainedLocal/${labeled.size}")
         println("false local : ${falseLocal.size} ${falseLocal.map { it.id }}")
         println("false cloud : ${falseCloud.size} ${falseCloud.map { it.id }}")
         println("known_miss converted: ${converted.size}/${misses.size} ${converted.map { it.id }}")
+        println("  tuning split: $convTuning/$missesTuning | holdout: ${converted.size - convTuning}/${misses.size - missesTuning} (measurement only — never tune against it)")
         println("─────────────────────────────────────────────────────────────")
 
         File(repoRoot(), "tests/router/decisions-android.txt").writeText(
@@ -277,9 +283,11 @@ class RouterCorpusTest {
         val offers = outcomes.values.count { it.result.action == ResolverAction.OFFER }
 
         println("── three-tier corpus metrics (android) ──────────────────────")
-        println("cases: ${cases.size} (labeled ${labeled.size}, known_miss ${misses.size})")
+        println("cases: ${cases.size} (labeled ${labeled.size}, known_miss ${misses.size}; holdout ${cases.count { it.holdout }})")
         println("labeled passing (minTier,action,tier,fallback): ${labeledPass.size}/${labeled.size}")
         println("known_miss converted: ${converted.size}/${misses.size} ${converted.map { it.id }}")
+        println("  tuning split: labeled ${labeledPass.count { !it.holdout }}/${labeled.count { !it.holdout }}, " +
+            "converted ${converted.count { !it.holdout }}/${misses.count { !it.holdout }} | holdout: measurement only")
         println("datacenter avoidance: sends $sends (cloud $cloudSends), offers $offers " +
             "(keyword facts only — embedder unavailable in JVM tests)")
         println("─────────────────────────────────────────────────────────────")
