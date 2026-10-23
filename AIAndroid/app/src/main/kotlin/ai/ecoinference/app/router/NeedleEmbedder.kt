@@ -70,6 +70,10 @@ object NeedleEmbedder {
         }
     }
 
+    /** True once engine + config are ready and [semanticFacts] will return facts.
+     *  Mirrors iOS NeedleEmbedder.isAvailable. */
+    fun isAvailable(): Boolean = ready
+
     /** Version-gated live update (Remote Config `router_exemplars`). */
     fun applyConfigIfNewer(newConfig: ExemplarConfig) {
         executor.execute {
@@ -102,7 +106,10 @@ object NeedleEmbedder {
     // ── executor-thread internals ──────────────────────────────────────────
 
     private fun initOnExecutor(context: Context) {
-        System.loadLibrary("needle_jni")
+        // CMake target name is "needlejni" → libneedlejni.so. (Caught on the first
+        // real-device run: a "needle_jni" mismatch failed-open to keyword facts —
+        // silent in JVM tests, which never load the native lib.)
+        System.loadLibrary("needlejni")
         val cact = context.assets.open("needle3.cact").use { it.readBytes() }
         val d = nativeLoad(cact)
         if (d <= 0) {

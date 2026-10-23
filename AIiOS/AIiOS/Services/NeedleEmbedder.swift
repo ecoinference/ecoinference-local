@@ -58,6 +58,14 @@ final class NeedleEmbedder {
         }
     }
 
+    /// True once the engine + config are ready and `semanticFacts` will return
+    /// facts. Mirrors Android NeedleEmbedder.isAvailable().
+    var isAvailable: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return isReady
+    }
+
     /// Semantic facts for one prompt, or nil when the embedder is unavailable
     /// or anything goes wrong — callers keep their keyword-derived facts.
     /// ~8-10 ms per prompt on M-series Macs; the Lenovo TB336FU measurement

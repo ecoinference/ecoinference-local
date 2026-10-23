@@ -25,6 +25,8 @@ android {
         versionCode   = 1
         versionName   = "1.0.0"
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         // Chaquopy requires explicit ABI list.
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
@@ -87,6 +89,15 @@ android {
             isReturnDefaultValues = true
         }
     }
+
+    sourceSets {
+        getByName("androidTest") {
+            // The shared router corpus (repo tests/router/) as instrumented-test
+            // assets — the on-device test reads the exact same corpus.jsonl the
+            // JVM and XCTest harnesses do; one source of bytes, three runners.
+            assets.srcDir("$projectDir/../../tests/router")
+        }
+    }
 }
 
 dependencies {
@@ -140,6 +151,11 @@ dependencies {
 
     // Unit tests (local JVM, no device/emulator needed)
     testImplementation(libs.junit)
+
+    // Instrumented tests (real device — on-device Needle corpus run)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
 
 // ── Chaquopy — on-device Python runtime ───────────────────────────────────────
