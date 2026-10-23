@@ -58,6 +58,18 @@ status). What remains, in order:
    real-device network-silence verification (the Mac strings/lsof pass was clean, but the
    formal gate is hardware); an iOS device run. No latency gate — Needle 3 is part of the app
    on every device ([docs/ROUTING_THREE_TIER_DECISIONS.md](docs/ROUTING_THREE_TIER_DECISIONS.md) D8).
+4. **Run the on-device corpus test** — built 2026-10-23, deferred ("we will test later").
+   `RouterOnDeviceCorpusTest` (androidTest) runs the 34-case corpus through the real Needle
+   engine on an attached phone: reports known_miss conversion and per-prompt embed latency,
+   hard-fails only on labeled regressions. Run from `AIAndroid/`:
+   `./gradlew :app:connectedDebugAndroidTest` (needs the openjdk@21 `JAVA_HOME` and the uv
+   python3.10 dir on `PATH` — see the machine notes in STATUS.md's 2026-10-21 entry). The
+   last attached phone (Xiaomi `aurora_eea`, serial `ea5c33bd`) already runs the engine —
+   verified: `engine ready, dim=3072`, 42 exemplar vectors in ~0.5 s — and the JNI
+   library-name bug that first device run surfaced is fixed (`2440daa`). This is the
+   hardware half of the conversion measurement (the Mac-side 13/15 GO is the desktop record)
+   and the first real-device latency datapoint — informational, since D8 retired the
+   latency gate.
 
 The original harness rationale, kept because it still governs step 1: the judging question is
 **"was local good enough?"** and not "which answer is better" (otherwise everything routes to
